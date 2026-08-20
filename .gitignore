@@ -1,2 +1,16 @@
 .superpowers/
 
+# dependencies and builds
+node_modules/
+.next/
+out/
+coverage/
+
+# local environment
+.env*
+!.env.example
+
+# editor and operating system
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
