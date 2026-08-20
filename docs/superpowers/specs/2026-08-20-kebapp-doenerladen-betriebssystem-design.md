@@ -1,15 +1,15 @@
 # Kebapp: Gruppeneinkauf und digitales Betriebssystem für Dönerläden
 
-**Stand:** 20. August 2026  
-**Pilotregion:** Mönchengladbach und Umgebung, anschließend Nordrhein-Westfalen  
-**Produktart:** B2B-Web-App/PWA mit automatisch erzeugten B2C-Laden-Websites  
+**Stand:** 21. August 2026<br>
+**Pilotregion:** Mönchengladbach und Umgebung, anschließend Nordrhein-Westfalen<br>
+**Produktart:** B2B-Web-App/PWA mit automatisch erzeugten öffentlichen Laden-Websites<br>
 **Status:** Freigegebener Produkt- und Pilotentwurf
 
 ## 1. Zusammenfassung
 
 Kebapp soll unabhängige Dönerläden wirtschaftlich und operativ stärken. Der erste Hebel ist ein betreuter Gruppeneinkauf: Mehrere Läden tragen ihren Bedarf ein, Kebapp bündelt die Mengen, verhandelt bessere Konditionen und weist die tatsächliche Ersparnis je Betrieb aus. Im ersten Geschäftsmodell verkauft und liefert der ausgewählte Lieferant direkt an jeden Laden. Kebapp koordiniert und vermittelt. Sobald Volumen, Lieferqualität und Zahlungsfähigkeit belastbar nachgewiesen sind, kann Kebapp später selbst zentral einkaufen und weiterverkaufen.
 
-Der Einkauf ist der wirtschaftliche Einstieg, Kebapp wird jedoch von Beginn an als vollständiges, modular aufgebautes Betriebssystem angeboten. Es umfasst Warenwirtschaft, Kalkulation, Buchhaltungsvorbereitung, Personal, Hygiene, KI-Unterstützung sowie eine kostenlose, automatisch veröffentlichte Website pro aktivem Mitglied. Die Website verwendet ein standardisiertes Template, lässt Logo und Farben anpassen, registriert eine `.de`-Domain, verwaltet SSL und ermöglicht Abholung, Vorbestellung und Onlinezahlung.
+Der Einkauf ist der wirtschaftliche Einstieg, Kebapp wird jedoch von Beginn an als vollständiges, modular aufgebautes Betriebssystem angeboten. Es umfasst Warenwirtschaft, Kalkulation, Buchhaltungsvorbereitung, Personal, Hygiene, KI-Unterstützung sowie eine kostenlose, automatisch veröffentlichte Website pro aktivem Mitglied. Die Website verwendet ein standardisiertes Template, lässt Logo und Farben anpassen, registriert eine `.de`-Domain und verwaltet SSL. Im Pilot ist sie eine reine Informationsseite mit Speisekarte, Öffnungszeiten, Kontakt, Karte und Pflichtangaben; Onlinebestellung und Bezahlung folgen erst in einer späteren Ausbaustufe.
 
 Der Pilot startet mit fünf bis zehn unabhängigen Läden in Mönchengladbach und einem Lieferradius von ungefähr 30 bis 50 Kilometern. Erfolg bedeutet gleichzeitig regelmäßige digitale Nutzung und eine belegbare Nettoersparnis von fünf bis zehn Prozent bei vergleichbarer Ware.
 
@@ -22,11 +22,10 @@ Die folgenden Entscheidungen sind für den Pilot verbindlich:
 3. Kebapp zeigt bereits im Pilot alle wesentlichen Module, begrenzt aber deren Funktionstiefe.
 4. Bestehende Kassensysteme werden angebunden oder über standardisierte Exporte importiert. Kebapp baut zunächst keine eigene TSE-Kasse.
 5. Buchhaltung, Umsatzsteuervoranmeldung und Abschluss werden umfassend vorbereitet, aber ausschließlich durch fachlich verantwortliche Personen freigegeben und übermittelt.
-6. Jede kostenlose Website unterstützt Menü, Abholung, Vorbestellung und Onlinezahlung, aber zunächst keinen eigenen Lieferdienst.
-7. Bei Endkundenbestellungen ist Kebapp der Geschäftspartner des Endkunden und nimmt die Zahlung an. Der jeweilige Laden erhält seinen Anteil automatisiert.
-8. Die technische Plattform und die Laden-Websites laufen bei Hetzner an einem deutschen Standort. INWX übernimmt Domainregistrierung und DNS; SSL wird über Let’s Encrypt automatisiert.
-9. Die Web-App ist mobiloptimiert und als PWA installierbar. Native Android- und iOS-Apps folgen nach dem validierten Pilot.
-10. Das Basispaket und die Standard-Website bleiben für aktiv am Gruppeneinkauf teilnehmende Betriebe kostenlos. Einnahmen entstehen aus Einkaufspartnerschaften, Onlinebestellungen und Premium-Funktionen.
+6. Jede kostenlose Website ist im Pilot eine reine Informationsseite mit Speisekarte, Öffnungszeiten, Kontakt, Karte und Pflichtangaben. Onlinebestellung, Bezahlung und ein eigener Lieferdienst gehören nicht zum Pilot.
+7. Die technische Plattform und die Laden-Websites laufen bei Hetzner an einem deutschen Standort. INWX übernimmt Domainregistrierung und DNS; SSL wird über Let’s Encrypt automatisiert.
+8. Die Web-App ist mobiloptimiert und als PWA installierbar. Native Android- und iOS-Apps folgen nach dem validierten Pilot.
+9. Das Basispaket und die Standard-Website bleiben für aktiv am Gruppeneinkauf teilnehmende Betriebe kostenlos. Einnahmen entstehen aus Einkaufspartnerschaften und Premium-Funktionen.
 
 ## 3. Ausgangslage und Problem
 
@@ -70,9 +69,9 @@ Der Experte prüft Buchungsvorschläge, Kontierung, UStVA-Entwürfe und Abschlus
 
 Die Administration verwaltet Läden, Lieferanten, Vorlagen, Integrationen und Supportfälle. Produktivdatenzugriffe sind rollenbegrenzt, protokolliert und nur bei berechtigtem Anlass zulässig.
 
-### 4.7 Endkunde
+### 4.7 Websitebesucher
 
-Der Endkunde besucht die individuelle Website eines Ladens, sieht Menü und Pflichtinformationen, bestellt zur Abholung und bezahlt online. Ein dauerhaftes Kundenkonto ist für den Pilot nicht erforderlich.
+Der Websitebesucher sieht Speisekarte, Öffnungszeiten, Kontaktdaten, Standort und Pflichtinformationen eines Ladens. Er kann den Laden anrufen, eine Route öffnen oder zu dessen bestehenden Kontaktkanälen wechseln. Kebapp nimmt im Pilot weder Bestellungen noch Zahlungen von Websitebesuchern entgegen und führt keine Kundenkonten.
 
 ## 5. Nutzenversprechen
 
@@ -182,15 +181,14 @@ Jeder aktiv teilnehmende Betrieb erhält:
 - ein mobiloptimiertes Standardtemplate
 - Logo, definierte Farbvariablen, Bilder und Texte
 - Öffnungszeiten, Kontakt, Karte und Impressum
+- Datenschutzhinweise
 - synchronisierte Speisekarte
 - Allergene und Zusatzstoffe
-- Abholung und Vorbestellung
-- Onlinezahlung
-- automatische Bestellbestätigung
+- Klick-zum-Anrufen und Routenlink
 - eine normale `.de`-Domain
 - Hosting und SSL
 
-Nicht im kostenlosen Template enthalten sind freie Individualgestaltung, mehrere Webseitenkonzepte, eigener Lieferdienst oder unbegrenzte Änderungsleistungen. Premium-Domains und Sonderentwicklungen zahlt der Laden zusätzlich.
+Nicht im kostenlosen Template enthalten sind Onlinebestellung, Onlinezahlung, Kundenkonten, freie Individualgestaltung, mehrere Webseitenkonzepte, eigener Lieferdienst oder unbegrenzte Änderungsleistungen. Premium-Domains und Sonderentwicklungen zahlt der Laden zusätzlich.
 
 Die Domain wird auf den Laden als Inhaber registriert. Kebapp ist technischer Verwalter. Bei Austritt kann die Domain übertragen werden. Hosting und Betrieb werden danach kostenpflichtig fortgesetzt oder nach vereinbarter Frist beendet.
 
@@ -198,7 +196,7 @@ Die Domain wird auf den Laden als Inhaber registriert. Kebapp ist technischer Ve
 
 Die Startseite zeigt:
 
-- heutigen Umsatz und Bestellungen
+- heutigen Umsatz aus Kassendaten und offene Einkaufsbestellungen
 - anstehende Aufgaben und Kontrollen
 - Personalbesetzung
 - Lager- und Lieferwarnungen
@@ -223,7 +221,7 @@ Zentrale Datenobjekte sind:
 - Bedarf, Sammelrunde, Angebot und Vergabe
 - Bestellung, Lieferung, Charge, Reklamation und Gutschrift
 - Beleg, Rechnung, Zahlung, Buchungsvorschlag und Expertenfreigabe
-- Website, Domain, Theme, Seite und Endkundenbestellung
+- Website, Domain, Theme und Seite
 - Hygieneplan, Kontrolle, Messwert und Abweichungsmaßnahme
 - Benachrichtigung, Audit-Ereignis und KI-Vorschlag
 
@@ -231,7 +229,7 @@ Zentrale Datenobjekte sind:
 
 ### 8.1 Vom Verkauf zur Sammelbestellung
 
-1. Kassen- und Websiteverkäufe fließen in Kebapp ein.
+1. Kassenverkäufe fließen in Kebapp ein.
 2. Das System berechnet Bestand, Verbrauch und Prognose.
 3. Der Laden prüft und bestätigt seinen Bedarf.
 4. Kebapp bündelt die regionale Gesamtmenge.
@@ -256,36 +254,19 @@ Zentrale Datenobjekte sind:
 
 Bei vorgeschriebener Verifikation der `.de`-Inhaberdaten muss der Domaininhaber die Verifikationsnachricht selbst bestätigen. Kebapp zeigt den Status und sendet Erinnerungen, kann diesen Schritt aber nicht rechtmäßig überspringen.
 
-### 8.3 Endkundenbestellung und Zahlung
+### 8.3 Website-Inhalte aktualisieren
 
-1. Der Kunde wählt einen Laden und legt Artikel in den Warenkorb.
-2. Kebapp prüft Öffnungszeiten, Abholfenster und Verfügbarkeit.
-3. Der Kunde bezahlt im Checkout der Plattform.
-4. Der Laden nimmt die Bestellung an oder sie läuft nach definierter Frist kontrolliert aus.
-5. Der Kunde erhält Status und Abholzeit.
-6. Nach Abholung werden Umsatz, Bestand und Buchhaltung aktualisiert.
+1. Der Laden oder Support ändert Speisekarte, Preise, Öffnungszeiten oder Kontaktdaten im geschützten Bereich.
+2. Kebapp prüft Pflichtfelder und erzeugt eine Vorschau.
+3. Eine berechtigte Person gibt die Änderung frei.
+4. Kebapp veröffentlicht die Inhalte auf Plattform-Subdomain und eigener Domain.
+5. Jede Veröffentlichung wird mit Zeitpunkt und verantwortlicher Person protokolliert.
 
-## 9. Zahlungsarchitektur
+## 9. Spätere Ausbaustufe: Onlinebestellung und Bezahlung
 
-Für Endkundenbestellungen wird Stripe Connect mit Accounts v2 vorgesehen:
+Onlinebestellung und Bezahlung sind ausdrücklich nicht Teil des Piloten. Version 1 speichert keine Warenkörbe oder Endkundenbestellungen, führt keine Kundenkonten und bindet keinen Zahlungsdienstleister für die Laden-Websites an.
 
-- Dashboard für Läden: Express
-- Gebührenverwaltung: Kebapp
-- Haftung für negative Kontostände: Kebapp
-- Charge Pattern: Destination Charges
-- Onboarding: eingebettete Connect-Komponenten
-- Risikomanagement: Stripe Radar mit Standardregeln
-- Plattformmarge: fünf Prozent
-- zusätzliche Berücksichtigung der geschätzten Stripe-Zahlungsgebühren
-- `applicationFeeIncludes = stripe_fee_estimate`
-
-Jeder Laden erhält eine Empfänger-Konfiguration mit aktivierten Überweisungen. Die Zahlung liegt auf dem Plattformkonto und der Ladenanteil wird automatisch übertragen. Kebapp ist für Erstattungen, Zahlungsstreitfälle, Transfer-Rückholungen und nicht gedeckte negative Ladenkonten verantwortlich.
-
-Der Express-Bereich zeigt Läden Umsätze und Auszahlungen. Wegen eingeschränkter Konflikt- und Erstattungsfunktionen bei Destination Charges benötigt Kebapp eigene Support- und Bearbeitungsprozesse.
-
-Die fünfprozentige Plattformmarge wird nicht als ausreichend zur Deckung der Zahlungsgebühren unterstellt. Der Abzug enthält deshalb zusätzlich eine geschätzte Zahlungsgebühr. Tatsächliche Kosten unterscheiden sich nach Zahlungsmethode und Vertrag; die Plattform überwacht ihre Marge anhand der Stripe-Berichte. Quellen: [Stripe Connect: Destination Charges](https://docs.stripe.com/connect/destination-charges), [Stripe-Preise](https://stripe.com/de/pricing), [Stripe-Margenberichte](https://docs.stripe.com/connect/margin-reports).
-
-Diese Zahlungsarchitektur gilt nur für Endkundenbestellungen auf Laden-Websites. B2B-Lieferantenrechnungen werden im Pilot nicht über Stripe Connect vermittelt.
+Vor einer späteren Einführung werden Produktablauf, Verantwortlichkeiten, Gebührenmodell, Datenschutz, Steuerbehandlung, Erstattungen und Streitfälle in einem eigenen Entwurf fachlich und rechtlich geprüft. Diese spätere Erweiterung darf die Informationswebsite und das B2B-Betriebssystem nicht technisch voraussetzen oder deren Pilotstart verzögern.
 
 ## 10. Technische Architektur
 
@@ -301,7 +282,7 @@ Komponenten:
 - PostgreSQL als zentrale transaktionale Datenbank
 - Objektspeicher für Rechnungen, Bilder und Exporte
 - Hintergrundaufträge für E-Mail, OCR, Domains und Integrationen
-- Integrationsadapter für POS, Bank, DATEV, E-Rechnung, Stripe und INWX
+- Integrationsadapter für POS, Bank, DATEV, E-Rechnung und INWX
 - getrennte KI-Schicht für Extraktion, Prognose und Empfehlungen
 
 Next.js eignet sich für dynamische Full-Stack-Webanwendungen. Für native Android- und iOS-Apps wird später Expo/React Native verwendet. Geteilt werden API-Client, Typen, Validierungen und Geschäftsregeln, nicht zwangsläufig jede Benutzeroberfläche. Quellen: [Next.js-Dokumentation](https://nextjs.org/docs), [Expo-Dokumentation](https://docs.expo.dev/).
@@ -374,21 +355,22 @@ Fehler führen nicht zu einem unklaren Zwischenzustand. Ist eine Domain belegt o
 
 Der Serverstandort allein erzeugt keine DSGVO-Konformität. Vor dem Pilot werden Verantwortlichkeiten je Datenfluss dokumentiert:
 
-- Kebapp kann für Einkaufsnetzwerk, Plattformzahlungen und eigene Analysen selbst Verantwortlicher sein.
-- Bei reiner Verarbeitung von Mitarbeiter-, Buchhaltungs- oder Endkundendaten im Auftrag eines Ladens kann Kebapp Auftragsverarbeiter sein.
+- Kebapp kann für Einkaufsnetzwerk und eigene, datensparsame Plattformanalysen selbst Verantwortlicher sein.
+- Bei reiner Verarbeitung von Mitarbeiter-, Buchhaltungs- oder Websiteinhalten im Auftrag eines Ladens kann Kebapp Auftragsverarbeiter sein.
 - Hetzner ist für gehostete Daten Auftragsverarbeiter von Kebapp.
-- Stripe, INWX, E-Mail-, Banking-, POS- und KI-Anbieter werden je Leistung als Auftragsverarbeiter oder eigenständige Verantwortliche eingeordnet.
+- INWX, E-Mail-, Banking-, POS- und KI-Anbieter werden je Leistung als Auftragsverarbeiter oder eigenständige Verantwortliche eingeordnet.
 
 Erforderlich sind:
 
 - AV-Verträge und Unterauftragnehmerverzeichnis
-- Datenschutzinformationen für Läden, Mitarbeiter und Endkunden
+- Datenschutzinformationen für Läden, Mitarbeiter und Websitebesucher
 - Zweck, Rechtsgrundlage und Speicherfrist je Datenkategorie
 - Datenminimierung und Löschkonzept
 - Export, Berichtigung und Löschung für Betroffenenanfragen
 - dokumentierte Berechtigung für Steuerberater- und Supportzugriffe
 - Datenschutz-Folgenabschätzung, wenn die abschließende Prüfung ein hohes Risiko feststellt
 - keine Verwendung von Kundendaten zum KI-Training ohne ausdrückliche Vereinbarung
+- keine nicht erforderlichen Tracking-Cookies im Standardtemplate; optionale einwilligungspflichtige Dienste bleiben standardmäßig deaktiviert
 
 Domaininhaberdaten müssen für die Registrierung an INWX und DENIC übermittelt werden. Dies wird im Onboarding transparent erklärt und auf die erforderlichen Daten begrenzt.
 
@@ -399,18 +381,17 @@ Kritische Prozesse verwenden explizite Zustände und können wiederholt ausgefü
 - Bedarf: Entwurf → bestätigt → gebündelt → vergeben → bestellt
 - Lieferung: angekündigt → geliefert → geprüft → reklamiert
 - Rechnung: eingelesen → abgeglichen → auffällig → freigegeben
-- Website-Bestellung: erstellt → bezahlt → angenommen → bereit → abgeholt
 - Domain: geprüft → registriert → DNS aktiv → SSL aktiv → veröffentlicht
+- Website-Inhalt: Entwurf → geprüft → veröffentlicht → ersetzt
 - Buchung: KI-Vorschlag → intern geprüft → fachlich freigegeben
 
 Regeln:
 
-- Doppelte Webhooks oder Klicks erzeugen keine Doppelbestellung oder Doppelzahlung.
+- Doppelte Webhooks oder Klicks erzeugen keine doppelte Einkaufsbestellung, Domainregistrierung oder Veröffentlichung.
 - Fehlgeschlagene Hintergrundaufträge werden mit begrenzter Anzahl wiederholt und anschließend sichtbar eskaliert.
 - Niedrige KI-Sicherheit führt zu manueller Prüfung statt zu einer automatischen Aktion.
 - Ausfall eines KI-Dienstes blockiert keine Bestellung, Zeiterfassung oder Hygienekontrolle.
 - Zeiterfassung und ausgewählte Hygieneformulare können kurzzeitig offline erfasst und später synchronisiert werden.
-- Nicht angenommene Endkundenbestellungen werden automatisch storniert oder erstattet.
 - Lieferantenänderungen nach Bestellschluss benötigen eine neue Ladenbestätigung, wenn Preis, Spezifikation oder Menge betroffen sind.
 
 ## 13. Geschäftsmodell
@@ -430,8 +411,6 @@ Bei aktiver Einkaufsteilnahme sind enthalten:
 ### 13.2 Einnahmen
 
 - transparente Lieferantenprovision beziehungsweise Rückvergütung
-- fünf Prozent Plattformmarge auf Endkunden-Onlinebestellungen
-- zusätzlich berücksichtigte Zahlungsabwicklungskosten
 - Premium-Module und Supportpakete
 - später mögliche Handelsmarge beim zentralen Eigenkauf
 
@@ -444,21 +423,19 @@ Die Pilotrechnung wird je aktivem Laden geführt:
 **Erlöse**
 
 - Einkaufspartner- und Rückvergütungserlöse
-- Marge aus Onlinebestellungen
 - Premiumerlöse
 
 **direkte Kosten**
 
 - Domain und DNS
 - anteiliges Hosting, Speicher und Backup
-- Zahlungs- und Rückbuchungskosten
 - E-Mail, OCR, KI und sonstige API-Nutzung
 - Onboarding- und Supportzeit
 - Einkaufs- und Reklamationsaufwand
 
 Die Plattform skaliert erst in eine weitere Region, wenn der erwartete Deckungsbeitrag die laufende Betreuung und Infrastruktur trägt.
 
-## 14. Kartell-, Lebensmittel-, Steuer- und Zahlungsrecht
+## 14. Kartell-, Lebensmittel- und Steuerrecht
 
 Bestimmte Kooperationen kleiner und mittlerer Unternehmen können als Mittelstandskooperation zulässig sein, wenn sie deren Wettbewerbsfähigkeit verbessern. Einkaufsgemeinschaften können dennoch wettbewerbsbeschränkend wirken. Vor Vertragsstart prüft eine spezialisierte Kanzlei insbesondere Informationsaustausch, Marktanteile, Exklusivität, Lieferantenvergabe und Provisionsmodell. Quelle: [Bundeskartellamt zur Kartellverfolgung](https://www.bundeskartellamt.de/DE/Aufgaben/Kartelle/Kartellverfolgung/Kartellverfolgung.html), [Bundeskartellamt zu Einkaufskooperationen](https://www.bundeskartellamt.de/SharedDocs/Meldung/DE/Pressemitteilungen/2022/20_01_2022_Begros_KHG.html).
 
@@ -470,7 +447,7 @@ Verboten beziehungsweise nicht vorgesehen sind:
 - autonome Steuerübermittlung ohne Freigabe
 - Bezeichnung von KI-Vorschlägen als fachlich geprüfte Beratung
 
-Da Kebapp bei Onlinebestellungen der Geschäftspartner des Endkunden ist, prüft ein Fachanwalt vor dem Pilot AGB, Widerrufs- und Stornierungsregeln, Zahlungsstreitfälle, Leistungsbeschreibung, Haftung und Plattform-/Ladenbeziehung. Ein Steuerberater bestätigt die umsatzsteuerliche Behandlung von Plattformgebühr, Zahlungsabzug und Auszahlungen.
+Ein Fachanwalt prüft vor dem Pilot Kooperations-, Plattform-, Lieferanten- und Ladenverträge sowie Leistungsbeschreibung und Haftung. Ein Steuerberater bestätigt die umsatzsteuerliche Behandlung von Plattformgebühren, Provisionen und Rückvergütungen. Endkundenbestellung und Onlinezahlung benötigen vor einer späteren Einführung eine getrennte rechtliche und steuerliche Prüfung.
 
 ## 15. Pilot in Mönchengladbach und Umgebung
 
@@ -501,7 +478,7 @@ Diese Daten definieren den Referenzpreis, Qualitätsvergleich und Ausgangswert f
 ### 15.3 Phasen
 
 1. **Operative Validierung:** Läden besuchen, Rechnungen analysieren und erste gebündelte Bestellungen betreut durchführen.
-2. **Technischer Kern:** Mandanten, Rollen, Einkauf, Website, Domains und Zahlungen.
+2. **Technischer Kern:** Mandanten, Rollen, Einkauf, Website und Domains.
 3. **Betriebsmodule:** Lager, Hygiene, Personal und Finanzvorbereitung.
 4. **Geschlossene Alpha:** drei Läden mit echten Daten und enger Begleitung.
 5. **Pilotbetrieb:** fünf bis zehn Läden und mindestens zwei Lieferanten.
@@ -521,7 +498,7 @@ Der Pilot wird fortgesetzt, wenn alle folgenden Kernkriterien erreicht werden:
 - Lieferqualität und Reklamationsquote verschlechtern sich nicht
 - die ausgewiesene Ersparnis ist anhand von Rechnung und Spezifikation nachprüfbar
 - eine Standard-Website steht nach vollständigen Daten innerhalb von 30 Minuten bereit oder erhält automatisch eine temporäre Subdomain
-- keine kritische Mandanten-, Zahlungs- oder Datenschutzverletzung bleibt unentdeckt
+- keine kritische Mandanten- oder Datenschutzverletzung bleibt unentdeckt
 - Buchhaltungs- und KI-Ergebnisse tragen immer einen eindeutigen Prüfstatus
 - die direkten Plattformkosten je aktivem Laden können mit den zugeordneten Erlösen gedeckt werden
 
@@ -533,7 +510,8 @@ Zusätzliche Kennzahlen:
 - Preisabweichung zwischen Angebot und Rechnung
 - Reklamationszeit und Gutschriftenquote
 - Zeitaufwand für Bestellung und Rechnung
-- Website-Bestellungen und Abholabschlussquote
+- Website-Verfügbarkeit sowie Aktualität von Menü, Öffnungszeiten und Kontakt
+- datensparsam gemessene Aufrufe von Anruf- und Routenlinks
 - Belegautomatisierung und manuelle Korrekturquote
 - Hygiene- und Zeiterfassungs-Vollständigkeit
 - Supportminuten pro Laden
@@ -543,7 +521,7 @@ Zusätzliche Kennzahlen:
 ### 17.1 Fachliche Tests
 
 - Mengenbündelung, Preisstaffeln, Rundung und Ersparnis
-- Gebühren, Rückvergütungen und Zahlungsabzüge
+- Rabatte, Rückvergütungen und Skonto
 - Rezept-, Lager- und Kalkulationsregeln
 - Arbeitszeit- und Hygienedokumentation
 - E-Rechnung, Kontierung und DATEV-Export
@@ -552,9 +530,8 @@ Zusätzliche Kennzahlen:
 
 - Bedarf bis Lieferung und Rechnung
 - Domainprüfung, Registrierung, DNS, SSL und Transfer
-- Stripe-Onboarding, Zahlung, Erstattung, Streitfall und Transfer-Rückholung
 - POS-, Bank- und E-Rechnungsimporte
-- Website-Menü bis Abholung
+- Website-Vorschau, Veröffentlichung, Menü, Kontakt- und Routenlinks
 - Expertenprüfung und Freigabe
 
 ### 17.3 Sicherheits- und Zuverlässigkeitstests
@@ -563,7 +540,7 @@ Zusätzliche Kennzahlen:
 - Webhook-Signaturen und Wiederholungsschutz
 - Lasttest zum Bestellschluss
 - Offline-Erfassung und Konfliktsynchronisation
-- Ausfall von Lieferanten-, Domain-, Zahlungs- und KI-Schnittstellen
+- Ausfall von Lieferanten-, Domain- und KI-Schnittstellen
 - Wiederherstellung aus Backup
 - Geheimnisrotation und Admin-MFA
 
@@ -582,7 +559,7 @@ Die Alpha wird in echten Läden auf günstigen Android-Geräten, Laden-Tablets u
 | Kostenlose Websites verursachen Individualaufwand | ein Template, definierte Variablen, klare Premiumgrenze |
 | POS-Landschaft ist uneinheitlich | zunächst CSV/DSFinV-K und priorisierte Adapter, keine eigene Kasse |
 | Fehlerhafte KI-Buchungen | Entwurfsstatus, Konfidenz, Belegbezug und Expertenfreigabe |
-| Zahlungsstreitfälle belasten Kebapp | Radar, Reserve, Supportprozess, Transfer-Rückholung und klare Ladenverträge |
+| Websiteinhalte sind veraltet | zentrale Stammdaten, Erinnerungen, einfache Vorschau und protokollierte Veröffentlichung |
 | Hetzner ist unmanaged | automatisierte Updates, Monitoring, Backups, Runbooks und benannte Betriebsverantwortung |
 | Datenschutzverletzung zwischen Mandanten | serverseitige Autorisierung, Datenbankregeln, Isolationstests und Audit-Alarm |
 | Kartellrechtlich problematischer Datenaustausch | aggregierte Lieferantenanfragen, keine Konkurrenzdatenansicht, juristische Prüfung |
@@ -595,6 +572,7 @@ Der Pilot enthält ausdrücklich nicht:
 - eigenes TSE-Kassensystem
 - autonom übermittelte Steuererklärungen oder UStVA
 - vollständige eigene Lohnabrechnung
+- Onlinebestellung, Onlinezahlung und Endkunden-Kundenkonten
 - eigener Endkunden-Lieferdienst und Fahrersteuerung
 - freier Website-Builder mit beliebigen Layouts
 - zentraler Fleisch-Eigenhandel durch Kebapp
@@ -609,14 +587,13 @@ Vor dem ersten echten Pilotauftrag müssen vorliegen:
 2. vollständige Produktspezifikation für die ersten Kernpositionen
 3. mindestens zwei grundsätzlich geeignete Lieferanten
 4. kartellrechtlich geprüfte Kooperations- und Datenregeln
-5. geprüfte Plattform-, Laden-, Endkunden- und Lieferantenverträge
-6. bestätigtes Steuer- und Zahlungsmodell
+5. geprüfte Plattform-, Laden- und Lieferantenverträge
+6. bestätigtes Steuer-, Provisions- und Rückvergütungsmodell
 7. AV-Verträge, Datenschutzinformationen und Löschkonzept
 8. Hetzner-Produktivumgebung an deutschem Standort
 9. INWX-Resellerkonto und getestete `.de`-Domainprozesse
-10. Stripe-Test- und Produktivfreigabe mit dokumentierten Konfliktprozessen
-11. benannte fachliche Prüfer für Buchhaltung und Steuern
-12. getestete Backup-Wiederherstellung und Sicherheitsalarmierung
+10. benannte fachliche Prüfer für Buchhaltung und Steuern
+11. getestete Backup-Wiederherstellung und Sicherheitsalarmierung
 
 ## 21. Empfohlener nächster Schritt
 
