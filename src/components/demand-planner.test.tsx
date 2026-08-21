@@ -9,7 +9,7 @@ describe("DemandPlanner", () => {
   });
 
   it("adds and persists a demand position", () => {
-    render(<DemandPlanner />);
+    render(<DemandPlanner role="OWNER" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Position hinzufügen" }));
     const dialog = screen.getByRole("dialog", { name: "Bedarf hinzufügen" });
@@ -24,7 +24,7 @@ describe("DemandPlanner", () => {
   });
 
   it("rejects implausible quantities", () => {
-    render(<DemandPlanner />);
+    render(<DemandPlanner role="OWNER" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Position hinzufügen" }));
     const dialog = screen.getByRole("dialog", { name: "Bedarf hinzufügen" });

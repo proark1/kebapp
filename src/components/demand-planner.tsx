@@ -22,6 +22,7 @@ import {
 import { buyingRound, initialDemands } from "@/lib/demo-data";
 import { loadDemands, saveDemands } from "@/lib/storage";
 import type { DemandItem } from "@/lib/types";
+import type { StoreRole } from "@/server/organizations/organization-dto";
 
 const productSpecifications: Record<string, string> = {
   "Kalb-Drehspieß": "20 kg · Scheibenanteil 60 % · halal",
@@ -33,7 +34,7 @@ function createId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `demand-${Date.now()}`;
 }
 
-export function DemandPlanner() {
+export function DemandPlanner({ role }: { role: StoreRole }) {
   const [items, setItems] = useState<DemandItem[]>(initialDemands);
   const [composerOpen, setComposerOpen] = useState(false);
   const [product, setProduct] = useState("Kalb-Drehspieß");
@@ -121,7 +122,11 @@ export function DemandPlanner() {
         <div>
           <span className="eyebrow">Gruppeneinkauf</span>
           <h1>Dein Fleischbedarf</h1>
-          <p>Bestätige, was du für die nächste Lieferung brauchst.</p>
+          <p>
+            {role === "OWNER"
+              ? "Bestätige, was du für die nächste Lieferung brauchst."
+              : "Trage den Bedarf ein. Der Inhaber bestätigt ihn anschließend."}
+          </p>
         </div>
         <div className="deadline-badge">
           <Clock3 size={18} aria-hidden="true" />

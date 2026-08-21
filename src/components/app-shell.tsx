@@ -2,38 +2,61 @@
 
 import {
   Boxes,
-  ChevronDown,
+  ChevronsUpDown,
   ClipboardCheck,
   Globe2,
   LayoutDashboard,
   Menu,
   PackageOpen,
   ReceiptText,
-  Settings,
   Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { AccountMenu } from "@/components/account-menu";
 import { BrandMark } from "@/components/brand-mark";
+import type { ActiveOrganizationDTO } from "@/server/organizations/organization-dto";
 
 const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
-  { href: "/app/website", label: "Website", icon: Globe2 },
+  { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
 ];
 
 const laterNavigation = [
   { label: "Waren", icon: Boxes },
   { label: "Belege", icon: ReceiptText },
-  { label: "Personal", icon: Users },
+  { label: "Personal", icon: Users, ownerOnly: true },
   { label: "Hygiene", icon: ClipboardCheck },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+type AppShellProps = {
+  children: React.ReactNode;
+  organization: ActiveOrganizationDTO;
+  signOutAction: (formData: FormData) => Promise<void>;
+  user: { initials: string; name: string };
+};
+
+export function AppShell({
+  children,
+  organization,
+  signOutAction,
+  user,
+}: AppShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const visiblePrimaryNavigation = primaryNavigation.filter(
+    (item) => !item.ownerOnly || organization.role === "OWNER",
+  );
+  const visibleLaterNavigation = laterNavigation.filter(
+    (item) => !item.ownerOnly || organization.role === "OWNER",
+  );
+
+  if (pathname === "/app/organisation-waehlen") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="app-frame">
@@ -63,18 +86,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <BrandMark inverse />
         </div>
 
-        <button className="store-switcher" type="button">
-          <span className="store-avatar">OR</span>
-          <span>
-            <strong>Ocakbaşı Rheydt</strong>
-            <small>Inhaberbereich</small>
-          </span>
-          <ChevronDown size={16} aria-hidden="true" />
-        </button>
+        {organization.organizationCount > 1 ? (
+          <Link className="store-switcher" href="/app/organisation-waehlen">
+            <span className="store-avatar">{organization.initials}</span>
+            <span>
+              <strong>{organization.storeName}</strong>
+              <small>{organization.roleLabel}</small>
+            </span>
+            <ChevronsUpDown size={16} aria-hidden="true" />
+          </Link>
+        ) : (
+          <div className="store-switcher store-switcher--static">
+            <span className="store-avatar">{organization.initials}</span>
+            <span>
+              <strong>{organization.storeName}</strong>
+              <small>{organization.roleLabel}</small>
+            </span>
+          </div>
+        )}
 
         <nav className="app-nav" aria-label="Hauptnavigation">
           <span className="app-nav__label">Heute</span>
-          {primaryNavigation.map((item) => {
+          {visiblePrimaryNavigation.map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/app"
@@ -95,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
 
           <span className="app-nav__label app-nav__label--spaced">Betrieb</span>
-          {laterNavigation.map((item) => {
+          {visibleLaterNavigation.map((item) => {
             const Icon = item.icon;
             return (
               <button className="app-nav__link app-nav__link--disabled" type="button" key={item.label}>
@@ -108,10 +141,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="app-sidebar__footer">
-          <button className="app-nav__link" type="button">
-            <Settings size={19} strokeWidth={1.9} aria-hidden="true" />
-            Einstellungen
-          </button>
+          <AccountMenu
+            role={organization.role}
+            roleLabel={organization.roleLabel}
+            signOutAction={signOutAction}
+            user={user}
+          />
           <div className="pilot-chip">
             <span aria-hidden="true" />
             Pilot Mönchengladbach
@@ -133,7 +168,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav className="mobile-tabbar" aria-label="Mobile Navigation">
-        {primaryNavigation.map((item) => {
+        {visiblePrimaryNavigation.map((item) => {
           const Icon = item.icon;
           const active =
             item.href === "/app"
