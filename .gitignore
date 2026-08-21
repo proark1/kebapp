@@ -9,8 +9,11 @@ coverage/
 # local environment
 .env*
 !.env.example
+!.env.db.example
 
 # editor and operating system
 .DS_Store
 Thumbs.db
 *.tsbuildinfo
+playwright-report/
+test-results/

@@ -11,14 +11,31 @@ Die öffentliche Website ist bewusst eine reine Informationsseite. Es gibt keine
 
 ## Lokal starten
 
-Voraussetzungen: Node.js 20.9 oder neuer und pnpm.
+Voraussetzungen: Node.js 20.9 oder neuer, pnpm sowie Docker Compose oder Podman Compose.
 
 ```bash
 pnpm install
+cp .env.example .env.local
+cp .env.db.example .env.db.local
+pnpm infra:up
 pnpm dev
 ```
 
-Danach ist die App unter [http://localhost:3000/app](http://localhost:3000/app) erreichbar.
+Unter Windows PowerShell kann statt `cp` jeweils `Copy-Item` verwendet werden. Die Werte mit `change-me` sind ausschließlich lokale Platzhalter. Passwörter und die zugehörigen Datenbank-URLs müssen konsistent geändert werden.
+
+Danach sind erreichbar:
+
+- App: [http://localhost:3000/app](http://localhost:3000/app)
+- Mailpit: [http://localhost:8025](http://localhost:8025)
+- PostgreSQL: `127.0.0.1:${POSTGRES_PORT}` (standardmäßig Port `5432`)
+
+Auf diesem Entwicklungsrechner wird Docker Compose verwendet. Die Compose-Datei bleibt Podman-kompatibel und kann alternativ so gestartet werden:
+
+```bash
+podman compose --env-file .env.db.local up -d
+```
+
+Die Next.js-Anwendung lädt nur `.env.local` mit der eingeschränkten Laufzeitverbindung. `.env.db.local` enthält die getrennte Besitzerverbindung und wird ausschließlich von Compose, Drizzle, Seeds und Integrationstests geladen. Beide Dateien sind ignoriert und dürfen nicht committed werden.
 
 ## Qualitätsprüfungen
 
@@ -28,7 +45,14 @@ pnpm test
 pnpm build
 ```
 
-Bedarf und Website-Einstellungen werden für den Pilotprototyp versioniert im lokalen Browserspeicher gehalten. Das ist absichtlich noch keine Produktionspersistenz. Authentifizierung, PostgreSQL, echte Mandantentrennung sowie INWX- und Hetzner-Automation folgen im nächsten technischen Schnitt.
+Die Infrastruktur lässt sich prüfen und stoppen mit:
+
+```bash
+pnpm infra:config
+pnpm infra:down
+```
+
+PostgreSQL und die getrennten Datenbankrollen stehen lokal bereit. Bedarf und Website-Einstellungen werden im aktuellen UI-Prototyp trotzdem noch im lokalen Browserspeicher gehalten. Die folgenden Implementierungsschritte verbinden Authentifizierung, Mandanten und diese Fachdaten mit PostgreSQL; INWX- und Hetzner-Automation bleiben ein späterer Ausbauschritt.
 
 ## Dokumentation
 
