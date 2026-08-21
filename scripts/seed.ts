@@ -13,6 +13,7 @@ import {
   organizations,
   platformRoles,
   registrationRequests,
+  storeProfiles,
   user,
   userProfiles,
 } from "../src/server/db/schema";
@@ -28,6 +29,7 @@ const ids = {
   membership: "10000000-0000-4000-8000-000000000002",
   request: "10000000-0000-4000-8000-000000000003",
   round: "20000000-0000-4000-8000-000000000001",
+  storeProfile: "50000000-0000-4000-8000-000000000001",
   vealItem: "40000000-0000-4000-8000-000000000001",
 } as const;
 
@@ -161,6 +163,63 @@ async function seed() {
           userId: ids.operator,
         })
         .onConflictDoNothing({ target: registrationRequests.id });
+
+      await transaction
+        .insert(storeProfiles)
+        .values({
+          accentColor: "#f3b83f",
+          city: "Mönchengladbach",
+          description:
+            "Drehspieß, frisches Gemüse und unsere Saucen aus eigener Küche – mitten in Rheydt.",
+          eyebrow: "Seit 1998 in Rheydt",
+          id: ids.storeProfile,
+          isPublished: true,
+          menu: [
+            {
+              category: "Döner",
+              description: "Drehspieß, Salat und Sauce nach Wahl",
+              id: "menu-doener",
+              name: "Döner im Fladenbrot",
+              price: "7.50",
+            },
+            {
+              category: "Döner",
+              description: "Dünnes Fladenbrot, Drehspieß, Salat und Sauce",
+              id: "menu-dueruem",
+              name: "Dürüm",
+              price: "8.50",
+            },
+            {
+              category: "Teller",
+              description: "Drehspieß, Beilage, Salat und Sauce",
+              id: "menu-teller",
+              name: "Ocakbaşı Teller",
+              price: "13.90",
+            },
+            {
+              category: "Vegetarisch",
+              description: "Falafel, Salat, Sesamsauce und Kräuter",
+              id: "menu-falafel",
+              name: "Falafel-Tasche",
+              price: "7.00",
+            },
+          ],
+          name: "Ocakbaşı Rheydt",
+          openingHours: [
+            { days: "Montag–Donnerstag", hours: "11:00–23:00" },
+            { days: "Freitag–Samstag", hours: "11:00–00:00" },
+            { days: "Sonntag", hours: "12:00–22:00" },
+          ],
+          organizationId: ids.organization,
+          phone: "+49 2166 123456",
+          postalCode: "41236",
+          publicSlug: "ocakbasi-rheydt-pilot",
+          publishedAt: new Date(),
+          shortName: "OR",
+          street: "Demo-Straße 24",
+          tagline: "Schicht für Schicht. Jeden Tag frisch.",
+        })
+        .onConflictDoNothing({ target: storeProfiles.organizationId });
 
       await transaction
         .insert(buyingRounds)

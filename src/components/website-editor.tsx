@@ -1,39 +1,83 @@
 "use client";
 
-import { Check, ExternalLink, Eye, Globe2, Palette, Save } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  Eye,
+  Globe2,
+  Palette,
+  Save,
+} from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { Storefront } from "@/components/storefront";
-import { demoStoreProfile } from "@/lib/demo-data";
-import { loadStoreProfile, saveStoreProfile } from "@/lib/storage";
-import type { StoreProfile } from "@/lib/types";
+import type { StoreProfile, StorefrontEditorData } from "@/lib/types";
 
-export function WebsiteEditor() {
-  const [profile, setProfile] = useState<StoreProfile>(demoStoreProfile);
-  const [message, setMessage] = useState("Noch nicht geändert");
-  const [messageTone, setMessageTone] = useState<"neutral" | "success" | "error">("neutral");
+type WebsiteEditorProps = {
+  initialData: StorefrontEditorData;
+  messageCode?: string;
+  saveAction: (formData: FormData) => Promise<void>;
+};
 
-  useEffect(() => {
-    const savedProfile = loadStoreProfile(window.localStorage);
-    if (!savedProfile) {
-      return;
-    }
+const messages: Record<
+  string,
+  { text: string; tone: "error" | "success" }
+> = {
+  gespeichert: { text: "Website-Entwurf gespeichert", tone: "success" },
+  ungueltig: {
+    text: "Einige Angaben sind ungültig. Prüfe die markierten Felder.",
+    tone: "error",
+  },
+  unvollstaendig: {
+    text: "Zum Veröffentlichen fehlen Kontakt, Adresse, Öffnungszeiten oder Speisekarte.",
+    tone: "error",
+  },
+  veroeffentlicht: {
+    text: "Website gespeichert und öffentlich erreichbar",
+    tone: "success",
+  },
+};
 
-    const timer = window.setTimeout(() => {
-      setProfile(savedProfile);
-      setMessage("Gespeicherte Website geladen");
-    }, 0);
+function SaveButton() {
+  const { pending } = useFormStatus();
 
-    return () => window.clearTimeout(timer);
-  }, []);
+  return (
+    <button className="button button--primary" disabled={pending} type="submit">
+      <Save size={17} aria-hidden="true" />
+      {pending ? "Wird gespeichert …" : "Änderungen speichern"}
+    </button>
+  );
+}
 
-  function updateField<K extends keyof StoreProfile>(key: K, value: StoreProfile[K]) {
+export function WebsiteEditor({
+  initialData,
+  messageCode,
+  saveAction,
+}: WebsiteEditorProps) {
+  const [profile, setProfile] = useState<StoreProfile>(initialData.profile);
+  const [isPublished, setIsPublished] = useState(initialData.isPublished);
+  const [dirty, setDirty] = useState(false);
+  const resultMessage = messageCode ? messages[messageCode] : undefined;
+  const message = dirty
+    ? "Ungespeicherte Änderungen"
+    : (resultMessage?.text ?? "Noch nicht geändert");
+  const messageTone = dirty ? "neutral" : (resultMessage?.tone ?? "neutral");
+  const publicAddress = initialData.customDomain ?? initialData.publicPath;
+
+  function updateField<K extends keyof StoreProfile>(
+    key: K,
+    value: StoreProfile[K],
+  ) {
     setProfile((current) => ({ ...current, [key]: value }));
-    setMessage("Ungespeicherte Änderungen");
-    setMessageTone("neutral");
+    setDirty(true);
   }
 
-  function updateMenuItem(id: string, field: "name" | "price", value: string) {
+  function updateMenuItem(
+    id: string,
+    field: "name" | "price",
+    value: string,
+  ) {
     setProfile((current) => ({
       ...current,
       menu: current.menu.map((item) =>
@@ -42,21 +86,7 @@ export function WebsiteEditor() {
           : item,
       ),
     }));
-    setMessage("Ungespeicherte Änderungen");
-    setMessageTone("neutral");
-  }
-
-  function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!profile.name.trim() || !profile.phone.trim() || !profile.street.trim()) {
-      setMessage("Name, Telefon und Adresse müssen ausgefüllt sein");
-      setMessageTone("error");
-      return;
-    }
-
-    const saved = saveStoreProfile(window.localStorage, profile);
-    setMessage(saved ? "Website-Einstellungen gespeichert" : "Einstellungen konnten nicht gespeichert werden");
-    setMessageTone(saved ? "success" : "error");
+    setDirty(true);
   }
 
   return (
@@ -65,25 +95,77 @@ export function WebsiteEditor() {
         <div>
           <span className="eyebrow">Kostenlose Internetseite</span>
           <h1>Deine Website</h1>
-          <p>Ändere die wichtigsten Angaben. Rechts siehst du sofort das Ergebnis.</p>
+          <p>
+            Ändere die wichtigsten Angaben. Rechts siehst du sofort das Ergebnis.
+          </p>
         </div>
         <div className="website-live-badge">
           <Globe2 size={18} aria-hidden="true" />
           <span>
-            ocakbasi-rheydt.de
-            <strong><i aria-hidden="true" /> SSL aktiv</strong>
+            {publicAddress}
+            <strong>
+              <i aria-hidden="true" />
+              {isPublished ? "Öffentlich" : "Entwurf"}
+            </strong>
           </span>
-          <Link href="/laden/ocakbasi-rheydt" target="_blank" aria-label="Öffentliche Website öffnen">
-            <ExternalLink size={18} aria-hidden="true" />
-          </Link>
+          {isPublished ? (
+            <Link
+              href={initialData.publicPath}
+              target="_blank"
+              aria-label="Öffentliche Website öffnen"
+            >
+              <ExternalLink size={18} aria-hidden="true" />
+            </Link>
+          ) : (
+            <span className="website-live-badge__inactive" aria-hidden="true">
+              <ExternalLink size={18} />
+            </span>
+          )}
         </div>
       </header>
 
       <div className="editor-layout">
-        <form className="editor-panel" onSubmit={save}>
+        <form className="editor-panel" action={saveAction}>
+          <input
+            name="profile"
+            type="hidden"
+            value={JSON.stringify(profile)}
+          />
+
+          <section className="publication-section">
+            <div className="editor-section-title">
+              <span>
+                <Globe2 size={17} aria-hidden="true" />
+              </span>
+              <div>
+                <h2>Veröffentlichung</h2>
+                <p>Du entscheidest, wann die Seite öffentlich ist.</p>
+              </div>
+            </div>
+            <label className="publication-control">
+              <input
+                checked={isPublished}
+                name="isPublished"
+                onChange={(event) => {
+                  setIsPublished(event.target.checked);
+                  setDirty(true);
+                }}
+                type="checkbox"
+              />
+              <span aria-hidden="true" />
+              <strong>
+                {isPublished
+                  ? "Website öffentlich anzeigen"
+                  : "Als Entwurf speichern"}
+              </strong>
+            </label>
+          </section>
+
           <section>
             <div className="editor-section-title">
-              <span><Palette size={17} aria-hidden="true" /></span>
+              <span>
+                <Palette size={17} aria-hidden="true" />
+              </span>
               <div>
                 <h2>Auftritt</h2>
                 <p>Name, Botschaft und Farbe</p>
@@ -92,25 +174,65 @@ export function WebsiteEditor() {
             <div className="form-stack">
               <label className="field">
                 <span>Ladenname</span>
-                <input value={profile.name} onChange={(event) => updateField("name", event.target.value)} />
+                <input
+                  maxLength={180}
+                  required
+                  value={profile.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                />
               </label>
               <label className="field">
                 <span>Kleine Zeile</span>
-                <input value={profile.eyebrow} onChange={(event) => updateField("eyebrow", event.target.value)} />
+                <input
+                  maxLength={180}
+                  value={profile.eyebrow}
+                  onChange={(event) =>
+                    updateField("eyebrow", event.target.value)
+                  }
+                />
               </label>
               <label className="field">
                 <span>Hauptüberschrift</span>
-                <textarea rows={2} value={profile.tagline} onChange={(event) => updateField("tagline", event.target.value)} />
+                <textarea
+                  maxLength={240}
+                  required={isPublished}
+                  rows={2}
+                  value={profile.tagline}
+                  onChange={(event) =>
+                    updateField("tagline", event.target.value)
+                  }
+                />
               </label>
               <label className="field">
                 <span>Kurzbeschreibung</span>
-                <textarea rows={3} value={profile.description} onChange={(event) => updateField("description", event.target.value)} />
+                <textarea
+                  maxLength={2_000}
+                  required={isPublished}
+                  rows={3}
+                  value={profile.description}
+                  onChange={(event) =>
+                    updateField("description", event.target.value)
+                  }
+                />
               </label>
               <label className="field color-field">
                 <span>Akzentfarbe</span>
                 <span>
-                  <input type="color" value={profile.accent} onChange={(event) => updateField("accent", event.target.value)} />
-                  <input value={profile.accent.toUpperCase()} onChange={(event) => updateField("accent", event.target.value)} />
+                  <input
+                    type="color"
+                    value={profile.accent}
+                    onChange={(event) =>
+                      updateField("accent", event.target.value)
+                    }
+                  />
+                  <input
+                    aria-label="Akzentfarbe als Hexwert"
+                    pattern="#[0-9A-Fa-f]{6}"
+                    value={profile.accent.toUpperCase()}
+                    onChange={(event) =>
+                      updateField("accent", event.target.value)
+                    }
+                  />
                 </span>
               </label>
             </div>
@@ -118,7 +240,9 @@ export function WebsiteEditor() {
 
           <section>
             <div className="editor-section-title">
-              <span><Globe2 size={17} aria-hidden="true" /></span>
+              <span>
+                <Globe2 size={17} aria-hidden="true" />
+              </span>
               <div>
                 <h2>Kontakt</h2>
                 <p>Direkt erreichbar, ohne Formular</p>
@@ -127,22 +251,57 @@ export function WebsiteEditor() {
             <div className="form-stack">
               <label className="field">
                 <span>Telefon</span>
-                <input type="tel" value={profile.phone} onChange={(event) => updateField("phone", event.target.value)} />
+                <input
+                  maxLength={40}
+                  required={isPublished}
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                />
               </label>
               <label className="field">
                 <span>Straße und Hausnummer</span>
-                <input value={profile.street} onChange={(event) => updateField("street", event.target.value)} />
+                <input
+                  maxLength={220}
+                  required={isPublished}
+                  value={profile.street}
+                  onChange={(event) =>
+                    updateField("street", event.target.value)
+                  }
+                />
               </label>
-              <label className="field">
-                <span>PLZ und Ort</span>
-                <input value={profile.city} onChange={(event) => updateField("city", event.target.value)} />
-              </label>
+              <div className="address-field-row">
+                <label className="field">
+                  <span>PLZ</span>
+                  <input
+                    maxLength={16}
+                    required={isPublished}
+                    value={profile.postalCode}
+                    onChange={(event) =>
+                      updateField("postalCode", event.target.value)
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Ort</span>
+                  <input
+                    maxLength={120}
+                    required={isPublished}
+                    value={profile.city}
+                    onChange={(event) =>
+                      updateField("city", event.target.value)
+                    }
+                  />
+                </label>
+              </div>
             </div>
           </section>
 
           <section>
             <div className="editor-section-title">
-              <span><Eye size={17} aria-hidden="true" /></span>
+              <span>
+                <Eye size={17} aria-hidden="true" />
+              </span>
               <div>
                 <h2>Speisekarte</h2>
                 <p>Auswahl und Preise</p>
@@ -153,11 +312,28 @@ export function WebsiteEditor() {
                 <div key={item.id}>
                   <label className="field">
                     <span>Gericht</span>
-                    <input value={item.name} onChange={(event) => updateMenuItem(item.id, "name", event.target.value)} />
+                    <input
+                      maxLength={120}
+                      required
+                      value={item.name}
+                      onChange={(event) =>
+                        updateMenuItem(item.id, "name", event.target.value)
+                      }
+                    />
                   </label>
                   <label className="field field--price">
                     <span>Preis</span>
-                    <input type="number" min="0" step="0.1" value={item.price} onChange={(event) => updateMenuItem(item.id, "price", event.target.value)} />
+                    <input
+                      max="1000"
+                      min="0"
+                      required
+                      step="0.1"
+                      type="number"
+                      value={item.price}
+                      onChange={(event) =>
+                        updateMenuItem(item.id, "price", event.target.value)
+                      }
+                    />
                     <i>€</i>
                   </label>
                 </div>
@@ -166,19 +342,30 @@ export function WebsiteEditor() {
           </section>
 
           <footer className="editor-panel__footer">
-            <span className={`save-message save-message--${messageTone}`} role="status" aria-live="polite">
-              {messageTone === "success" ? <Check size={15} aria-hidden="true" /> : <Save size={15} aria-hidden="true" />}
+            <span
+              className={`save-message save-message--${messageTone}`}
+              role="status"
+              aria-live="polite"
+            >
+              {messageTone === "success" ? (
+                <Check size={15} aria-hidden="true" />
+              ) : (
+                <Save size={15} aria-hidden="true" />
+              )}
               {message}
             </span>
             <div className="editor-panel__actions">
-              <Link className="button button--secondary editor-mobile-preview" href="/laden/ocakbasi-rheydt" target="_blank">
-                <ExternalLink size={17} aria-hidden="true" />
-                Vorschau öffnen
-              </Link>
-              <button className="button button--primary" type="submit">
-                <Save size={17} aria-hidden="true" />
-                Änderungen speichern
-              </button>
+              {isPublished ? (
+                <Link
+                  className="button button--secondary editor-mobile-preview"
+                  href={initialData.publicPath}
+                  target="_blank"
+                >
+                  <ExternalLink size={17} aria-hidden="true" />
+                  Seite öffnen
+                </Link>
+              ) : null}
+              <SaveButton />
             </div>
           </footer>
         </form>
@@ -186,13 +373,15 @@ export function WebsiteEditor() {
         <aside className="preview-panel" aria-label="Website-Vorschau">
           <div className="preview-panel__toolbar">
             <span>
-              <i /><i /><i />
+              <i />
+              <i />
+              <i />
             </span>
             <strong>Live-Vorschau</strong>
-            <small>Mobil & Desktop</small>
+            <small>Mobil &amp; Desktop</small>
           </div>
           <div className="preview-panel__viewport">
-            <Storefront initialProfile={profile} preview />
+            <Storefront profile={profile} preview />
           </div>
         </aside>
       </div>

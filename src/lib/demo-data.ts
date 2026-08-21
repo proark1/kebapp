@@ -48,7 +48,8 @@ export const demoStoreProfile: StoreProfile = {
     "Drehspieß, frisches Gemüse und unsere Saucen aus eigener Küche – mitten in Rheydt.",
   phone: "+49 2166 123456",
   street: "Demo-Straße 24",
-  city: "41236 Mönchengladbach",
+  postalCode: "41236",
+  city: "Mönchengladbach",
   accent: "#f3b83f",
   openingHours: [
     { days: "Montag–Donnerstag", hours: "11:00–23:00" },

@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { BuyingRoundMeter } from "@/components/buying-round-meter";
 import { formatCurrency, getBuyingRoundSnapshot } from "@/lib/calculations";
-import type { DemandPlanningData } from "@/lib/types";
+import type { DemandPlanningData, StorefrontEditorData } from "@/lib/types";
 import type { ActiveOrganizationDTO } from "@/server/organizations/organization-dto";
 
 const todayLabel = new Intl.DateTimeFormat("de-DE", {
@@ -34,9 +34,15 @@ type DashboardProps = {
   operatorName: string;
   organization: ActiveOrganizationDTO;
   planning: DemandPlanningData | null;
+  storefront: StorefrontEditorData | null;
 };
 
-export function Dashboard({ operatorName, organization, planning }: DashboardProps) {
+export function Dashboard({
+  operatorName,
+  organization,
+  planning,
+  storefront,
+}: DashboardProps) {
   const firstName = operatorName.trim().split(/\s+/)[0] || operatorName;
   const canManageWebsite = organization.role === "OWNER";
   const roundSnapshot = planning
@@ -197,11 +203,21 @@ export function Dashboard({ operatorName, organization, planning }: DashboardPro
             <div className="panel__header">
               <div>
                 <span className="eyebrow">Deine Internetseite</span>
-                <h2>Für deinen Auftritt bereit</h2>
+                <h2>
+                  {storefront?.isPublished
+                    ? "Online und erreichbar"
+                    : "Als Entwurf vorbereitet"}
+                </h2>
               </div>
-              <span className="status-dot status-dot--online">
-                <Check size={13} aria-hidden="true" />
-                Pilot
+              <span
+                className={`status-dot ${storefront?.isPublished ? "status-dot--online" : ""}`}
+              >
+                {storefront?.isPublished ? (
+                  <Check size={13} aria-hidden="true" />
+                ) : (
+                  <Clock3 size={13} aria-hidden="true" />
+                )}
+                {storefront?.isPublished ? "Online" : "Entwurf"}
               </span>
             </div>
 
@@ -210,7 +226,11 @@ export function Dashboard({ operatorName, organization, planning }: DashboardPro
                 <i />
                 <i />
                 <i />
-                <span>Webadresse in Vorbereitung</span>
+                <span>
+                  {storefront?.customDomain ??
+                    storefront?.publicPath ??
+                    "Lokale Adresse wird vorbereitet"}
+                </span>
               </div>
               <div className="mini-browser__page">
                 <span>{organization.initials}</span>
@@ -225,20 +245,36 @@ export function Dashboard({ operatorName, organization, planning }: DashboardPro
             <div className="website-status-card__meta">
               <span>
                 <Globe2 size={16} aria-hidden="true" />
-                SSL automatisch
+                {storefront?.isPublished
+                  ? "Öffentlich erreichbar"
+                  : "Nicht öffentlich"}
               </span>
               <span>
                 <Clock3 size={16} aria-hidden="true" />
-                Domain folgt später
+                Domain &amp; SSL folgen im Produktionsschritt
               </span>
             </div>
             <div className="website-status-card__actions">
               <Link className="button button--secondary" href="/app/website">
                 Website bearbeiten
               </Link>
-              <span className="icon-button icon-button--bordered" aria-hidden="true">
-                <ExternalLink size={18} />
-              </span>
+              {storefront?.isPublished ? (
+                <Link
+                  aria-label="Öffentliche Website öffnen"
+                  className="icon-button icon-button--bordered"
+                  href={storefront.publicPath}
+                  target="_blank"
+                >
+                  <ExternalLink size={18} aria-hidden="true" />
+                </Link>
+              ) : (
+                <span
+                  className="icon-button icon-button--bordered"
+                  aria-hidden="true"
+                >
+                  <ExternalLink size={18} />
+                </span>
+              )}
             </div>
           </article>
         ) : null}

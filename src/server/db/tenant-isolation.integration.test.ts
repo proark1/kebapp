@@ -595,6 +595,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "has_active_owner_membership",
       "has_active_support_assignment",
       "is_platform_admin",
+      "public_storefront",
       "regional_confirmed_demand_kg",
     ]);
     expect(

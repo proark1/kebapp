@@ -1,13 +1,10 @@
-"use client";
-
 import { ArrowDown, Clock3, MapPin, Navigation, Phone } from "lucide-react";
-import { useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { BrandMark } from "@/components/brand-mark";
-import { loadStoreProfile } from "@/lib/storage";
 import type { StoreProfile } from "@/lib/types";
 
 type StorefrontProps = {
-  initialProfile: StoreProfile;
+  profile: StoreProfile;
   preview?: boolean;
 };
 
@@ -18,32 +15,16 @@ function menuPrice(price: number): string {
   }).format(price);
 }
 
-export function Storefront({ initialProfile, preview = false }: StorefrontProps) {
-  const [storedProfile, setStoredProfile] = useState(initialProfile);
-
-  useEffect(() => {
-    if (preview) {
-      return;
-    }
-
-    const savedProfile = loadStoreProfile(window.localStorage);
-    if (!savedProfile) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setStoredProfile(savedProfile), 0);
-    return () => window.clearTimeout(timer);
-  }, [initialProfile, preview]);
-
-  const profile = preview ? initialProfile : storedProfile;
+export function Storefront({ profile, preview = false }: StorefrontProps) {
   const style = { "--store-accent": profile.accent } as CSSProperties;
-  const mapQuery = encodeURIComponent(`${profile.street}, ${profile.city}`);
+  const address = `${profile.street}, ${profile.postalCode} ${profile.city}`;
+  const mapQuery = encodeURIComponent(address);
   const phoneHref = `tel:${profile.phone.replace(/\s/g, "")}`;
 
   return (
     <div className={`storefront ${preview ? "storefront--preview" : ""}`} style={style}>
       {!preview ? (
-        <div className="demo-ribbon">Demo-Website · keine Bestellfunktion</div>
+        <div className="demo-ribbon">Informationsseite · keine Bestellfunktion</div>
       ) : null}
 
       <header className="storefront-header">
@@ -109,7 +90,7 @@ export function Storefront({ initialProfile, preview = false }: StorefrontProps)
           <span>HALAL</span><i />
           <span>FRISCHES GEMÜSE</span><i />
           <span>HAUSGEMACHTE SAUCEN</span><i />
-          <span>MITTEN IN RHEYDT</span>
+          <span>BEI UNS VOR ORT</span>
         </div>
 
         <section className="storefront-menu" id="speisekarte">
@@ -131,14 +112,14 @@ export function Storefront({ initialProfile, preview = false }: StorefrontProps)
               </article>
             ))}
           </div>
-          <p className="storefront-menu__note">Alle Preise inklusive gesetzlicher Umsatzsteuer. Diese Demo nimmt keine Onlinebestellungen entgegen.</p>
+          <p className="storefront-menu__note">Alle Preise inklusive gesetzlicher Umsatzsteuer. Über diese Website werden keine Onlinebestellungen angenommen.</p>
         </section>
 
         <section className="storefront-contact" id="kontakt">
           <div className="storefront-contact__statement">
             <span className="storefront-eyebrow">Komm vorbei</span>
             <h2>Dein Platz ist schon warm.</h2>
-            <p>Nur wenige Schritte vom Rheydter Marktplatz.</p>
+            <p>Du findest uns in {profile.city}.</p>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
               target="_blank"
@@ -153,7 +134,7 @@ export function Storefront({ initialProfile, preview = false }: StorefrontProps)
               <MapPin size={21} aria-hidden="true" />
               <span>
                 <small>Adresse</small>
-                <strong>{profile.street}<br />{profile.city}</strong>
+                <strong>{profile.street}<br />{profile.postalCode} {profile.city}</strong>
               </span>
             </div>
             <div>
@@ -188,12 +169,12 @@ export function Storefront({ initialProfile, preview = false }: StorefrontProps)
             <span>{profile.shortName}</span>
             <strong>{profile.name}</strong>
           </span>
-          <p>Dies ist eine fiktive Demo-Website für den Kebapp-Pilot.</p>
+          <p>Informationswebsite mit Kebapp · keine Onlinebestellung.</p>
         </div>
         <div className="storefront-footer__legal">
           <details id="impressum">
             <summary>Impressum</summary>
-            <p>Demo-Angaben – vor Veröffentlichung durch geprüfte Inhaberdaten ersetzen.</p>
+            <p>Pilotangaben – vor dem Produktivbetrieb rechtlich prüfen und vervollständigen.</p>
           </details>
           <details id="datenschutz">
             <summary>Datenschutz</summary>

@@ -59,8 +59,22 @@ export type StoreProfile = {
   description: string;
   phone: string;
   street: string;
+  postalCode: string;
   city: string;
   accent: string;
   openingHours: OpeningHour[];
   menu: MenuItem[];
+};
+
+export type StorefrontEditorData = {
+  customDomain: string | null;
+  isPublished: boolean;
+  profile: StoreProfile;
+  publicPath: string;
+  publicSlug: string;
+};
+
+export type PublicStorefrontData = {
+  profile: StoreProfile;
+  publicSlug: string;
 };

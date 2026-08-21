@@ -36,6 +36,13 @@
       "when": 1787350349435,
       "tag": "0004_broad_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787352890182,
+      "tag": "0005_public_storefront",
+      "breakpoints": true
     }
   ]
 }
