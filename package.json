@@ -15,6 +15,7 @@
     "infra:up": "docker compose --env-file .env.db.local up -d",
     "infra:down": "docker compose --env-file .env.db.local down",
     "infra:logs": "docker compose --env-file .env.db.local logs -f",
+    "auth:schema": "auth generate --config scripts/auth-schema.config.ts --adapter drizzle --dialect postgresql --output src/server/db/schema/auth.ts --yes",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
