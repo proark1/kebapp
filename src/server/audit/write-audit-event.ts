@@ -10,6 +10,7 @@ type AuditEventInput = {
   objectType: string;
   organizationId?: string;
   reason?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export async function writeAuditEvent(
@@ -23,6 +24,7 @@ export async function writeAuditEvent(
     objectType: input.objectType,
     organizationId: input.organizationId,
     reason: input.reason,
+    metadata: input.metadata,
     result: "SUCCESS",
   });
 }

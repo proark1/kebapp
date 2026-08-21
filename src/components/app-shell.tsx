@@ -25,10 +25,20 @@ const primaryNavigation = [
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
 ];
 
-const laterNavigation = [
+const laterNavigation: Array<{
+  href?: string;
+  icon: typeof Boxes;
+  label: string;
+  ownerOnly?: boolean;
+}> = [
   { label: "Waren", icon: Boxes },
   { label: "Belege", icon: ReceiptText },
-  { label: "Personal", icon: Users, ownerOnly: true },
+  {
+    href: "/app/einstellungen/team",
+    label: "Team",
+    icon: Users,
+    ownerOnly: true,
+  },
   { label: "Hygiene", icon: ClipboardCheck },
 ];
 
@@ -130,6 +140,24 @@ export function AppShell({
           <span className="app-nav__label app-nav__label--spaced">Betrieb</span>
           {visibleLaterNavigation.map((item) => {
             const Icon = item.icon;
+            if (item.href) {
+              const active = pathname.startsWith(item.href);
+              return (
+                <Link
+                  className={
+                    active
+                      ? "app-nav__link app-nav__link--active"
+                      : "app-nav__link"
+                  }
+                  href={item.href}
+                  key={item.label}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon size={19} strokeWidth={1.9} aria-hidden="true" />
+                  {item.label}
+                </Link>
+              );
+            }
             return (
               <button className="app-nav__link app-nav__link--disabled" type="button" key={item.label}>
                 <Icon size={19} strokeWidth={1.9} aria-hidden="true" />

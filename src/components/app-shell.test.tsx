@@ -38,6 +38,10 @@ describe("AppShell role navigation", () => {
       "/app/organisation-waehlen",
     );
     expect(screen.getByText("Team & Rollen")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Team" })).toHaveAttribute(
+      "href",
+      "/app/einstellungen/team",
+    );
     expect(screen.getByText("Domain & Sicherheit")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Website" })).not.toHaveLength(0);
   });
@@ -60,7 +64,7 @@ describe("AppShell role navigation", () => {
 
     expect(screen.queryByText("Team & Rollen")).not.toBeInTheDocument();
     expect(screen.queryByText("Domain & Sicherheit")).not.toBeInTheDocument();
-    expect(screen.queryByText("Personal")).not.toBeInTheDocument();
+    expect(screen.queryByText("Team")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Website" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Einkauf" })).not.toHaveLength(0);
   });

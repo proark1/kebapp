@@ -13,6 +13,14 @@ type AuthEmailInput = {
   url: string;
 };
 
+type EmployeeInvitationEmailInput = {
+  expiresAt: Date;
+  inviterName: string;
+  storeName: string;
+  to: string;
+  url: string;
+};
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -84,6 +92,29 @@ export function passwordResetEmail(input: AuthEmailInput): AuthEmail {
     }),
     subject: "Kebapp: Passwort zurücksetzen",
     text: `Hallo ${input.name},\n\n${explanation}\n\n${input.url}\n\nKebapp lokal`,
+    to: input.to,
+  };
+}
+
+export function employeeInvitationEmail(
+  input: EmployeeInvitationEmailInput,
+): AuthEmail {
+  const expiry = new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Berlin",
+  }).format(input.expiresAt);
+  const explanation = `${input.inviterName} lädt dich als Mitarbeiter:in zu ${input.storeName} ein. Melde dich mit dieser E-Mail-Adresse an und nimm die Einladung bis ${expiry} Uhr an.`;
+
+  return {
+    html: emailShell({
+      action: "Einladung annehmen",
+      explanation,
+      name: "Kebapp-Teammitglied",
+      url: input.url,
+    }),
+    subject: `Kebapp: Einladung zu ${input.storeName}`,
+    text: `Hallo,\n\n${explanation}\n\n${input.url}\n\nKebapp lokal`,
     to: input.to,
   };
 }

@@ -575,6 +575,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
     `);
 
     expect(functions.rows.map((row) => row.function_name)).toEqual([
+      "can_accept_employee_invitation",
       "can_access_organization",
       "can_administer_organization",
       "can_confirm_demand",
@@ -587,6 +588,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "can_submit_registration",
       "current_organization_id",
       "current_user_id",
+      "current_verified_email",
       "has_active_membership",
       "has_active_owner_membership",
       "has_active_support_assignment",

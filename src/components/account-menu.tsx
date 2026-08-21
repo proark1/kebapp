@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
+import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import type { StoreRole } from "@/server/organizations/organization-dto";
 
@@ -48,11 +49,10 @@ export function AccountMenu({
 
         {role === "OWNER" ? (
           <div className="account-menu__owner-tools" aria-label="Inhaberverwaltung">
-            <button disabled type="button">
+            <Link href="/app/einstellungen/team">
               <Users size={16} aria-hidden="true" />
               Team &amp; Rollen
-              <small>bald</small>
-            </button>
+            </Link>
             <button disabled type="button">
               <ShieldCheck size={16} aria-hidden="true" />
               Domain &amp; Sicherheit
