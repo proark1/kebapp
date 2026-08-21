@@ -37,6 +37,21 @@ podman compose --env-file .env.db.local up -d
 
 Die Next.js-Anwendung lädt nur `.env.local` mit der eingeschränkten Laufzeitverbindung. `.env.db.local` enthält die getrennte Besitzerverbindung und wird ausschließlich von Compose, Drizzle, Seeds und Integrationstests geladen. Beide Dateien sind ignoriert und dürfen nicht committed werden. Der Laufzeit-Rollenname `kebapp_app` ist Bestandteil der versionierten RLS-Richtlinien und bleibt fest; das Passwort wird pro Umgebung geändert.
 
+## Lokale Authentifizierung
+
+Better Auth nutzt PostgreSQL-Sitzungen und verlangt vor der Anmeldung eine bestätigte E-Mail-Adresse. Mailpit fängt Verifizierungs- und Passwort-Reset-Nachrichten lokal unter [http://localhost:8025](http://localhost:8025) ab. Verifizierungslinks gelten 60 Minuten, Passwort-Reset-Links 30 Minuten. Ein erfolgreicher Passwort-Reset widerruft sämtliche bestehenden Sitzungen des Benutzers.
+
+Die Rate-Limits werden auch lokal in PostgreSQL gespeichert und gelten pro Endpunkt und IP-Adresse:
+
+- Registrierung und Anmeldung: jeweils 5 Versuche pro Minute
+- Verifizierungsnachricht erneut senden: 3 Versuche in 5 Minuten
+- E-Mail-Link bestätigen: 10 Versuche pro Minute
+- Passwort-Reset anfordern: 3 Versuche in 5 Minuten
+- Passwort tatsächlich zurücksetzen: 5 Versuche in 5 Minuten
+- sonstige Auth-Endpunkte: 100 Aufrufe pro Minute
+
+Der Proxy prüft auf geschützten Routen nur, ob ein Sitzungscookie vorhanden ist. Die verbindliche Sitzungs- und Berechtigungsprüfung bleibt immer serverseitig an der jeweiligen Datenabfrage oder Änderung.
+
 ## Qualitätsprüfungen
 
 ```bash

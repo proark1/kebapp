@@ -21,6 +21,8 @@ const dbEnvSchema = z
     DATABASE_OWNER_URL: postgresUrl,
     TEST_DATABASE_URL: postgresUrl,
     TEST_DATABASE_OWNER_URL: postgresUrl,
+    MAILPIT_SMTP_PORT: z.coerce.number().int().min(1).max(65_535),
+    MAILPIT_HTTP_PORT: z.coerce.number().int().min(1).max(65_535),
     SEED_ADMIN_EMAIL: z.email(),
     SEED_ADMIN_PASSWORD: z.string().min(12),
   })

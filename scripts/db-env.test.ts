@@ -17,6 +17,8 @@ const validDbEnv = {
     "postgresql://kebapp_app:local-app-password@127.0.0.1:5432/kebapp_test",
   TEST_DATABASE_OWNER_URL:
     "postgresql://kebapp_owner:local-owner-password@127.0.0.1:5432/kebapp_test",
+  MAILPIT_SMTP_PORT: "1025",
+  MAILPIT_HTTP_PORT: "8025",
   SEED_ADMIN_EMAIL: "admin@kebapp.local",
   SEED_ADMIN_PASSWORD: "local-admin-password",
 };
