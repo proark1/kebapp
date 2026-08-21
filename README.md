@@ -35,13 +35,14 @@ Auf diesem Entwicklungsrechner wird Docker Compose verwendet. Die Compose-Datei 
 podman compose --env-file .env.db.local up -d
 ```
 
-Die Next.js-Anwendung lädt nur `.env.local` mit der eingeschränkten Laufzeitverbindung. `.env.db.local` enthält die getrennte Besitzerverbindung und wird ausschließlich von Compose, Drizzle, Seeds und Integrationstests geladen. Beide Dateien sind ignoriert und dürfen nicht committed werden.
+Die Next.js-Anwendung lädt nur `.env.local` mit der eingeschränkten Laufzeitverbindung. `.env.db.local` enthält die getrennte Besitzerverbindung und wird ausschließlich von Compose, Drizzle, Seeds und Integrationstests geladen. Beide Dateien sind ignoriert und dürfen nicht committed werden. Der Laufzeit-Rollenname `kebapp_app` ist Bestandteil der versionierten RLS-Richtlinien und bleibt fest; das Passwort wird pro Umgebung geändert.
 
 ## Qualitätsprüfungen
 
 ```bash
 pnpm lint
 pnpm test
+pnpm test:integration
 pnpm build
 ```
 

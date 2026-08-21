@@ -15,7 +15,7 @@ const dbEnvSchema = z
     POSTGRES_PORT: z.coerce.number().int().min(1).max(65_535),
     POSTGRES_OWNER_USER: z.string().min(1),
     POSTGRES_OWNER_PASSWORD: z.string().min(12),
-    POSTGRES_APP_USER: z.string().min(1),
+    POSTGRES_APP_USER: z.literal("kebapp_app"),
     POSTGRES_APP_PASSWORD: z.string().min(12),
     DATABASE_URL: postgresUrl,
     DATABASE_OWNER_URL: postgresUrl,

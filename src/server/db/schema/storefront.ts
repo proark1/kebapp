@@ -94,4 +94,4 @@ export const storeProfiles = pgTable(
       table.publicSlug,
     ),
   ],
-);
+).enableRLS();

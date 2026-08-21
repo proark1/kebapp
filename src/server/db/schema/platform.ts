@@ -89,7 +89,7 @@ export const userProfiles = pgTable(
   (table) => [
     uniqueIndex("user_profiles_user_id_unique").on(table.userId),
   ],
-);
+).enableRLS();
 
 export const platformRoles = pgTable(
   "platform_roles",
@@ -112,7 +112,7 @@ export const platformRoles = pgTable(
       table.role,
     ),
   ],
-);
+).enableRLS();
 
 export const organizations = pgTable(
   "organizations",
@@ -131,7 +131,7 @@ export const organizations = pgTable(
   (table) => [
     uniqueIndex("organizations_slug_unique").on(sql`lower(${table.slug})`),
   ],
-);
+).enableRLS();
 
 export const memberships = pgTable(
   "memberships",
@@ -161,7 +161,7 @@ export const memberships = pgTable(
       table.status,
     ),
   ],
-);
+).enableRLS();
 
 export const registrationRequests = pgTable(
   "registration_requests",
@@ -200,7 +200,7 @@ export const registrationRequests = pgTable(
       table.createdAt,
     ),
   ],
-);
+).enableRLS();
 
 export const invitations = pgTable(
   "invitations",
@@ -233,7 +233,7 @@ export const invitations = pgTable(
       table.status,
     ),
   ],
-);
+).enableRLS();
 
 export const supportAssignments = pgTable(
   "support_assignments",
@@ -263,7 +263,7 @@ export const supportAssignments = pgTable(
       table.status,
     ),
   ],
-);
+).enableRLS();
 
 export const auditEvents = pgTable(
   "audit_events",
@@ -298,4 +298,4 @@ export const auditEvents = pgTable(
       table.createdAt,
     ),
   ],
-);
+).enableRLS();

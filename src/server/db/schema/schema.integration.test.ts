@@ -1,9 +1,5 @@
-import path from "node:path";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { loadDbEnv } from "../../../../scripts/db-env";
+import { createTestDatabaseHarness } from "@/server/testing/database";
 
 const expectedTables = [
   "account",
@@ -55,39 +51,11 @@ const expectedEnums = {
   registration_request_status: ["PENDING", "APPROVED", "REJECTED"],
 } as const;
 
-const env = loadDbEnv();
-const ownerPool = new Pool({ connectionString: env.TEST_DATABASE_OWNER_URL });
-
-function requireTestDatabase(connectionString: string): void {
-  const databaseName = decodeURIComponent(new URL(connectionString).pathname.slice(1));
-
-  if (!databaseName.endsWith("_test")) {
-    throw new Error(
-      "Destruktive Datenbanktests sind nur auf einer Datenbank mit _test erlaubt.",
-    );
-  }
-}
+const harness = createTestDatabaseHarness();
+const { ownerPool } = harness;
 
 async function resetAndMigrate(): Promise<void> {
-  requireTestDatabase(env.TEST_DATABASE_OWNER_URL);
-
-  const currentDatabase = await ownerPool.query<{ current_database: string }>(
-    "select current_database()",
-  );
-
-  if (!currentDatabase.rows[0]?.current_database.endsWith("_test")) {
-    throw new Error("Die verbundene Datenbank ist keine Testdatenbank.");
-  }
-
-  await ownerPool.query(`
-    drop schema if exists drizzle cascade;
-    drop schema if exists public cascade;
-    create schema public authorization current_user;
-  `);
-
-  await migrate(drizzle(ownerPool), {
-    migrationsFolder: path.resolve(process.cwd(), "drizzle"),
-  });
+  await harness.resetAndMigrate();
 }
 
 describe.sequential("PostgreSQL schema migration", () => {
@@ -96,7 +64,7 @@ describe.sequential("PostgreSQL schema migration", () => {
   });
 
   afterAll(async () => {
-    await ownerPool.end();
+    await harness.close();
   });
 
   it("creates all authentication, platform, procurement, and storefront tables", async () => {

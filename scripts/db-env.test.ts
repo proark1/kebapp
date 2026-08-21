@@ -42,6 +42,19 @@ describe("parseDbEnv", () => {
     ).toThrow();
   });
 
+  it("keeps the migration-bound runtime role name stable", () => {
+    expect(() =>
+      parseDbEnv({
+        ...validDbEnv,
+        POSTGRES_APP_USER: "custom_runtime",
+        DATABASE_URL:
+          "postgresql://custom_runtime:local-app-password@127.0.0.1:5432/kebapp",
+        TEST_DATABASE_URL:
+          "postgresql://custom_runtime:local-app-password@127.0.0.1:5432/kebapp_test",
+      }),
+    ).toThrow();
+  });
+
   it("requires the test database name to end in _test", () => {
     expect(() =>
       parseDbEnv({

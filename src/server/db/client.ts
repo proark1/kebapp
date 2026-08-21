@@ -1,6 +1,6 @@
 import "server-only";
 
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { getRuntimeEnv } from "@/lib/env";
 import * as schema from "@/server/db/schema";
@@ -16,6 +16,12 @@ function createPool(): Pool {
   });
 }
 
+export type KebappDatabase = NodePgDatabase<typeof schema>;
+
+export function createDatabase(pool: Pool): KebappDatabase {
+  return drizzle(pool, { schema });
+}
+
 export const databasePool =
   globalForDatabase.kebappDatabasePool ?? createPool();
 
@@ -23,4 +29,4 @@ if (process.env.NODE_ENV !== "production") {
   globalForDatabase.kebappDatabasePool = databasePool;
 }
 
-export const database = drizzle(databasePool, { schema });
+export const database = createDatabase(databasePool);

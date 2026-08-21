@@ -8,6 +8,13 @@
       "when": 1787303420845,
       "tag": "0000_fair_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787308304115,
+      "tag": "0001_tenant_security",
+      "breakpoints": true
     }
   ]
 }

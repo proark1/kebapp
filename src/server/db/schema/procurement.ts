@@ -109,7 +109,7 @@ export const buyingRounds = pgTable(
       table.closesAt,
     ),
   ],
-);
+).enableRLS();
 
 export const demandSubmissions = pgTable(
   "demand_submissions",
@@ -142,7 +142,7 @@ export const demandSubmissions = pgTable(
       table.status,
     ),
   ],
-);
+).enableRLS();
 
 export const demandItems = pgTable(
   "demand_items",
@@ -185,4 +185,4 @@ export const demandItems = pgTable(
       table.submissionId,
     ),
   ],
-);
+).enableRLS();
