@@ -10,6 +10,10 @@ import {
   PlatformAdminRequiredError,
 } from "@/server/organizations/admin";
 import {
+  assertPlatformSupport,
+  PlatformSupportRequiredError,
+} from "@/server/support/service";
+import {
   ACTIVE_ORGANIZATION_COOKIE,
   type ActiveOrganizationResolution,
   resolveActiveOrganization,
@@ -69,6 +73,26 @@ export async function requirePlatformAdminPage(
     await assertPlatformAdmin({ actor });
   } catch (error) {
     if (error instanceof PlatformAdminRequiredError) {
+      redirect(await getPostLoginDestination(actor.userId));
+    }
+    throw error;
+  }
+
+  return actor;
+}
+
+export async function requirePlatformSupportPage(
+  continueTo: string,
+): Promise<SessionActor> {
+  const actor = await getOptionalSession();
+  if (!actor) {
+    redirect(`/anmelden?weiter=${encodeURIComponent(continueTo)}`);
+  }
+
+  try {
+    await assertPlatformSupport({ actor });
+  } catch (error) {
+    if (error instanceof PlatformSupportRequiredError) {
       redirect(await getPostLoginDestination(actor.userId));
     }
     throw error;

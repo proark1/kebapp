@@ -23,6 +23,8 @@ const validDbEnv = {
   SEED_ADMIN_PASSWORD: "local-admin-password",
   SEED_OPERATOR_EMAIL: "betrieb@kebapp.local",
   SEED_OPERATOR_PASSWORD: "local-operator-password",
+  SEED_SUPPORT_EMAIL: "support@kebapp.local",
+  SEED_SUPPORT_PASSWORD: "local-support-password",
 };
 
 describe("parseDbEnv", () => {

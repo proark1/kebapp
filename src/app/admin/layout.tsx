@@ -28,6 +28,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav aria-label="Admin-Navigation">
           <Link href="/admin">Übersicht</Link>
           <Link href="/admin/antraege">Ladenanträge</Link>
+          <Link href="/admin/support">Supporteinsätze</Link>
+          <Link href="/admin/audit">Auditprotokoll</Link>
         </nav>
         <footer>
           <span aria-hidden="true" />

@@ -14,6 +14,7 @@ import {
   platformRoles,
   registrationRequests,
   storeProfiles,
+  supportAssignments,
   user,
   userProfiles,
 } from "../src/server/db/schema";
@@ -30,6 +31,9 @@ const ids = {
   request: "10000000-0000-4000-8000-000000000003",
   round: "20000000-0000-4000-8000-000000000001",
   storeProfile: "50000000-0000-4000-8000-000000000001",
+  support: "seed-support",
+  supportAccount: "seed-support-account",
+  supportAssignment: "60000000-0000-4000-8000-000000000001",
   vealItem: "40000000-0000-4000-8000-000000000001",
 } as const;
 
@@ -39,9 +43,10 @@ async function seed() {
   const database = drizzle(pool);
 
   try {
-    const [adminPassword, operatorPassword] = await Promise.all([
+    const [adminPassword, operatorPassword, supportPassword] = await Promise.all([
       hashPassword(env.SEED_ADMIN_PASSWORD),
       hashPassword(env.SEED_OPERATOR_PASSWORD),
+      hashPassword(env.SEED_SUPPORT_PASSWORD),
     ]);
     const credentialIssuer = createLocalAccountIssuer("credential");
     const closesAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1_000);
@@ -68,6 +73,12 @@ async function seed() {
             emailVerified: true,
             id: ids.operator,
             name: "Meral Betreiberin",
+          },
+          {
+            email: env.SEED_SUPPORT_EMAIL.toLowerCase(),
+            emailVerified: true,
+            id: ids.support,
+            name: "Deniz Support",
           },
         ])
         .onConflictDoUpdate({
@@ -99,6 +110,14 @@ async function seed() {
             providerId: "credential",
             userId: ids.operator,
           },
+          {
+            accountId: ids.support,
+            id: ids.supportAccount,
+            issuer: credentialIssuer,
+            password: supportPassword,
+            providerId: "credential",
+            userId: ids.support,
+          },
         ])
         .onConflictDoUpdate({
           target: [account.issuer, account.accountId],
@@ -110,16 +129,24 @@ async function seed() {
         .values([
           { displayName: "Kebapp Admin", userId: ids.admin },
           { displayName: "Meral Betreiberin", userId: ids.operator },
+          { displayName: "Deniz Support", userId: ids.support },
         ])
         .onConflictDoNothing({ target: userProfiles.userId });
 
       await transaction
         .insert(platformRoles)
-        .values({
-          grantedByUserId: ids.admin,
-          role: "ADMIN",
-          userId: ids.admin,
-        })
+        .values([
+          {
+            grantedByUserId: ids.admin,
+            role: "ADMIN",
+            userId: ids.admin,
+          },
+          {
+            grantedByUserId: ids.admin,
+            role: "SUPPORT",
+            userId: ids.support,
+          },
+        ])
         .onConflictDoNothing({
           target: [platformRoles.userId, platformRoles.role],
         });
@@ -163,6 +190,17 @@ async function seed() {
           userId: ids.operator,
         })
         .onConflictDoNothing({ target: registrationRequests.id });
+
+      await transaction
+        .insert(supportAssignments)
+        .values({
+          assignedByUserId: ids.admin,
+          id: ids.supportAssignment,
+          organizationId: ids.organization,
+          purpose: "Pilotbetreuung für Fleischbedarf und kostenlose Ladenwebsite",
+          supportUserId: ids.support,
+        })
+        .onConflictDoNothing({ target: supportAssignments.id });
 
       await transaction
         .insert(storeProfiles)

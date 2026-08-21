@@ -1,20 +1,20 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { StoreProfile } from "@/lib/types";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";
-import {
-  memberships,
-  organizations,
-  storeProfiles,
-} from "@/server/db/schema";
+import { organizations, storeProfiles } from "@/server/db/schema";
 import { withTenantContext } from "@/server/db/tenant-context";
 import {
   isStorefrontProfilePublishable,
   storefrontOrganizationIdSchema,
   storefrontUpdateSchema,
 } from "@/server/storefront/validation";
+import {
+  authorizeOperationalMutation,
+  SupportOperationDeniedError,
+} from "@/server/support/service";
 
 export class StorefrontPermissionDeniedError extends Error {
   constructor() {
@@ -44,6 +44,7 @@ export async function updateStorefrontProfile(input: {
   isPublished: boolean;
   organizationId: string;
   profile: StoreProfile;
+  supportReason?: string;
 }): Promise<{ isPublished: boolean; publicSlug: string }> {
   const organizationId = storefrontOrganizationIdSchema.parse(
     input.organizationId,
@@ -56,19 +57,21 @@ export async function updateStorefrontProfile(input: {
   return withTenantContext(
     { actor: input.actor, database: input.database, organizationId },
     async (transaction) => {
-      const [membership] = await transaction
-        .select({ role: memberships.role })
-        .from(memberships)
-        .where(
-          and(
-            eq(memberships.organizationId, organizationId),
-            eq(memberships.userId, input.actor.userId),
-            eq(memberships.status, "ACTIVE"),
-          ),
-        )
-        .limit(1);
-      if (membership?.role !== "OWNER") {
-        throw new StorefrontPermissionDeniedError();
+      let authorization: Awaited<
+        ReturnType<typeof authorizeOperationalMutation>
+      >;
+      try {
+        authorization = await authorizeOperationalMutation(transaction, {
+          actorUserId: input.actor.userId,
+          allowedMembershipRoles: ["OWNER"],
+          organizationId,
+          supportReason: input.supportReason,
+        });
+      } catch (error) {
+        if (error instanceof SupportOperationDeniedError) {
+          throw new StorefrontPermissionDeniedError();
+        }
+        throw error;
       }
       if (values.isPublished) {
         assertPublishable(values.profile);
@@ -132,15 +135,26 @@ export async function updateStorefrontProfile(input: {
       const publicationChanged =
         (existing?.isPublished ?? false) !== values.isPublished;
       await writeAuditEvent(transaction, {
-        action: publicationChanged
-          ? values.isPublished
-            ? "STOREFRONT_PUBLISHED"
-            : "STOREFRONT_UNPUBLISHED"
-          : "STOREFRONT_UPDATED",
+        action:
+          authorization.kind === "SUPPORT"
+            ? "SUPPORT_STOREFRONT_UPDATED"
+            : publicationChanged
+              ? values.isPublished
+                ? "STOREFRONT_PUBLISHED"
+                : "STOREFRONT_UNPUBLISHED"
+              : "STOREFRONT_UPDATED",
         actorUserId: input.actor.userId,
+        metadata:
+          authorization.kind === "SUPPORT"
+            ? {
+                change: publicationChanged ? "PUBLICATION_AND_PROFILE" : "PROFILE",
+                isPublished: values.isPublished,
+              }
+            : undefined,
         objectId: saved!.id,
         objectType: "store_profile",
         organizationId,
+        reason: authorization.reason,
       });
 
       return {

@@ -19,6 +19,7 @@ import {
   demandQuantitySchema,
   procurementIdSchema,
 } from "@/server/procurement/validation";
+import { authorizeOperationalMutation } from "@/server/support/service";
 
 type ProcurementActor = { userId: string };
 
@@ -162,6 +163,8 @@ async function getOwnedDraftItem(
     .select({
       buyingRoundId: demandSubmissions.buyingRoundId,
       id: demandItems.id,
+      productName: demandItems.productName,
+      quantity: demandItems.quantity,
       submissionId: demandItems.submissionId,
       submissionStatus: demandSubmissions.status,
     })
@@ -196,6 +199,7 @@ export async function addDemandItem(input: {
   input: DemandItemInput;
   now?: Date;
   organizationId: string;
+  supportReason?: string;
 }): Promise<{ demandItemId: string }> {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const values = demandItemInputSchema.parse(input.input);
@@ -204,6 +208,12 @@ export async function addDemandItem(input: {
   return withTenantContext(
     { actor: input.actor, database: input.database, organizationId },
     async (transaction) => {
+      const authorization = await authorizeOperationalMutation(transaction, {
+        actorUserId: input.actor.userId,
+        allowedMembershipRoles: ["OWNER", "EMPLOYEE"],
+        organizationId,
+        supportReason: input.supportReason,
+      });
       const round = await requireEditableRound(transaction, {
         buyingRoundId: values.buyingRoundId,
         now,
@@ -230,6 +240,22 @@ export async function addDemandItem(input: {
         })
         .returning({ id: demandItems.id });
 
+      if (authorization.kind === "SUPPORT") {
+        await writeAuditEvent(transaction, {
+          action: "SUPPORT_DEMAND_ITEM_ADDED",
+          actorUserId: input.actor.userId,
+          metadata: {
+            productName: values.productName,
+            quantity: values.quantity,
+            unit: values.unit,
+          },
+          objectId: created!.id,
+          objectType: "demand_item",
+          organizationId,
+          reason: authorization.reason,
+        });
+      }
+
       return { demandItemId: created!.id };
     },
   );
@@ -242,6 +268,7 @@ export async function updateDemandItemQuantity(input: {
   now?: Date;
   organizationId: string;
   quantity: number;
+  supportReason?: string;
 }): Promise<void> {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const demandItemId = procurementIdSchema.parse(input.demandItemId);
@@ -251,6 +278,12 @@ export async function updateDemandItemQuantity(input: {
   await withTenantContext(
     { actor: input.actor, database: input.database, organizationId },
     async (transaction) => {
+      const authorization = await authorizeOperationalMutation(transaction, {
+        actorUserId: input.actor.userId,
+        allowedMembershipRoles: ["OWNER", "EMPLOYEE"],
+        organizationId,
+        supportReason: input.supportReason,
+      });
       const item = await getOwnedDraftItem(transaction, {
         demandItemId,
         organizationId,
@@ -275,6 +308,17 @@ export async function updateDemandItemQuantity(input: {
       if (!updated) {
         throw new DemandNotFoundError();
       }
+      if (authorization.kind === "SUPPORT") {
+        await writeAuditEvent(transaction, {
+          action: "SUPPORT_DEMAND_QUANTITY_UPDATED",
+          actorUserId: input.actor.userId,
+          metadata: { after: quantity, before: Number(item.quantity) },
+          objectId: demandItemId,
+          objectType: "demand_item",
+          organizationId,
+          reason: authorization.reason,
+        });
+      }
     },
   );
 }
@@ -285,6 +329,7 @@ export async function removeDemandItem(input: {
   demandItemId: string;
   now?: Date;
   organizationId: string;
+  supportReason?: string;
 }): Promise<void> {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const demandItemId = procurementIdSchema.parse(input.demandItemId);
@@ -293,6 +338,12 @@ export async function removeDemandItem(input: {
   await withTenantContext(
     { actor: input.actor, database: input.database, organizationId },
     async (transaction) => {
+      const authorization = await authorizeOperationalMutation(transaction, {
+        actorUserId: input.actor.userId,
+        allowedMembershipRoles: ["OWNER", "EMPLOYEE"],
+        organizationId,
+        supportReason: input.supportReason,
+      });
       const item = await getOwnedDraftItem(transaction, {
         demandItemId,
         organizationId,
@@ -315,6 +366,20 @@ export async function removeDemandItem(input: {
         .returning({ id: demandItems.id });
       if (!deleted) {
         throw new DemandNotFoundError();
+      }
+      if (authorization.kind === "SUPPORT") {
+        await writeAuditEvent(transaction, {
+          action: "SUPPORT_DEMAND_ITEM_REMOVED",
+          actorUserId: input.actor.userId,
+          metadata: {
+            productName: item.productName,
+            quantity: Number(item.quantity),
+          },
+          objectId: demandItemId,
+          objectType: "demand_item",
+          organizationId,
+          reason: authorization.reason,
+        });
       }
     },
   );

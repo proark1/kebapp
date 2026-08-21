@@ -269,6 +269,11 @@ export const supportAssignments = pgTable(
       table.organizationId,
       table.status,
     ),
+    index("support_assignments_user_status_expiry_idx").on(
+      table.supportUserId,
+      table.status,
+      table.expiresAt,
+    ),
   ],
 ).enableRLS();
 
