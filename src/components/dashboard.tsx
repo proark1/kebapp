@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BuyingRoundMeter } from "@/components/buying-round-meter";
-import { buyingRound, initialDemands } from "@/lib/demo-data";
+import { formatCurrency, getBuyingRoundSnapshot } from "@/lib/calculations";
+import type { DemandPlanningData } from "@/lib/types";
 import type { ActiveOrganizationDTO } from "@/server/organizations/organization-dto";
 
 const todayLabel = new Intl.DateTimeFormat("de-DE", {
@@ -21,15 +22,26 @@ const todayLabel = new Intl.DateTimeFormat("de-DE", {
   day: "2-digit",
   month: "long",
 }).format(new Date());
+const deadlineLabel = new Intl.DateTimeFormat("de-DE", {
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  month: "2-digit",
+  timeZone: "Europe/Berlin",
+});
 
 type DashboardProps = {
   operatorName: string;
   organization: ActiveOrganizationDTO;
+  planning: DemandPlanningData | null;
 };
 
-export function Dashboard({ operatorName, organization }: DashboardProps) {
+export function Dashboard({ operatorName, organization, planning }: DashboardProps) {
   const firstName = operatorName.trim().split(/\s+/)[0] || operatorName;
   const canManageWebsite = organization.role === "OWNER";
+  const roundSnapshot = planning
+    ? getBuyingRoundSnapshot(planning.round, planning.items)
+    : null;
 
   return (
     <div className="page-stack">
@@ -52,14 +64,23 @@ export function Dashboard({ operatorName, organization }: DashboardProps) {
       </header>
 
       <section className="dashboard-lead" aria-label="Aktuelle Sammelrunde">
-        <BuyingRoundMeter round={buyingRound} demands={initialDemands} />
+        {planning ? (
+          <BuyingRoundMeter round={planning.round} demands={planning.items} />
+        ) : (
+          <article className="dashboard-round-empty">
+            <PackageCheck size={28} aria-hidden="true" />
+            <span className="eyebrow eyebrow--light">Sammelrunde</span>
+            <h2>Nächste Runde in Vorbereitung</h2>
+            <p>Dein Laden wird automatisch informiert, sobald sie geöffnet ist.</p>
+          </article>
+        )}
 
         <article className="decision-card">
           <div className="decision-card__icon">
             <Sparkles size={20} aria-hidden="true" />
           </div>
           <div>
-            <span className="eyebrow">Kebapp-Vorschlag</span>
+            <span className="eyebrow">Pilotvorschau · Kebapp-Vorschlag</span>
             <h2>14 kg Kalb ergänzen?</h2>
             <p>
               Freitage lagen zuletzt 11 % über deinem Plan. Mit 14 kg Reserve
@@ -75,7 +96,7 @@ export function Dashboard({ operatorName, organization }: DashboardProps) {
               Später
             </button>
           </div>
-          <span className="confidence-note">Prognosesicherheit 82 %</span>
+          <span className="confidence-note">Beispielprognose · noch ohne Kassendaten</span>
         </article>
       </section>
 
@@ -84,23 +105,25 @@ export function Dashboard({ operatorName, organization }: DashboardProps) {
           <div className="metric-card__icon metric-card__icon--green">
             <TrendingDown size={20} aria-hidden="true" />
           </div>
-          <span className="metric-card__label">Ersparnis im August</span>
-          <strong>612,40 €</strong>
-          <small>8,3 % unter deinem Referenzpreis</small>
+          <span className="metric-card__label">Diese Sammelrunde</span>
+          <strong>
+            {roundSnapshot ? formatCurrency(roundSnapshot.estimatedSavings) : "—"}
+          </strong>
+          <small>Voraussichtliche Ersparnis aus bestätigter Gruppenmenge</small>
         </article>
         <article className="metric-card">
           <div className="metric-card__icon metric-card__icon--yellow">
             <PackageCheck size={20} aria-hidden="true" />
           </div>
           <span className="metric-card__label">Nächste Lieferung</span>
-          <strong>86 kg</strong>
-          <small>Montag · 06:00–09:00 Uhr</small>
+          <strong>{roundSnapshot ? `${roundSnapshot.storeKg} kg` : "—"}</strong>
+          <small>{planning?.round.deliveryWindow ?? "Noch kein Lieferfenster"}</small>
         </article>
         <article className="metric-card">
           <div className="metric-card__icon metric-card__icon--red">
             <ReceiptText size={20} aria-hidden="true" />
           </div>
-          <span className="metric-card__label">Offene Belege</span>
+          <span className="metric-card__label">Offene Belege · Pilotvorschau</span>
           <strong>4</strong>
           <small>Davon einer mit Preisabweichung</small>
         </article>
@@ -124,11 +147,17 @@ export function Dashboard({ operatorName, organization }: DashboardProps) {
               </span>
               <div>
                 <strong>
-                  {organization.role === "OWNER"
-                    ? "Fleischbedarf bestätigen"
-                    : "Fleischbedarf prüfen"}
+                  {planning?.submissionStatus === "CONFIRMED"
+                    ? "Fleischbedarf bestätigt"
+                    : organization.role === "OWNER"
+                      ? "Fleischbedarf bestätigen"
+                      : "Fleischbedarf eintragen"}
                 </strong>
-                <span>Bestellschluss morgen um 18:00 Uhr</span>
+                <span>
+                  {planning
+                    ? `Bestellschluss ${deadlineLabel.format(new Date(planning.round.closesAt))} Uhr`
+                    : "Nächste Sammelrunde wird vorbereitet"}
+                </span>
               </div>
               <Link href="/app/einkauf" aria-label="Fleischbedarf öffnen">
                 <ArrowRight size={18} aria-hidden="true" />

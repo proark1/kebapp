@@ -58,6 +58,7 @@ export const buyingRounds = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "restrict" }),
+    regionalKey: varchar("regional_key", { length: 120 }).notNull(),
     name: varchar("name", { length: 180 }).notNull(),
     status: buyingRoundStatus("status").default("PLANNING").notNull(),
     closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
@@ -108,6 +109,7 @@ export const buyingRounds = pgTable(
       table.status,
       table.closesAt,
     ),
+    index("buying_rounds_regional_key_idx").on(table.regionalKey),
   ],
 ).enableRLS();
 

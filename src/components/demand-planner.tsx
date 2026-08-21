@@ -10,18 +10,15 @@ import {
   PackagePlus,
   Plus,
   Save,
+  ShieldCheck,
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { BuyingRoundMeter } from "@/components/buying-round-meter";
-import {
-  formatCurrency,
-  getBuyingRoundSnapshot,
-} from "@/lib/calculations";
-import { buyingRound, initialDemands } from "@/lib/demo-data";
-import { loadDemands, saveDemands } from "@/lib/storage";
-import type { DemandItem } from "@/lib/types";
+import { formatCurrency, getBuyingRoundSnapshot } from "@/lib/calculations";
+import type { DemandPlanningData } from "@/lib/types";
 import type { StoreRole } from "@/server/organizations/organization-dto";
 
 const productSpecifications: Record<string, string> = {
@@ -30,91 +27,98 @@ const productSpecifications: Record<string, string> = {
   "Rind-Drehspieß": "20 kg · Hackanteil max. 40 % · halal",
 };
 
-function createId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `demand-${Date.now()}`;
+const dateFormatter = new Intl.DateTimeFormat("de-DE", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+const deadlineFormatter = new Intl.DateTimeFormat("de-DE", {
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  month: "2-digit",
+  timeZone: "Europe/Berlin",
+});
+
+const messages: Record<string, { text: string; tone: "error" | "success" }> = {
+  bestaetigt: { text: "Bedarf verbindlich bestätigt", tone: "success" },
+  "bestaetigung-verboten": {
+    text: "Nur Inhaber:innen dürfen den Bedarf bestätigen",
+    tone: "error",
+  },
+  entfernt: { text: "Position entfernt", tone: "success" },
+  gesperrt: {
+    text: "Diese Position oder Sammelrunde ist nicht mehr änderbar",
+    tone: "error",
+  },
+  gespeichert: { text: "Menge gespeichert", tone: "success" },
+  hinzugefuegt: { text: "Position hinzugefügt", tone: "success" },
+  leer: {
+    text: "Trage mindestens eine Position vor der Bestätigung ein",
+    tone: "error",
+  },
+  ungueltig: { text: "Bitte prüfe die eingegebenen Werte", tone: "error" },
+};
+
+type DemandAction = (formData: FormData) => Promise<void>;
+
+function PendingButton({
+  children,
+  className,
+  pendingLabel,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  pendingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button className={className} disabled={pending} type="submit">
+      {children}
+      <span className="sr-only">{pending ? pendingLabel : ""}</span>
+    </button>
+  );
 }
 
-export function DemandPlanner({ role }: { role: StoreRole }) {
-  const [items, setItems] = useState<DemandItem[]>(initialDemands);
+function TextSubmitButton({
+  children,
+  className,
+  pendingLabel,
+}: {
+  children: React.ReactNode;
+  className: string;
+  pendingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button className={className} disabled={pending} type="submit">
+      {pending ? pendingLabel : children}
+    </button>
+  );
+}
+
+export function DemandPlanner({
+  addAction,
+  confirmAction,
+  messageCode,
+  planning,
+  removeAction,
+  role,
+  updateAction,
+}: {
+  addAction: DemandAction;
+  confirmAction: DemandAction;
+  messageCode?: string;
+  planning: DemandPlanningData;
+  removeAction: DemandAction;
+  role: StoreRole;
+  updateAction: DemandAction;
+}) {
   const [composerOpen, setComposerOpen] = useState(false);
   const [product, setProduct] = useState("Kalb-Drehspieß");
-  const [amount, setAmount] = useState("20");
-  const [deliveryDate, setDeliveryDate] = useState("2026-08-24");
-  const [message, setMessage] = useState("Demodaten geladen");
-  const [messageTone, setMessageTone] = useState<"neutral" | "success" | "error">("neutral");
-
-  useEffect(() => {
-    const savedItems = loadDemands(window.localStorage);
-    if (!savedItems) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setItems(savedItems);
-      setMessage("Gespeicherter Bedarf geladen");
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const snapshot = getBuyingRoundSnapshot(buyingRound, items);
-
-  function persist(nextItems: DemandItem[], successMessage: string) {
-    const saved = saveDemands(window.localStorage, nextItems);
-    if (!saved) {
-      setMessage("Änderung sichtbar, aber lokal nicht gespeichert");
-      setMessageTone("error");
-      return;
-    }
-
-    setMessage(successMessage);
-    setMessageTone("success");
-  }
-
-  function updateAmount(id: string, nextAmount: number) {
-    if (!Number.isFinite(nextAmount) || nextAmount < 1 || nextAmount > 500) {
-      setMessage("Menge muss zwischen 1 und 500 liegen");
-      setMessageTone("error");
-      return;
-    }
-
-    const nextItems = items.map((item) =>
-      item.id === id ? { ...item, amount: nextAmount } : item,
-    );
-    setItems(nextItems);
-    persist(nextItems, "Menge automatisch gespeichert");
-  }
-
-  function removeItem(id: string) {
-    const nextItems = items.filter((item) => item.id !== id);
-    setItems(nextItems);
-    persist(nextItems, "Position entfernt");
-  }
-
-  function addItem(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const parsedAmount = Number(amount.replace(",", "."));
-
-    if (!Number.isFinite(parsedAmount) || parsedAmount < 1 || parsedAmount > 500) {
-      setMessage("Bitte eine Menge zwischen 1 und 500 kg eintragen");
-      setMessageTone("error");
-      return;
-    }
-
-    const nextItem: DemandItem = {
-      id: createId(),
-      product,
-      specification: productSpecifications[product] ?? "Standardspezifikation",
-      amount: parsedAmount,
-      unit: "kg",
-      deliveryDate,
-    };
-    const nextItems = [...items, nextItem];
-    setItems(nextItems);
-    persist(nextItems, "Position hinzugefügt und gespeichert");
-    setComposerOpen(false);
-    setAmount("20");
-  }
+  const snapshot = getBuyingRoundSnapshot(planning.round, planning.items);
+  const message = messageCode ? messages[messageCode] : undefined;
+  const locked = !planning.editable;
 
   return (
     <div className="page-stack">
@@ -123,22 +127,29 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
           <span className="eyebrow">Gruppeneinkauf</span>
           <h1>Dein Fleischbedarf</h1>
           <p>
-            {role === "OWNER"
-              ? "Bestätige, was du für die nächste Lieferung brauchst."
-              : "Trage den Bedarf ein. Der Inhaber bestätigt ihn anschließend."}
+            {planning.submissionStatus === "CONFIRMED"
+              ? "Dieser Bedarf ist verbindlich bestätigt und nicht mehr änderbar."
+              : role === "OWNER"
+                ? "Prüfe und bestätige, was du für die nächste Lieferung brauchst."
+                : "Trage den Bedarf ein. Der Inhaber bestätigt ihn anschließend."}
           </p>
         </div>
         <div className="deadline-badge">
           <Clock3 size={18} aria-hidden="true" />
           <span>
             Bestellschluss
-            <strong>Sa., 18:00 Uhr</strong>
+            <strong>
+              {deadlineFormatter.format(new Date(planning.round.closesAt))} Uhr
+            </strong>
           </span>
         </div>
       </header>
 
-      <section className="buying-summary-grid" aria-label="Zusammenfassung der Sammelrunde">
-        <BuyingRoundMeter round={buyingRound} demands={items} compact />
+      <section
+        className="buying-summary-grid"
+        aria-label="Zusammenfassung der Sammelrunde"
+      >
+        <BuyingRoundMeter round={planning.round} demands={planning.items} compact />
 
         <article className="round-facts">
           <div>
@@ -157,7 +168,7 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
           </div>
           <p>
             <CircleHelp size={16} aria-hidden="true" />
-            Berechnet gegen deinen bisherigen Referenzpreis von {formatCurrency(buyingRound.referencePricePerKg)} je kg.
+            Summe anderer Läden nur nach Bestätigung; Einzelmengen bleiben verborgen.
           </p>
         </article>
       </section>
@@ -166,20 +177,29 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
         <div className="panel__header demand-panel__header">
           <div>
             <span className="eyebrow">Lieferung</span>
-            <h2>Montag, 24. August</h2>
-            <p>Geplant zwischen 06:00 und 09:00 Uhr</p>
+            <h2>{planning.round.name}</h2>
+            <p>{planning.round.deliveryWindow}</p>
           </div>
-          <button
-            className="button button--primary"
-            type="button"
-            onClick={() => setComposerOpen(true)}
-          >
-            <Plus size={18} aria-hidden="true" />
-            Position hinzufügen
-          </button>
+          {planning.editable ? (
+            <button
+              className="button button--primary"
+              type="button"
+              onClick={() => setComposerOpen(true)}
+            >
+              <Plus size={18} aria-hidden="true" />
+              Position hinzufügen
+            </button>
+          ) : (
+            <span className="demand-lock-badge">
+              <ShieldCheck size={16} aria-hidden="true" />
+              {planning.submissionStatus === "CONFIRMED"
+                ? "Bestätigt"
+                : "Geschlossen"}
+            </span>
+          )}
         </div>
 
-        {items.length > 0 ? (
+        {planning.items.length > 0 ? (
           <div className="demand-table-wrap">
             <table className="demand-table">
               <thead>
@@ -191,7 +211,7 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {planning.items.map((item) => (
                   <tr key={item.id}>
                     <td data-label="Produkt">
                       <div className="product-cell">
@@ -209,50 +229,81 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
                     <td data-label="Lieferdatum">
                       <span className="date-cell">
                         <CalendarDays size={17} aria-hidden="true" />
-                        24.08.2026
+                        {dateFormatter.format(
+                          new Date(`${item.deliveryDate}T12:00:00Z`),
+                        )}
                       </span>
                     </td>
                     <td data-label="Menge">
-                      <div className="quantity-control">
-                        <button
-                          type="button"
-                          aria-label={`${item.product}: Menge um 1 kg verringern`}
-                          onClick={() => updateAmount(item.id, item.amount - 1)}
-                        >
-                          <Minus size={15} aria-hidden="true" />
-                        </button>
-                        <label>
-                          <span className="sr-only">Menge für {item.product}</span>
-                          <input
-                            aria-label={`Menge für ${item.product}`}
-                            type="number"
-                            min="1"
-                            max="500"
-                            value={item.amount}
-                            onChange={(event) =>
-                              updateAmount(item.id, Number(event.target.value))
-                            }
-                          />
-                          <span>{item.unit}</span>
-                        </label>
-                        <button
-                          type="button"
-                          aria-label={`${item.product}: Menge um 1 kg erhöhen`}
-                          onClick={() => updateAmount(item.id, item.amount + 1)}
-                        >
-                          <Plus size={15} aria-hidden="true" />
-                        </button>
-                      </div>
+                      {planning.editable ? (
+                        <div className="quantity-control quantity-control--server">
+                          <form action={updateAction}>
+                            <input name="demandItemId" type="hidden" value={item.id} />
+                            <input
+                              name="quantity"
+                              type="hidden"
+                              value={Math.max(1, item.amount - 1)}
+                            />
+                            <PendingButton pendingLabel="Menge wird verringert">
+                              <Minus size={15} aria-hidden="true" />
+                            </PendingButton>
+                          </form>
+                          <form
+                            action={updateAction}
+                            className="quantity-control__input-form"
+                          >
+                            <input name="demandItemId" type="hidden" value={item.id} />
+                            <label>
+                              <span className="sr-only">Menge für {item.product}</span>
+                              <input
+                                aria-label={`Menge für ${item.product}`}
+                                defaultValue={item.amount}
+                                max="500"
+                                min="0.001"
+                                name="quantity"
+                                step="0.001"
+                                type="number"
+                              />
+                              <span>{item.unit}</span>
+                            </label>
+                            <PendingButton
+                              className="quantity-control__save"
+                              pendingLabel="Menge wird gespeichert"
+                            >
+                              <Save size={14} aria-hidden="true" />
+                            </PendingButton>
+                          </form>
+                          <form action={updateAction}>
+                            <input name="demandItemId" type="hidden" value={item.id} />
+                            <input
+                              name="quantity"
+                              type="hidden"
+                              value={Math.min(500, item.amount + 1)}
+                            />
+                            <PendingButton pendingLabel="Menge wird erhöht">
+                              <Plus size={15} aria-hidden="true" />
+                            </PendingButton>
+                          </form>
+                        </div>
+                      ) : (
+                        <strong className="quantity-readonly">
+                          {item.amount} {item.unit}
+                        </strong>
+                      )}
                     </td>
                     <td>
-                      <button
-                        className="icon-button icon-button--danger"
-                        type="button"
-                        aria-label={`${item.product} entfernen`}
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 size={17} aria-hidden="true" />
-                      </button>
+                      {planning.editable ? (
+                        <form action={removeAction}>
+                          <input name="demandItemId" type="hidden" value={item.id} />
+                          <PendingButton
+                            className="icon-button icon-button--danger"
+                            pendingLabel="Position wird entfernt"
+                          >
+                            <Trash2 size={17} aria-hidden="true" />
+                            <span className="sr-only">{item.product} entfernen</span>
+                          </PendingButton>
+                        </form>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -263,23 +314,65 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
           <div className="empty-state">
             <PackagePlus size={30} aria-hidden="true" />
             <h3>Noch kein Bedarf eingetragen</h3>
-            <p>Füge deine erste Position hinzu, damit sie in die Sammelrunde einfließt.</p>
-            <button className="button button--primary" type="button" onClick={() => setComposerOpen(true)}>
-              Bedarf eintragen
-            </button>
+            <p>
+              {locked
+                ? "Für diese Runde wurde kein Bedarf bestätigt."
+                : "Füge deine erste Position hinzu, damit sie in die Sammelrunde einfließt."}
+            </p>
+            {planning.editable ? (
+              <button
+                className="button button--primary"
+                type="button"
+                onClick={() => setComposerOpen(true)}
+              >
+                Bedarf eintragen
+              </button>
+            ) : null}
           </div>
         )}
 
         <footer className="demand-panel__footer">
-          <span className={`save-message save-message--${messageTone}`} role="status" aria-live="polite">
-            {messageTone === "success" ? <Check size={15} aria-hidden="true" /> : <Save size={15} aria-hidden="true" />}
-            {message}
+          <span
+            className={`save-message save-message--${message?.tone ?? "neutral"}`}
+            role="status"
+            aria-live="polite"
+          >
+            {message?.tone === "success" ? (
+              <Check size={15} aria-hidden="true" />
+            ) : (
+              <Save size={15} aria-hidden="true" />
+            )}
+            {message?.text ?? "Alle Angaben werden sicher im Ladenkonto gespeichert"}
           </span>
-          <span>{items.length} Positionen · {snapshot.storeKg} kg gesamt</span>
+          <span>
+            {planning.items.length} Positionen · {snapshot.storeKg} kg gesamt
+          </span>
         </footer>
       </section>
 
-      {composerOpen ? (
+      {planning.canConfirm ? (
+        <section className="demand-confirm-bar">
+          <div>
+            <span className="eyebrow">Verbindliche Freigabe</span>
+            <h2>Bedarf für die Bündelung bestätigen</h2>
+            <p>
+              Nach der Bestätigung werden die Positionen gesperrt und fließen in
+              die regionale Gruppenmenge ein.
+            </p>
+          </div>
+          <form action={confirmAction}>
+            <input name="buyingRoundId" type="hidden" value={planning.round.id} />
+            <TextSubmitButton
+              className="button button--primary"
+              pendingLabel="Wird bestätigt …"
+            >
+              Bedarf bestätigen
+            </TextSubmitButton>
+          </form>
+        </section>
+      ) : null}
+
+      {composerOpen && planning.editable ? (
         <div className="modal-layer" role="presentation">
           <button
             className="modal-backdrop"
@@ -287,21 +380,42 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
             aria-label="Dialog schließen"
             onClick={() => setComposerOpen(false)}
           />
-          <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="composer-title">
+          <section
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="composer-title"
+          >
             <div className="modal-card__header">
               <div>
                 <span className="eyebrow">Neue Position</span>
                 <h2 id="composer-title">Bedarf hinzufügen</h2>
               </div>
-              <button className="icon-button" type="button" aria-label="Dialog schließen" onClick={() => setComposerOpen(false)}>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="Dialog schließen"
+                onClick={() => setComposerOpen(false)}
+              >
                 <X aria-hidden="true" />
               </button>
             </div>
-            <form className="form-stack" onSubmit={addItem}>
+            <form action={addAction} className="form-stack">
+              <input name="buyingRoundId" type="hidden" value={planning.round.id} />
+              <input
+                name="specification"
+                type="hidden"
+                value={productSpecifications[product]}
+              />
+              <input name="unit" type="hidden" value="KG" />
               <label className="field">
                 <span>Produkt</span>
                 <span className="select-wrap">
-                  <select value={product} onChange={(event) => setProduct(event.target.value)}>
+                  <select
+                    name="productName"
+                    value={product}
+                    onChange={(event) => setProduct(event.target.value)}
+                  >
                     {Object.keys(productSpecifications).map((option) => (
                       <option key={option}>{option}</option>
                     ))}
@@ -314,28 +428,40 @@ export function DemandPlanner({ role }: { role: StoreRole }) {
                 <label className="field">
                   <span>Menge in kg</span>
                   <input
-                    type="number"
-                    min="1"
-                    max="500"
-                    step="1"
-                    value={amount}
-                    onChange={(event) => setAmount(event.target.value)}
                     autoFocus
+                    defaultValue="20"
+                    max="500"
+                    min="0.001"
+                    name="quantity"
+                    required
+                    step="0.001"
+                    type="number"
                   />
                 </label>
                 <label className="field">
                   <span>Lieferdatum</span>
-                  <input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} />
+                  <input
+                    defaultValue={planning.round.deliveryDate}
+                    name="requestedDeliveryDate"
+                    required
+                    type="date"
+                  />
                 </label>
               </div>
               <div className="modal-card__actions">
-                <button className="button button--quiet" type="button" onClick={() => setComposerOpen(false)}>
+                <button
+                  className="button button--quiet"
+                  type="button"
+                  onClick={() => setComposerOpen(false)}
+                >
                   Abbrechen
                 </button>
-                <button className="button button--primary" type="submit">
-                  <Plus size={17} aria-hidden="true" />
+                <TextSubmitButton
+                  className="button button--primary"
+                  pendingLabel="Wird hinzugefügt …"
+                >
                   Position hinzufügen
-                </button>
+                </TextSubmitButton>
               </div>
             </form>
           </section>

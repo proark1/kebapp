@@ -18,11 +18,23 @@ export type PriceTier = {
 export type BuyingRound = {
   id: string;
   closesAt: string;
+  deliveryDate: string;
   deliveryWindow: string;
   committedKgWithoutStore: number;
+  name: string;
+  regionalKey: string;
+  status: "PLANNING" | "OPEN" | "CLOSED" | "SUBMITTED" | "CANCELLED";
   targetKg: number;
   referencePricePerKg: number;
   tiers: PriceTier[];
+};
+
+export type DemandPlanningData = {
+  canConfirm: boolean;
+  editable: boolean;
+  items: DemandItem[];
+  round: BuyingRound;
+  submissionStatus: "DRAFT" | "CONFIRMED";
 };
 
 export type MenuItem = {

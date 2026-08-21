@@ -101,6 +101,7 @@ async function seedTwoOrganizations(harness: TestDatabaseHarness): Promise<void>
     `insert into buying_rounds (
        id,
        organization_id,
+       regional_key,
        name,
        status,
        closes_at,
@@ -110,8 +111,8 @@ async function seedTwoOrganizations(harness: TestDatabaseHarness): Promise<void>
        reference_unit_price,
        created_by_user_id
      ) values
-       ($1, $2, 'Runde A', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $3),
-       ($4, $5, 'Runde B', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $6)`,
+       ($1, $2, 'tenant-a-round', 'Runde A', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $3),
+       ($4, $5, 'tenant-b-round', 'Runde B', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $6)`,
     [
       ids.roundA,
       ids.organizationA,
@@ -579,6 +580,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "can_access_organization",
       "can_administer_organization",
       "can_confirm_demand",
+      "can_edit_buying_round",
       "can_edit_demand",
       "can_edit_submission",
       "can_manage_members",
@@ -593,6 +595,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "has_active_owner_membership",
       "has_active_support_assignment",
       "is_platform_admin",
+      "regional_confirmed_demand_kg",
     ]);
     expect(
       functions.rows.every(

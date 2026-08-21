@@ -6,6 +6,9 @@ import { Pool } from "pg";
 import { loadDbEnv } from "./db-env";
 import {
   account,
+  buyingRounds,
+  demandItems,
+  demandSubmissions,
   memberships,
   organizations,
   platformRoles,
@@ -17,11 +20,15 @@ import {
 const ids = {
   admin: "seed-admin",
   adminAccount: "seed-admin-account",
+  chickenItem: "40000000-0000-4000-8000-000000000002",
+  demandSubmission: "30000000-0000-4000-8000-000000000001",
   operator: "seed-operator",
   operatorAccount: "seed-operator-account",
   organization: "10000000-0000-4000-8000-000000000001",
   membership: "10000000-0000-4000-8000-000000000002",
   request: "10000000-0000-4000-8000-000000000003",
+  round: "20000000-0000-4000-8000-000000000001",
+  vealItem: "40000000-0000-4000-8000-000000000001",
 } as const;
 
 async function seed() {
@@ -35,6 +42,14 @@ async function seed() {
       hashPassword(env.SEED_OPERATOR_PASSWORD),
     ]);
     const credentialIssuer = createLocalAccountIssuer("credential");
+    const closesAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1_000);
+    const deliveryStartsAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1_000,
+    );
+    deliveryStartsAt.setUTCHours(4, 0, 0, 0);
+    const deliveryEndsAt = new Date(deliveryStartsAt);
+    deliveryEndsAt.setUTCHours(7, 0, 0, 0);
+    const deliveryDate = deliveryStartsAt.toISOString().slice(0, 10);
 
     await database.transaction(async (transaction) => {
       await transaction
@@ -146,6 +161,95 @@ async function seed() {
           userId: ids.operator,
         })
         .onConflictDoNothing({ target: registrationRequests.id });
+
+      await transaction
+        .insert(buyingRounds)
+        .values({
+          closesAt,
+          createdByUserId: ids.admin,
+          deliveryEndsAt,
+          deliveryStartsAt,
+          id: ids.round,
+          name: "Pilot-Sammelrunde Fleisch",
+          organizationId: ids.organization,
+          pricingTiers: [
+            {
+              label: "Einzelkondition",
+              minimumQuantity: "0",
+              unitPrice: "9.40",
+            },
+            {
+              label: "Gruppenpreis 1",
+              minimumQuantity: "300",
+              unitPrice: "9.05",
+            },
+            {
+              label: "Gruppenpreis 2",
+              minimumQuantity: "500",
+              unitPrice: "8.65",
+            },
+            {
+              label: "Zielpreis",
+              minimumQuantity: "750",
+              unitPrice: "8.42",
+            },
+          ],
+          referenceUnitPrice: "9.18",
+          regionalKey: `mg-fleisch-${deliveryDate}`,
+          status: "OPEN",
+          targetQuantity: "750.000",
+        })
+        .onConflictDoUpdate({
+          target: buyingRounds.id,
+          set: {
+            closesAt,
+            deliveryEndsAt,
+            deliveryStartsAt,
+            regionalKey: `mg-fleisch-${deliveryDate}`,
+            updatedAt: new Date(),
+          },
+        });
+
+      await transaction
+        .insert(demandSubmissions)
+        .values({
+          buyingRoundId: ids.round,
+          id: ids.demandSubmission,
+          organizationId: ids.organization,
+          status: "DRAFT",
+        })
+        .onConflictDoNothing({ target: demandSubmissions.id });
+
+      await transaction
+        .insert(demandItems)
+        .values([
+          {
+            estimatedUnitPrice: "9.18",
+            id: ids.vealItem,
+            organizationId: ids.organization,
+            productName: "Kalb-Drehspieß",
+            quantity: "60.000",
+            requestedDeliveryDate: deliveryDate,
+            specification: "20 kg · Scheibenanteil 60 % · halal",
+            submissionId: ids.demandSubmission,
+            unit: "KG",
+          },
+          {
+            estimatedUnitPrice: "9.18",
+            id: ids.chickenItem,
+            organizationId: ids.organization,
+            productName: "Hähnchen-Drehspieß",
+            quantity: "26.000",
+            requestedDeliveryDate: deliveryDate,
+            specification: "15 kg · gewürzt · halal",
+            submissionId: ids.demandSubmission,
+            unit: "KG",
+          },
+        ])
+        .onConflictDoUpdate({
+          target: demandItems.id,
+          set: { requestedDeliveryDate: deliveryDate, updatedAt: new Date() },
+        });
     });
 
     console.info("Lokale Kebapp-Testkonten und Pilotantrag sind bereit.");

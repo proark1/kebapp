@@ -3,8 +3,12 @@ import type { BuyingRound, DemandItem, StoreProfile } from "@/lib/types";
 export const buyingRound: BuyingRound = {
   id: "mg-2026-08-24",
   closesAt: "2026-08-22T18:00:00+02:00",
+  deliveryDate: "2026-08-24",
   deliveryWindow: "Montag, 24. August · 06:00–09:00 Uhr",
   committedKgWithoutStore: 598,
+  name: "Fleisch · 24. August",
+  regionalKey: "mg-fleisch-2026-08-24",
+  status: "OPEN",
   targetKg: 750,
   referencePricePerKg: 9.18,
   tiers: [
