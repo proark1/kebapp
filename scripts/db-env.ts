@@ -25,6 +25,8 @@ const dbEnvSchema = z
     MAILPIT_HTTP_PORT: z.coerce.number().int().min(1).max(65_535),
     SEED_ADMIN_EMAIL: z.email(),
     SEED_ADMIN_PASSWORD: z.string().min(12),
+    SEED_OPERATOR_EMAIL: z.email(),
+    SEED_OPERATOR_PASSWORD: z.string().min(12),
   })
   .superRefine((value, context) => {
     if (value.POSTGRES_OWNER_USER === value.POSTGRES_APP_USER) {

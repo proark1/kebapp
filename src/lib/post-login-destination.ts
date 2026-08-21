@@ -71,7 +71,7 @@ export function choosePostLoginDestination(facts: PostLoginFacts): string {
   ).length;
 
   if (activeMemberships > 1) {
-    return "/organisation-waehlen";
+    return "/app/organisation-waehlen";
   }
 
   if (activeMemberships === 1) {

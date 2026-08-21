@@ -574,7 +574,24 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       order by procedure_record.proname
     `);
 
-    expect(functions.rows).toHaveLength(13);
+    expect(functions.rows.map((row) => row.function_name)).toEqual([
+      "can_access_organization",
+      "can_administer_organization",
+      "can_confirm_demand",
+      "can_edit_demand",
+      "can_edit_submission",
+      "can_manage_members",
+      "can_manage_storefront",
+      "can_register_owner_membership",
+      "can_start_registration",
+      "can_submit_registration",
+      "current_organization_id",
+      "current_user_id",
+      "has_active_membership",
+      "has_active_owner_membership",
+      "has_active_support_assignment",
+      "is_platform_admin",
+    ]);
     expect(
       functions.rows.every(
         (functionRecord) =>

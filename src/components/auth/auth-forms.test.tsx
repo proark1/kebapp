@@ -177,7 +177,7 @@ describe("Kebapp authentication forms", () => {
         ...baseFacts,
         membershipStatuses: ["ACTIVE", "ACTIVE"],
       }),
-    ).toBe("/organisation-waehlen");
+    ).toBe("/app/organisation-waehlen");
     expect(
       choosePostLoginDestination({
         ...baseFacts,

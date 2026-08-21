@@ -21,6 +21,8 @@ const validDbEnv = {
   MAILPIT_HTTP_PORT: "8025",
   SEED_ADMIN_EMAIL: "admin@kebapp.local",
   SEED_ADMIN_PASSWORD: "local-admin-password",
+  SEED_OPERATOR_EMAIL: "betrieb@kebapp.local",
+  SEED_OPERATOR_PASSWORD: "local-operator-password",
 };
 
 describe("parseDbEnv", () => {

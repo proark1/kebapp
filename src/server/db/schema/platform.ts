@@ -195,6 +195,9 @@ export const registrationRequests = pgTable(
     uniqueIndex("registration_requests_organization_unique").on(
       table.organizationId,
     ),
+    uniqueIndex("registration_requests_user_pending_unique")
+      .on(table.userId)
+      .where(sql`${table.status} = 'PENDING'`),
     index("registration_requests_status_created_idx").on(
       table.status,
       table.createdAt,
