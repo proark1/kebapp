@@ -33,4 +33,6 @@ Bedarf und Website-Einstellungen werden für den Pilotprototyp versioniert im lo
 ## Dokumentation
 
 - Produkt- und Pilotentwurf: `docs/superpowers/specs/2026-08-20-kebapp-doenerladen-betriebssystem-design.md`
-- Implementierungsplan: `docs/superpowers/plans/2026-08-21-kebapp-mvp-vertical-slice.md`
+- Technischer Entwurf für Authentifizierung und Mandanten: `docs/superpowers/specs/2026-08-21-kebapp-auth-mandanten-postgresql-design.md`
+- Implementierungsplan des UI-Prototyps: `docs/superpowers/plans/2026-08-21-kebapp-mvp-vertical-slice.md`
+- Implementierungsplan für Authentifizierung, Mandanten und PostgreSQL: `docs/superpowers/plans/2026-08-21-kebapp-auth-mandanten-postgresql.md`
