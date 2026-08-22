@@ -14,6 +14,7 @@ const child = spawn(process.execPath, [nextCli, ...process.argv.slice(2)], {
     ...process.env,
     BETTER_AUTH_URL: "http://127.0.0.1:3100",
     DATABASE_URL: dbEnv.TEST_DATABASE_URL,
+    DEMO_MODE: "false",
   },
   stdio: "inherit",
 });

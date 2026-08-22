@@ -31,7 +31,13 @@ temporäre Hostname wird aus der IPv4 gebildet, zum Beispiel
 3. Das geprüfte Repository ohne `.git`, lokale Env-Dateien, `node_modules` und
    Buildausgaben nach `/opt/kebapp/releases/<release>` übertragen.
 4. Im Release `deploy/scripts/bootstrap-release.sh` ausführen.
-5. Eine lokal erzeugte `.env.production` per Standard-Eingabe oder SCP nach
+5. Die Secret-Datei lokal erzeugen, ohne ihren Inhalt im Terminal auszugeben:
+
+   ```bash
+   pnpm prod:env:create -- --host HOST --output .env.kebapp-production
+   ```
+
+   Diese Datei per Standard-Eingabe oder SCP nach
    `/opt/kebapp/shared/.env.production` übertragen und `chmod 600` setzen. Die
    Datei darf nie in Git oder Logs landen.
 6. Im Release `deploy/scripts/deploy.sh <release>` ausführen.
@@ -51,6 +57,16 @@ docker compose --env-file /opt/kebapp/shared/.env.production \
 curl --fail --silent https://HOST/api/health
 systemctl status kebapp-backup.timer
 journalctl -u kebapp-backup.service --since today
+```
+
+Der vollständige Rollen-Smoke-Test wird von einem vertrauenswürdigen Rechner
+mit installiertem Playwright ausgeführt; die Secret-Datei wird nur lokal
+eingelesen:
+
+```bash
+pnpm prod:smoke:roles -- \
+  --env-file .env.kebapp-production \
+  --url https://HOST
 ```
 
 Verbindungsstrings und die Ausgabe von `docker inspect` werden nicht in Tickets

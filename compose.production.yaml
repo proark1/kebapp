@@ -72,6 +72,9 @@ services:
 
   seed:
     image: ${KEBAPP_TOOLING_IMAGE:-kebapp-tooling:local}
+    build:
+      context: .
+      target: tooling
     command: ["pnpm", "prod:seed:demo"]
     environment: *tooling-environment
     depends_on:

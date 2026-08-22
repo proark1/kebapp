@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["nodemailer"],
   experimental: {

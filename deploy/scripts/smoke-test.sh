@@ -61,7 +61,8 @@ if ! grep -Fq "Ocakbasi Rheydt" "$PUBLIC_BODY"; then
 fi
 
 UNPUBLISHED_STATUS="$(
-  curl --silent --output /dev/null --write-out '%{http_code}' \
+  curl --silent --show-error --retry 5 --retry-all-errors --retry-delay 2 \
+    --connect-timeout 5 --max-time 20 --output /dev/null --write-out '%{http_code}' \
     "${BASE_URL}/laden/mangal-am-markt"
 )"
 if [[ "$UNPUBLISHED_STATUS" != "404" ]]; then
@@ -70,7 +71,7 @@ if [[ "$UNPUBLISHED_STATUS" != "404" ]]; then
 fi
 
 curl_retry --output "$DEMO_BODY" "${BASE_URL}/registrieren"
-if ! grep -Fq "Demo-Modus" "$DEMO_BODY"; then
+if ! grep -Fq "Demo deaktiviert" "$DEMO_BODY"; then
   echo "Der öffentliche Demo-Hinweis fehlt." >&2
   exit 1
 fi

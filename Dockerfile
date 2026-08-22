@@ -34,6 +34,14 @@ ENV DEMO_MODE=true
 
 RUN mkdir -p public && pnpm build
 
+# Next 16 traces only the CJS branch of this export-mapped pnpm dependency,
+# while the standalone server loads its ESM branch during startup.
+RUN HELPER_PACKAGE="$(find node_modules/.pnpm -maxdepth 1 -type d -name '@swc+helpers@*' -print -quit)" \
+    && test -n "$HELPER_PACKAGE" \
+    && HELPER_TARGET=".next/standalone/node_modules/.pnpm/$(basename "$HELPER_PACKAGE")/node_modules/@swc/helpers" \
+    && mkdir -p "$HELPER_TARGET" \
+    && cp -a "$HELPER_PACKAGE/node_modules/@swc/helpers/." "$HELPER_TARGET/"
+
 FROM node:24.13.0-alpine AS app
 
 ENV NODE_ENV=production

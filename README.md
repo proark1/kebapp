@@ -162,9 +162,16 @@ Compose-Netzwerk. `.env.production.example` dokumentiert die erforderlichen
 Werte, darf aber nicht mit den Platzhaltern produktiv verwendet werden.
 
 ```bash
-docker compose --env-file .env.production \
+pnpm prod:env:create -- --host HOST --output .env.kebapp-production
+scp .env.kebapp-production deploy@SERVER:/opt/kebapp/shared/.env.production
+# Anschließend auf dem Server:
+docker compose --env-file /opt/kebapp/shared/.env.production \
   -f compose.production.yaml up -d
 ```
+
+Der generierte lokale Dateiname wird von Next.js nicht automatisch geladen. Auf
+dem Server wird dieselbe Datei mit Modus `0600` als
+`/opt/kebapp/shared/.env.production` abgelegt.
 
 Provisionierung, Deployment, tägliche Dumps, Restore-Probe und Rollback sind im
 [Hetzner-Demo-Runbook](docs/runbooks/hetzner-demo.md) beschrieben.
