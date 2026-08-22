@@ -17,6 +17,16 @@ const runtimeEnvSchema = z
       .enum(["true", "false"])
       .default("false")
       .transform((value) => value === "true"),
+    DEMO_ADMIN_EMAIL: z.email().optional(),
+    DEMO_ADMIN_PASSWORD: z.string().min(12).optional(),
+    DEMO_EMPLOYEE_EMAIL: z.email().optional(),
+    DEMO_EMPLOYEE_PASSWORD: z.string().min(12).optional(),
+    DEMO_OWNER_EMAIL: z.email().optional(),
+    DEMO_OWNER_PASSWORD: z.string().min(12).optional(),
+    DEMO_SECOND_OWNER_EMAIL: z.email().optional(),
+    DEMO_SECOND_OWNER_PASSWORD: z.string().min(12).optional(),
+    DEMO_SUPPORT_EMAIL: z.email().optional(),
+    DEMO_SUPPORT_PASSWORD: z.string().min(12).optional(),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65_535).optional(),
     SMTP_FROM: z.string().min(3).optional(),

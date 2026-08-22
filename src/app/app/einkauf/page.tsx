@@ -9,6 +9,7 @@ import {
 import { DemandPlanner } from "@/components/demand-planner";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { getDemandPlanning } from "@/server/procurement/queries";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: "Einkauf",
@@ -56,6 +57,7 @@ export default async function BuyingPage({
     <DemandPlanner
       addAction={addDemandItemAction}
       confirmAction={confirmDemandSubmissionAction}
+      demoMode={isPublicDemo()}
       messageCode={query.meldung}
       planning={planning}
       removeAction={removeDemandItemAction}

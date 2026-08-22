@@ -27,6 +27,14 @@ export type StoreMenuItem = {
   price: string;
 };
 
+export type StoreFeature =
+  | "HALAL"
+  | "FRESH_VEGETABLES"
+  | "HOMEMADE_SAUCES"
+  | "PREPARED_ON_SITE";
+
+export type StoreDomainRequestStatus = "NONE" | "REVIEW_REQUESTED";
+
 export const storeProfiles = pgTable(
   "store_profiles",
   {
@@ -50,6 +58,18 @@ export const storeProfiles = pgTable(
       .notNull(),
     logoUrl: text("logo_url"),
     customDomain: varchar("custom_domain", { length: 253 }),
+    requestedDomain: varchar("requested_domain", { length: 253 }),
+    domainRequestStatus: text("domain_request_status")
+      .$type<StoreDomainRequestStatus>()
+      .default("NONE")
+      .notNull(),
+    domainRequestedAt: timestamp("domain_requested_at", {
+      withTimezone: true,
+    }),
+    features: jsonb("features")
+      .$type<StoreFeature[]>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
     openingHours: jsonb("opening_hours")
       .$type<StoreOpeningHour[]>()
       .default(sql`'[]'::jsonb`)
@@ -58,7 +78,7 @@ export const storeProfiles = pgTable(
       .$type<StoreMenuItem[]>()
       .default(sql`'[]'::jsonb`)
       .notNull(),
-    schemaVersion: integer("schema_version").default(1).notNull(),
+    schemaVersion: integer("schema_version").default(2).notNull(),
     isPublished: boolean("is_published").default(false).notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -84,6 +104,14 @@ export const storeProfiles = pgTable(
     check(
       "store_profiles_menu_array",
       sql`jsonb_typeof(${table.menu}) = 'array'`,
+    ),
+    check(
+      "store_profiles_features_array",
+      sql`jsonb_typeof(${table.features}) = 'array'`,
+    ),
+    check(
+      "store_profiles_domain_request_status_values",
+      sql`${table.domainRequestStatus} in ('NONE', 'REVIEW_REQUESTED')`,
     ),
     check(
       "store_profiles_schema_version_positive",

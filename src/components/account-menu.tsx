@@ -1,12 +1,9 @@
 "use client";
 
-import { LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
-import Link from "next/link";
+import { LogOut, UserRound } from "lucide-react";
 import { useFormStatus } from "react-dom";
-import type { StoreRole } from "@/server/organizations/organization-dto";
 
 type AccountMenuProps = {
-  role: StoreRole;
   roleLabel: string;
   signOutAction: (formData: FormData) => Promise<void>;
   user: { initials: string; name: string };
@@ -24,7 +21,6 @@ function SignOutButton() {
 }
 
 export function AccountMenu({
-  role,
   roleLabel,
   signOutAction,
   user,
@@ -46,20 +42,6 @@ export function AccountMenu({
             <small>{roleLabel}</small>
           </span>
         </header>
-
-        {role === "OWNER" ? (
-          <div className="account-menu__owner-tools" aria-label="Inhaberverwaltung">
-            <Link href="/app/einstellungen/team">
-              <Users size={16} aria-hidden="true" />
-              Team &amp; Rollen
-            </Link>
-            <button disabled type="button">
-              <ShieldCheck size={16} aria-hidden="true" />
-              Domain &amp; Sicherheit
-              <small>bald</small>
-            </button>
-          </div>
-        ) : null}
 
         <form action={signOutAction}>
           <SignOutButton />

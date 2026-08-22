@@ -6,6 +6,7 @@ import {
   ChevronDown,
   CircleHelp,
   Clock3,
+  FlaskConical,
   Minus,
   PackagePlus,
   Plus,
@@ -14,7 +15,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { BuyingRoundMeter } from "@/components/buying-round-meter";
 import { formatCurrency, getBuyingRoundSnapshot } from "@/lib/calculations";
@@ -105,6 +106,7 @@ export function DemandPlanner({
   removeAction,
   role,
   updateAction,
+  demoMode = false,
 }: {
   addAction: DemandAction;
   confirmAction: DemandAction;
@@ -113,12 +115,58 @@ export function DemandPlanner({
   removeAction: DemandAction;
   role: StoreRole;
   updateAction: DemandAction;
+  demoMode?: boolean;
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [product, setProduct] = useState("Kalb-Drehspieß");
+  const confirmDialogRef = useRef<HTMLElement>(null);
+  const confirmTriggerRef = useRef<HTMLButtonElement>(null);
   const snapshot = getBuyingRoundSnapshot(planning.round, planning.items);
   const message = messageCode ? messages[messageCode] : undefined;
   const locked = !planning.editable;
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+
+    const dialog = confirmDialogRef.current;
+    const trigger = confirmTriggerRef.current;
+    const initialFocus = dialog?.querySelector<HTMLElement>(
+      "[data-initial-focus]",
+    );
+    initialFocus?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setConfirmOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      trigger?.focus();
+    };
+  }, [confirmOpen]);
 
   return (
     <div className="page-stack">
@@ -144,6 +192,16 @@ export function DemandPlanner({
           </span>
         </div>
       </header>
+
+      {demoMode ? (
+        <div className="demo-order-note" role="note">
+          <FlaskConical aria-hidden="true" size={18} />
+          <span>
+            <strong>Demo-Modus:</strong> Bestätigungen verändern nur
+            Beispieldaten. Es wird kein realer Lieferantenauftrag ausgelöst.
+          </span>
+        </div>
+      ) : null}
 
       <section
         className="buying-summary-grid"
@@ -246,6 +304,9 @@ export function DemandPlanner({
                             />
                             <PendingButton pendingLabel="Menge wird verringert">
                               <Minus size={15} aria-hidden="true" />
+                              <span className="sr-only">
+                                Menge für {item.product} verringern
+                              </span>
                             </PendingButton>
                           </form>
                           <form
@@ -271,6 +332,9 @@ export function DemandPlanner({
                               pendingLabel="Menge wird gespeichert"
                             >
                               <Save size={14} aria-hidden="true" />
+                              <span className="sr-only">
+                                Menge für {item.product} speichern
+                              </span>
                             </PendingButton>
                           </form>
                           <form action={updateAction}>
@@ -282,6 +346,9 @@ export function DemandPlanner({
                             />
                             <PendingButton pendingLabel="Menge wird erhöht">
                               <Plus size={15} aria-hidden="true" />
+                              <span className="sr-only">
+                                Menge für {item.product} erhöhen
+                              </span>
                             </PendingButton>
                           </form>
                         </div>
@@ -360,16 +427,101 @@ export function DemandPlanner({
               die regionale Gruppenmenge ein.
             </p>
           </div>
-          <form action={confirmAction}>
-            <input name="buyingRoundId" type="hidden" value={planning.round.id} />
-            <TextSubmitButton
-              className="button button--primary"
-              pendingLabel="Wird bestätigt …"
-            >
-              Bedarf bestätigen
-            </TextSubmitButton>
-          </form>
+          <button
+            className="button button--primary"
+            onClick={() => setConfirmOpen(true)}
+            ref={confirmTriggerRef}
+            type="button"
+          >
+            Bestätigung prüfen
+          </button>
         </section>
+      ) : null}
+
+      {confirmOpen && planning.canConfirm ? (
+        <div className="modal-layer" role="presentation">
+          <button
+            className="modal-backdrop"
+            type="button"
+            aria-label="Prüfung schließen"
+            onClick={() => setConfirmOpen(false)}
+          />
+          <section
+            aria-labelledby="confirm-title"
+            aria-describedby="confirm-description"
+            aria-modal="true"
+            className="modal-card demand-confirm-modal"
+            ref={confirmDialogRef}
+            role="dialog"
+          >
+            <div className="modal-card__header">
+              <div>
+                <span className="eyebrow">Letzte Prüfung</span>
+                <h2 id="confirm-title">Bedarf verbindlich bestätigen?</h2>
+              </div>
+              <button
+                aria-label="Prüfung schließen"
+                className="icon-button"
+                data-initial-focus
+                onClick={() => setConfirmOpen(false)}
+                type="button"
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+
+            <p id="confirm-description" className="demand-confirm-modal__intro">
+              Nach der Bestätigung sind diese Positionen für die Sammelrunde
+              gesperrt und zählen zur sichtbaren Gruppenmenge.
+            </p>
+
+            <dl className="demand-confirm-modal__facts">
+              <div><dt>Sammelrunde</dt><dd>{planning.round.name}</dd></div>
+              <div><dt>Lieferfenster</dt><dd>{planning.round.deliveryWindow}</dd></div>
+              <div><dt>Gesamtmenge</dt><dd>{snapshot.storeKg} kg</dd></div>
+              <div>
+                <dt>Geschätzter Warenwert</dt>
+                <dd>{formatCurrency(snapshot.storeKg * snapshot.activeTier.pricePerKg)}</dd>
+              </div>
+            </dl>
+
+            <ul className="demand-confirm-modal__items" aria-label="Positionen">
+              {planning.items.map((item) => (
+                <li key={item.id}>
+                  <span><strong>{item.product}</strong><small>{item.specification}</small></span>
+                  <span><strong>{item.amount} {item.unit}</strong><small>{dateFormatter.format(new Date(`${item.deliveryDate}T12:00:00Z`))}</small></span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="demand-confirm-modal__warning">
+              <ShieldCheck aria-hidden="true" size={19} />
+              <p>
+                <strong>In dieser öffentlichen Demo entsteht keine echte Bestellung.</strong>
+                Die Bestätigung sperrt ausschließlich die Beispieldaten in diesem Ladenkonto.
+              </p>
+            </div>
+
+            <div className="modal-card__actions">
+              <button
+                className="button button--quiet"
+                onClick={() => setConfirmOpen(false)}
+                type="button"
+              >
+                Zurück und weiter bearbeiten
+              </button>
+              <form action={confirmAction}>
+                <input name="buyingRoundId" type="hidden" value={planning.round.id} />
+                <TextSubmitButton
+                  className="button button--primary"
+                  pendingLabel="Wird bestätigt …"
+                >
+                  Jetzt für die Demo-Gruppenmenge bestätigen
+                </TextSubmitButton>
+              </form>
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {composerOpen && planning.editable ? (

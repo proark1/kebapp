@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { saveStorefrontAction } from "@/app/app/website/actions";
+import {
+  requestStorefrontDomainAction,
+  saveStorefrontAction,
+} from "@/app/app/website/actions";
 import { WebsiteEditor } from "@/components/website-editor";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { getStorefrontEditor } from "@/server/storefront/queries";
@@ -32,6 +35,7 @@ export default async function WebsitePage({
   return (
     <WebsiteEditor
       initialData={editor}
+      domainAction={requestStorefrontDomainAction}
       messageCode={query.meldung}
       saveAction={saveStorefrontAction}
     />

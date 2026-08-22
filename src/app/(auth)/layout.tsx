@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </a>
 
       <aside className="auth-stage" aria-label="Kebapp Pilot">
-        <Link className="auth-stage__brand" href="/anmelden" aria-label="Kebapp Anmeldung">
+        <Link className="auth-stage__brand" href="/" aria-label="Kebapp Startseite">
           <BrandMark inverse />
         </Link>
 

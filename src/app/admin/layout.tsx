@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { BrandMark } from "@/components/brand-mark";
+import { AdminNavigation } from "@/components/admin-navigation";
+import { DemoEnvironmentBar } from "@/components/demo-environment-bar";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: { default: "Prüftisch", template: "%s · Kebapp Prüftisch" },
@@ -10,40 +11,16 @@ export const metadata: Metadata = {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const actor = await requirePlatformAdminPage("/admin");
+  const demoMode = isPublicDemo();
 
   return (
-    <div className="admin-shell">
+    <div className={`admin-shell ${demoMode ? "admin-shell--demo" : ""}`}>
       <a className="skip-link" href="#admin-main">
         Zum Inhalt springen
       </a>
-      <aside className="admin-rail">
-        <Link href="/admin" aria-label="Kebapp Prüftisch Startseite">
-          <BrandMark inverse />
-        </Link>
-        <div className="admin-rail__office">
-          <span>Interner Bereich</span>
-          <strong>Prüftisch NRW</strong>
-          <small>Mönchengladbach · Pilot</small>
-        </div>
-        <nav aria-label="Admin-Navigation">
-          <Link href="/admin">Übersicht</Link>
-          <Link href="/admin/antraege">Ladenanträge</Link>
-          <Link href="/admin/support">Supporteinsätze</Link>
-          <Link href="/admin/audit">Auditprotokoll</Link>
-        </nav>
-        <footer>
-          <span aria-hidden="true" />
-          <p>
-            Angemeldet als
-            <strong>{actor.name}</strong>
-          </p>
-        </footer>
-      </aside>
+      {demoMode ? <DemoEnvironmentBar /> : null}
+      <AdminNavigation actorName={actor.name} />
       <div className="admin-workspace">
-        <header className="admin-mobile-header">
-          <BrandMark />
-          <span>Prüftisch NRW</span>
-        </header>
         <main id="admin-main">{children}</main>
       </div>
     </div>

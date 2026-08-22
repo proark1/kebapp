@@ -210,6 +210,12 @@ async function seed() {
           description:
             "Drehspieß, frisches Gemüse und unsere Saucen aus eigener Küche – mitten in Rheydt.",
           eyebrow: "Seit 1998 in Rheydt",
+          features: [
+            "HALAL",
+            "FRESH_VEGETABLES",
+            "HOMEMADE_SAUCES",
+            "PREPARED_ON_SITE",
+          ],
           id: ids.storeProfile,
           isPublished: true,
           menu: [
@@ -253,6 +259,7 @@ async function seed() {
           postalCode: "41236",
           publicSlug: "ocakbasi-rheydt-pilot",
           publishedAt: new Date(),
+          schemaVersion: 2,
           shortName: "OR",
           street: "Demo-Straße 24",
           tagline: "Schicht für Schicht. Jeden Tag frisch.",

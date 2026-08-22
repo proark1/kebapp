@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Headset, ShieldCheck } from "lucide-react";
-import { BrandMark } from "@/components/brand-mark";
+import { DemoEnvironmentBar } from "@/components/demo-environment-bar";
+import { SupportNavigation } from "@/components/support-navigation";
 import { requirePlatformSupportPage } from "@/server/auth/page-guards";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: { default: "Supporteinsatz", template: "%s · Kebapp Support" },
@@ -15,10 +16,12 @@ export default async function SupportLayout({
   children: React.ReactNode;
 }) {
   const actor = await requirePlatformSupportPage("/support");
+  const demoMode = isPublicDemo();
 
   return (
-    <div className="support-shell">
+    <div className={`support-shell ${demoMode ? "support-shell--demo" : ""}`}>
       <a className="skip-link" href="#support-main">Zum Inhalt springen</a>
+      {demoMode ? <DemoEnvironmentBar /> : null}
       <header className="support-context-bar">
         <div>
           <Headset size={18} aria-hidden="true" />
@@ -30,23 +33,7 @@ export default async function SupportLayout({
           Änderungen werden begründet protokolliert
         </span>
       </header>
-      <aside className="support-rail">
-        <Link href="/support" aria-label="Kebapp Support Startseite">
-          <BrandMark inverse />
-        </Link>
-        <div className="support-rail__identity">
-          <span>Betreuter Betrieb</span>
-          <strong>Supportdesk NRW</strong>
-          <small>Mönchengladbach · Pilot</small>
-        </div>
-        <nav aria-label="Support-Navigation">
-          <Link href="/support">Meine Läden</Link>
-        </nav>
-        <footer>
-          <Headset size={18} aria-hidden="true" />
-          <p>Angemeldet als<strong>{actor.name}</strong></p>
-        </footer>
-      </aside>
+      <SupportNavigation actorName={actor.name} />
       <main className="support-workspace" id="support-main">{children}</main>
     </div>
   );

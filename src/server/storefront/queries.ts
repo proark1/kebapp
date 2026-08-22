@@ -21,6 +21,8 @@ type StoredProfile = {
   city: string | null;
   description: string | null;
   eyebrow: string | null;
+  features: unknown;
+  logoUrl: string | null;
   menu: unknown;
   name: string;
   openingHours: unknown;
@@ -37,6 +39,8 @@ type PublicStorefrontRow = {
   city: string | null;
   description: string | null;
   eyebrow: string | null;
+  features: unknown;
+  logo_url: string | null;
   menu: unknown;
   name: string;
   opening_hours: unknown;
@@ -62,6 +66,8 @@ function toStoreProfile(record: StoredProfile): StoreProfile {
     city: record.city ?? "",
     description: record.description ?? "",
     eyebrow: record.eyebrow ?? "",
+    features: record.features,
+    logoUrl: record.logoUrl ?? "",
     menu: record.menu,
     name: record.name,
     openingHours: record.openingHours,
@@ -97,6 +103,8 @@ function createDefaultProfile(storeName: string): StoreProfile {
     description:
       "Döner, Tellergerichte und vegetarische Auswahl – frisch für dich zubereitet.",
     eyebrow: `Willkommen bei ${storeName}`,
+    features: [],
+    logoUrl: "",
     menu: [
       {
         category: "Döner",
@@ -135,7 +143,7 @@ function createDefaultProfile(storeName: string): StoreProfile {
     ],
     phone: "",
     postalCode: "",
-    schemaVersion: 1,
+    schemaVersion: 2,
     shortName: createShortName(storeName),
     street: "",
     tagline: "Frisch zubereitet. Direkt bei uns im Laden.",
@@ -160,8 +168,11 @@ export async function getStorefrontEditor(input: {
           city: storeProfiles.city,
           customDomain: storeProfiles.customDomain,
           description: storeProfiles.description,
+          domainRequestStatus: storeProfiles.domainRequestStatus,
           eyebrow: storeProfiles.eyebrow,
+          features: storeProfiles.features,
           isPublished: storeProfiles.isPublished,
+          logoUrl: storeProfiles.logoUrl,
           menu: storeProfiles.menu,
           name: storeProfiles.name,
           openingHours: storeProfiles.openingHours,
@@ -169,6 +180,7 @@ export async function getStorefrontEditor(input: {
           postalCode: storeProfiles.postalCode,
           profileId: storeProfiles.id,
           publicSlug: storeProfiles.publicSlug,
+          requestedDomain: storeProfiles.requestedDomain,
           schemaVersion: storeProfiles.schemaVersion,
           shortName: storeProfiles.shortName,
           storeName: organizations.storeName,
@@ -195,6 +207,8 @@ export async function getStorefrontEditor(input: {
             city: row.city,
             description: row.description,
             eyebrow: row.eyebrow,
+            features: row.features,
+            logoUrl: row.logoUrl,
             menu: row.menu,
             name: row.name!,
             openingHours: row.openingHours,
@@ -209,10 +223,12 @@ export async function getStorefrontEditor(input: {
 
       return {
         customDomain: row.customDomain,
+        domainRequestStatus: row.domainRequestStatus ?? "NONE",
         isPublished: row.isPublished ?? false,
         profile,
         publicPath: `/laden/${publicSlug}`,
         publicSlug,
+        requestedDomain: row.requestedDomain,
       };
     },
   );
@@ -245,6 +261,8 @@ export async function getPublicStorefrontBySlug(input: {
       city: row.city,
       description: row.description,
       eyebrow: row.eyebrow,
+      features: row.features,
+      logoUrl: row.logo_url,
       menu: row.menu,
       name: row.name,
       openingHours: row.opening_hours,

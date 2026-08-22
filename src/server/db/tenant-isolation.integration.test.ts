@@ -111,8 +111,8 @@ async function seedTwoOrganizations(harness: TestDatabaseHarness): Promise<void>
        reference_unit_price,
        created_by_user_id
      ) values
-       ($1, $2, 'tenant-a-round', 'Runde A', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $3),
-       ($4, $5, 'tenant-b-round', 'Runde B', 'OPEN', '2026-08-22T16:00:00Z', '2026-08-24T04:00:00Z', '2026-08-24T08:00:00Z', 500, 9.20, $6)`,
+       ($1, $2, 'tenant-a-round', 'Runde A', 'OPEN', now() + interval '1 day', date_trunc('day', now()) + interval '2 days 4 hours', date_trunc('day', now()) + interval '2 days 8 hours', 500, 9.20, $3),
+       ($4, $5, 'tenant-b-round', 'Runde B', 'OPEN', now() + interval '1 day', date_trunc('day', now()) + interval '2 days 4 hours', date_trunc('day', now()) + interval '2 days 8 hours', 500, 9.20, $6)`,
     [
       ids.roundA,
       ids.organizationA,
@@ -148,8 +148,8 @@ async function seedTwoOrganizations(harness: TestDatabaseHarness): Promise<void>
        unit,
        requested_delivery_date
      ) values
-       ($1, $2, $3, 'Kalb A', 60, 'KG', '2026-08-24'),
-       ($4, $5, $6, 'Kalb B', 70, 'KG', '2026-08-24')`,
+       ($1, $2, $3, 'Kalb A', 60, 'KG', current_date + 2),
+       ($4, $5, $6, 'Kalb B', 70, 'KG', current_date + 2)`,
     [
       ids.itemA,
       ids.organizationA,

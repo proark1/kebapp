@@ -6,13 +6,19 @@ import { demoStoreProfile } from "@/test/fixtures/store-profile";
 
 const initialData: StorefrontEditorData = {
   customDomain: null,
+  domainRequestStatus: "NONE",
   isPublished: true,
   profile: demoStoreProfile,
   publicPath: "/laden/ocakbasi-rheydt-pilot",
   publicSlug: "ocakbasi-rheydt-pilot",
+  requestedDomain: null,
 };
 
 function createSaveAction() {
+  return vi.fn<(formData: FormData) => Promise<void>>(async () => undefined);
+}
+
+function createDomainAction() {
   return vi.fn<(formData: FormData) => Promise<void>>(async () => undefined);
 }
 
@@ -23,17 +29,17 @@ describe("WebsiteEditor", () => {
 
   it("renders injected database data without local storage", () => {
     render(
-      <WebsiteEditor initialData={initialData} saveAction={createSaveAction()} />,
+      <WebsiteEditor domainAction={createDomainAction()} initialData={initialData} saveAction={createSaveAction()} />,
     );
 
     expect(screen.getByDisplayValue("Ocakbaşı Rheydt")).toBeInTheDocument();
-    expect(screen.getByText("/laden/ocakbasi-rheydt-pilot")).toBeInTheDocument();
+    expect(screen.getAllByText("/laden/ocakbasi-rheydt-pilot")).toHaveLength(2);
     expect(window.localStorage).toHaveLength(0);
   });
 
   it("updates the live preview before saving", () => {
     render(
-      <WebsiteEditor initialData={initialData} saveAction={createSaveAction()} />,
+      <WebsiteEditor domainAction={createDomainAction()} initialData={initialData} saveAction={createSaveAction()} />,
     );
 
     fireEvent.change(screen.getByLabelText("Ladenname"), {
@@ -46,7 +52,7 @@ describe("WebsiteEditor", () => {
 
   it("submits the edited profile and publication status through the action", async () => {
     const saveAction = createSaveAction();
-    render(<WebsiteEditor initialData={initialData} saveAction={saveAction} />);
+    render(<WebsiteEditor domainAction={createDomainAction()} initialData={initialData} saveAction={saveAction} />);
 
     fireEvent.change(screen.getByLabelText("Ladenname"), {
       target: { value: "Kebap Haus am Markt" },
@@ -69,9 +75,11 @@ describe("WebsiteEditor", () => {
 
   it("can save an unpublished draft without exposing an external link", async () => {
     const saveAction = createSaveAction();
-    render(<WebsiteEditor initialData={initialData} saveAction={saveAction} />);
+    render(<WebsiteEditor domainAction={createDomainAction()} initialData={initialData} saveAction={saveAction} />);
 
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Website öffentlich anzeigen" }),
+    );
     expect(
       screen.queryByRole("link", { name: "Öffentliche Website öffnen" }),
     ).not.toBeInTheDocument();
@@ -83,5 +91,76 @@ describe("WebsiteEditor", () => {
 
     await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
     expect(saveAction.mock.calls[0]?.[0].get("isPublished")).toBeNull();
+  });
+
+  it("adds complete menu and opening-hour rows and persists selected features", async () => {
+    const saveAction = createSaveAction();
+    render(
+      <WebsiteEditor
+        domainAction={createDomainAction()}
+        initialData={initialData}
+        saveAction={saveAction}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Gericht" }));
+    fireEvent.click(screen.getByRole("button", { name: "Zeile" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Halal" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Änderungen speichern" }));
+    });
+
+    await waitFor(() => expect(saveAction).toHaveBeenCalledOnce());
+    const submitted = JSON.parse(
+      String(saveAction.mock.calls[0]?.[0].get("profile")),
+    );
+    expect(submitted.menu).toHaveLength(5);
+    expect(submitted.menu[4]).toMatchObject({
+      category: "Döner",
+      description: "",
+      name: "Neues Gericht",
+    });
+    expect(submitted.openingHours).toHaveLength(4);
+    expect(submitted.features).not.toContain("HALAL");
+  });
+
+  it("submits a syntactically valid domain only to the review action", async () => {
+    const domainAction = createDomainAction();
+    render(
+      <WebsiteEditor
+        domainAction={domainAction}
+        initialData={initialData}
+        saveAction={createSaveAction()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Gewünschte Domain/), {
+      target: { value: "mein-doenerladen.de" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Zur Prüfung vormerken" }));
+    });
+
+    await waitFor(() => expect(domainAction).toHaveBeenCalledOnce());
+    expect(domainAction.mock.calls[0]?.[0].get("requestedDomain")).toBe(
+      "mein-doenerladen.de",
+    );
+  });
+
+  it("rejects SVG logos in the browser before profile submission", () => {
+    render(
+      <WebsiteEditor
+        domainAction={createDomainAction()}
+        initialData={initialData}
+        saveAction={createSaveAction()}
+      />,
+    );
+    const file = new File(["<svg />"], "logo.svg", { type: "image/svg+xml" });
+
+    fireEvent.change(screen.getByLabelText("Logo auswählen"), {
+      target: { files: [file] },
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("SVG-Dateien sind nicht erlaubt");
   });
 });

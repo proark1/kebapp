@@ -8,9 +8,10 @@ import { initialAuthFormState } from "@/lib/auth-form-state";
 type LoginFormProps = {
   action: AuthFormAction;
   continueTo?: string;
+  demoMode?: boolean;
 };
 
-export function LoginForm({ action, continueTo }: LoginFormProps) {
+export function LoginForm({ action, continueTo, demoMode = false }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(
     action,
     initialAuthFormState,
@@ -48,7 +49,9 @@ export function LoginForm({ action, continueTo }: LoginFormProps) {
       <div className="auth-field">
         <span className="auth-field__label-row">
           <label htmlFor="login-password">Passwort</label>
-          <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+          {demoMode ? null : (
+            <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+          )}
         </span>
         <input
           aria-describedby={

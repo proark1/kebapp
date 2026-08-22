@@ -1,15 +1,11 @@
 "use client";
 
 import {
-  Boxes,
   ChevronsUpDown,
-  ClipboardCheck,
   Globe2,
   LayoutDashboard,
   Menu,
   PackageOpen,
-  ReceiptText,
-  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { AccountMenu } from "@/components/account-menu";
 import { BrandMark } from "@/components/brand-mark";
+import { DemoEnvironmentBar } from "@/components/demo-environment-bar";
 import type { ActiveOrganizationDTO } from "@/server/organizations/organization-dto";
 
 const primaryNavigation = [
@@ -25,25 +22,9 @@ const primaryNavigation = [
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
 ];
 
-const laterNavigation: Array<{
-  href?: string;
-  icon: typeof Boxes;
-  label: string;
-  ownerOnly?: boolean;
-}> = [
-  { label: "Waren", icon: Boxes },
-  { label: "Belege", icon: ReceiptText },
-  {
-    href: "/app/einstellungen/team",
-    label: "Team",
-    icon: Users,
-    ownerOnly: true,
-  },
-  { label: "Hygiene", icon: ClipboardCheck },
-];
-
 type AppShellProps = {
   children: React.ReactNode;
+  demoMode: boolean;
   organization: ActiveOrganizationDTO;
   signOutAction: (formData: FormData) => Promise<void>;
   user: { initials: string; name: string };
@@ -51,6 +32,7 @@ type AppShellProps = {
 
 export function AppShell({
   children,
+  demoMode,
   organization,
   signOutAction,
   user,
@@ -60,19 +42,18 @@ export function AppShell({
   const visiblePrimaryNavigation = primaryNavigation.filter(
     (item) => !item.ownerOnly || organization.role === "OWNER",
   );
-  const visibleLaterNavigation = laterNavigation.filter(
-    (item) => !item.ownerOnly || organization.role === "OWNER",
-  );
 
   if (pathname === "/app/organisation-waehlen") {
     return <>{children}</>;
   }
 
   return (
-    <div className="app-frame">
+    <div className={`app-frame ${demoMode ? "app-frame--demo" : ""}`}>
       <a className="skip-link" href="#main-content">
         Zum Inhalt springen
       </a>
+
+      {demoMode ? <DemoEnvironmentBar /> : null}
 
       <header className="mobile-header">
         <BrandMark />
@@ -130,6 +111,7 @@ export function AppShell({
                 href={item.href}
                 key={item.href}
                 onClick={() => setMenuOpen(false)}
+                aria-current={active ? "page" : undefined}
               >
                 <Icon size={19} strokeWidth={1.9} aria-hidden="true" />
                 {item.label}
@@ -137,40 +119,10 @@ export function AppShell({
             );
           })}
 
-          <span className="app-nav__label app-nav__label--spaced">Betrieb</span>
-          {visibleLaterNavigation.map((item) => {
-            const Icon = item.icon;
-            if (item.href) {
-              const active = pathname.startsWith(item.href);
-              return (
-                <Link
-                  className={
-                    active
-                      ? "app-nav__link app-nav__link--active"
-                      : "app-nav__link"
-                  }
-                  href={item.href}
-                  key={item.label}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Icon size={19} strokeWidth={1.9} aria-hidden="true" />
-                  {item.label}
-                </Link>
-              );
-            }
-            return (
-              <button className="app-nav__link app-nav__link--disabled" type="button" key={item.label}>
-                <Icon size={19} strokeWidth={1.9} aria-hidden="true" />
-                {item.label}
-                <span className="soon-pill">bald</span>
-              </button>
-            );
-          })}
         </nav>
 
         <div className="app-sidebar__footer">
           <AccountMenu
-            role={organization.role}
             roleLabel={organization.roleLabel}
             signOutAction={signOutAction}
             user={user}
@@ -207,6 +159,7 @@ export function AppShell({
               className={active ? "mobile-tabbar__link mobile-tabbar__link--active" : "mobile-tabbar__link"}
               href={item.href}
               key={item.href}
+              aria-current={active ? "page" : undefined}
             >
               <Icon size={20} aria-hidden="true" />
               <span>{item.label}</span>

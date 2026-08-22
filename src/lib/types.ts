@@ -50,8 +50,19 @@ export type OpeningHour = {
   hours: string;
 };
 
+export const STORE_FEATURES = [
+  "HALAL",
+  "FRESH_VEGETABLES",
+  "HOMEMADE_SAUCES",
+  "PREPARED_ON_SITE",
+] as const;
+
+export type StoreFeature = (typeof STORE_FEATURES)[number];
+
+export type StoreDomainRequestStatus = "NONE" | "REVIEW_REQUESTED";
+
 export type StoreProfile = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   name: string;
   shortName: string;
   eyebrow: string;
@@ -62,12 +73,16 @@ export type StoreProfile = {
   postalCode: string;
   city: string;
   accent: string;
+  features: StoreFeature[];
+  logoUrl: string;
   openingHours: OpeningHour[];
   menu: MenuItem[];
 };
 
 export type StorefrontEditorData = {
   customDomain: string | null;
+  domainRequestStatus: StoreDomainRequestStatus;
+  requestedDomain: string | null;
   isPublished: boolean;
   profile: StoreProfile;
   publicPath: string;

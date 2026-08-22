@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 
 type AuthCardProps = {
   children: ReactNode;
@@ -15,6 +16,8 @@ export function AuthCard({
   footer,
   title,
 }: AuthCardProps) {
+  const demoMode = isPublicDemo();
+
   return (
     <main className="auth-main" id="auth-main">
       <section className="auth-card" aria-labelledby="auth-title">
@@ -29,7 +32,9 @@ export function AuthCard({
         {footer ? <footer className="auth-card__footer">{footer}</footer> : null}
       </section>
       <p className="auth-local-note">
-        Lokaler Pilot · E-Mails landen ausschließlich in Mailpit
+        {demoMode
+          ? "Öffentliche Demo · E-Mail-Versand deaktiviert"
+          : "Lokale Entwicklungsumgebung · E-Mails nur über den konfigurierten Testversand"}
       </p>
     </main>
   );

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { TenantAccessDeniedError } from "@/server/db/tenant-context";
 import {
+  requestStorefrontDomain,
   updateStorefrontProfile,
   StorefrontPermissionDeniedError,
 } from "@/server/storefront/mutations";
@@ -160,6 +161,67 @@ describe.sequential("tenant storefronts", () => {
       [ids.organizationA],
     );
     expect(persisted.rows[0]?.name).toBe("Kebap Haus am Markt");
+  });
+
+  it("stores selected features, a validated logo, and a domain review request", async () => {
+    const editor = await getStorefrontEditor({
+      actor: actors.ownerA,
+      database: harness.runtimeDatabase,
+      organizationId: ids.organizationA,
+    });
+    const logoUrl = "data:image/png;base64,iVBORw0KGgo=";
+
+    await updateStorefrontProfile({
+      actor: actors.ownerA,
+      database: harness.runtimeDatabase,
+      isPublished: true,
+      organizationId: ids.organizationA,
+      profile: {
+        ...editor.profile,
+        features: ["HALAL", "HOMEMADE_SAUCES"],
+        logoUrl,
+      },
+    });
+    await requestStorefrontDomain({
+      actor: actors.ownerA,
+      database: harness.runtimeDatabase,
+      organizationId: ids.organizationA,
+      requestedDomain: "Laden-A.DE",
+    });
+
+    await expect(
+      getStorefrontEditor({
+        actor: actors.ownerA,
+        database: harness.runtimeDatabase,
+        organizationId: ids.organizationA,
+      }),
+    ).resolves.toMatchObject({
+      domainRequestStatus: "REVIEW_REQUESTED",
+      profile: {
+        features: ["HALAL", "HOMEMADE_SAUCES"],
+        logoUrl,
+      },
+      requestedDomain: "laden-a.de",
+    });
+    await expect(
+      getPublicStorefrontBySlug({
+        database: harness.runtimeDatabase,
+        slug: "laden-a",
+      }),
+    ).resolves.toMatchObject({
+      profile: { features: ["HALAL", "HOMEMADE_SAUCES"], logoUrl },
+    });
+  });
+
+  it("rejects domain review requests from employees", async () => {
+    await expect(
+      requestStorefrontDomain({
+        actor: actors.employeeA,
+        database: harness.runtimeDatabase,
+        organizationId: ids.organizationA,
+        requestedDomain: "manipuliert.de",
+      }),
+    ).rejects.toBeInstanceOf(StorefrontPermissionDeniedError);
   });
 
   it("rejects profile changes by an employee", async () => {

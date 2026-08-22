@@ -50,6 +50,13 @@
       "when": 1787354305706,
       "tag": "0006_clean_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787404761371,
+      "tag": "0007_lucky_avengers",
+      "breakpoints": true
     }
   ]
 }

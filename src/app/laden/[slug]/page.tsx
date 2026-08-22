@@ -38,5 +38,5 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
     notFound();
   }
 
-  return <Storefront profile={storefront.profile} />;
+  return <Storefront profile={storefront.profile} publicSlug={storefront.publicSlug} />;
 }

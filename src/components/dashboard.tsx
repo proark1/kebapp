@@ -57,7 +57,7 @@ export function Dashboard({
           <h1>Guten Morgen, {firstName}.</h1>
           <p>
             {canManageWebsite
-              ? "Drei Dinge brauchen heute deine Entscheidung."
+              ? "Zwei Dinge kannst du heute direkt erledigen."
               : "Dein Ladenbereich ist bereit für den nächsten Bedarf."}
           </p>
         </div>
@@ -98,9 +98,6 @@ export function Dashboard({
               Vorschlag prüfen
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
-            <button className="button button--quiet" type="button">
-              Später
-            </button>
           </div>
           <span className="confidence-note">Beispielprognose · noch ohne Kassendaten</span>
         </article>
@@ -111,7 +108,7 @@ export function Dashboard({
           <div className="metric-card__icon metric-card__icon--green">
             <TrendingDown size={20} aria-hidden="true" />
           </div>
-          <span className="metric-card__label">Diese Sammelrunde</span>
+          <span className="metric-card__label">Diese Sammelrunde · Beispieldaten</span>
           <strong>
             {roundSnapshot ? formatCurrency(roundSnapshot.estimatedSavings) : "—"}
           </strong>
@@ -143,7 +140,7 @@ export function Dashboard({
               <h2>Deine Aufgaben</h2>
             </div>
             <span className="count-badge">
-              {canManageWebsite ? "3 offen" : "2 offen"}
+              {canManageWebsite ? "2 offen" : "1 offen"}
             </span>
           </div>
           <ul className="task-list">
@@ -183,18 +180,6 @@ export function Dashboard({
                 </Link>
               </li>
             ) : null}
-            <li>
-              <span className="task-list__status">
-                <ReceiptText size={18} aria-hidden="true" />
-              </span>
-              <div>
-                <strong>Rechnung kontrollieren</strong>
-                <span>12,80 € über der Bestellung</span>
-              </div>
-              <button type="button" aria-label="Rechnung öffnen">
-                <ArrowRight size={18} aria-hidden="true" />
-              </button>
-            </li>
           </ul>
         </article>
 

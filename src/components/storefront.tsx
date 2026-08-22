@@ -1,11 +1,19 @@
 import { ArrowDown, Clock3, MapPin, Navigation, Phone } from "lucide-react";
+import Image from "next/image";
 import type { CSSProperties } from "react";
-import { BrandMark } from "@/components/brand-mark";
-import type { StoreProfile } from "@/lib/types";
+import type { StoreFeature, StoreProfile } from "@/lib/types";
 
 type StorefrontProps = {
   profile: StoreProfile;
   preview?: boolean;
+  publicSlug?: string;
+};
+
+const featureLabels: Record<StoreFeature, string> = {
+  HALAL: "Halal",
+  FRESH_VEGETABLES: "Frisches Gemüse",
+  HOMEMADE_SAUCES: "Hausgemachte Saucen",
+  PREPARED_ON_SITE: "Vor Ort zubereitet",
 };
 
 function menuPrice(price: number): string {
@@ -15,7 +23,26 @@ function menuPrice(price: number): string {
   }).format(price);
 }
 
-export function Storefront({ profile, preview = false }: StorefrontProps) {
+function StoreLogo({ profile }: { profile: StoreProfile }) {
+  return profile.logoUrl ? (
+    <Image
+      alt={`Logo von ${profile.name}`}
+      className="storefront-logo__image"
+      height={48}
+      src={profile.logoUrl}
+      unoptimized
+      width={48}
+    />
+  ) : (
+    <span>{profile.shortName}</span>
+  );
+}
+
+export function Storefront({
+  profile,
+  preview = false,
+  publicSlug,
+}: StorefrontProps) {
   const style = { "--store-accent": profile.accent } as CSSProperties;
   const address = `${profile.street}, ${profile.postalCode} ${profile.city}`;
   const mapQuery = encodeURIComponent(address);
@@ -29,7 +56,7 @@ export function Storefront({ profile, preview = false }: StorefrontProps) {
 
       <header className="storefront-header">
         <a className="storefront-logo" href="#start" aria-label={`${profile.name} Startseite`}>
-          <span>{profile.shortName}</span>
+          <StoreLogo profile={profile} />
           <strong>{profile.name}</strong>
         </a>
         <nav aria-label="Seitennavigation">
@@ -71,7 +98,7 @@ export function Storefront({ profile, preview = false }: StorefrontProps) {
           </div>
 
           <div className="storefront-hero__visual" aria-hidden="true">
-            <span className="storefront-hero__stamp">FRISCH<br />VOM SPIESS</span>
+            <span className="storefront-hero__stamp">DEIN LADEN<br />IN {profile.city.toUpperCase()}</span>
             <div className="hero-skewer">
               <i className="hero-skewer__rod" />
               <span className="hero-skewer__slice hero-skewer__slice--1" />
@@ -82,22 +109,26 @@ export function Storefront({ profile, preview = false }: StorefrontProps) {
               <span className="hero-skewer__slice hero-skewer__slice--6" />
               <i className="hero-skewer__tray" />
             </div>
-            <span className="hero-skewer__caption">Täglich frisch vorbereitet</span>
+            <span className="hero-skewer__caption">Speisekarte &amp; Öffnungszeiten</span>
           </div>
         </section>
 
-        <div className="storefront-marquee" aria-hidden="true">
-          <span>HALAL</span><i />
-          <span>FRISCHES GEMÜSE</span><i />
-          <span>HAUSGEMACHTE SAUCEN</span><i />
-          <span>BEI UNS VOR ORT</span>
-        </div>
+        {profile.features.length > 0 ? (
+          <div className="storefront-marquee" aria-label="Merkmale des Ladens">
+            {profile.features.map((feature, index) => (
+              <span key={feature}>
+                {featureLabels[feature]}
+                {index < profile.features.length - 1 ? <i aria-hidden="true" /> : null}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         <section className="storefront-menu" id="speisekarte">
           <div className="storefront-section-heading">
             <span>Was wir machen</span>
             <h2>Unsere Speisekarte</h2>
-            <p>Klare Auswahl, frisch zubereitet. Allergene und Zusatzstoffe erfährst du bei unserem Team.</p>
+            <p>Unsere Auswahl auf einen Blick. Allergene und Zusatzstoffe erfährst du bei unserem Team.</p>
           </div>
           <div className="storefront-menu__grid">
             {profile.menu.map((item, index) => (
@@ -166,22 +197,22 @@ export function Storefront({ profile, preview = false }: StorefrontProps) {
       <footer className="storefront-footer">
         <div>
           <span className="storefront-logo storefront-logo--footer">
-            <span>{profile.shortName}</span>
+            <StoreLogo profile={profile} />
             <strong>{profile.name}</strong>
           </span>
           <p>Informationswebsite mit Kebapp · keine Onlinebestellung.</p>
         </div>
-        <div className="storefront-footer__legal">
-          <details id="impressum">
-            <summary>Impressum</summary>
-            <p>Pilotangaben – vor dem Produktivbetrieb rechtlich prüfen und vervollständigen.</p>
-          </details>
-          <details id="datenschutz">
-            <summary>Datenschutz</summary>
-            <p>Keine Tracking-Cookies, kein eingebetteter Kartendienst und keine Onlinebestellung in dieser Demo.</p>
-          </details>
-        </div>
-        <BrandMark inverse />
+        <nav className="storefront-footer__legal" aria-label="Rechtliche Informationen">
+          {preview || !publicSlug ? (
+            <><span>Impressum</span><span>Datenschutz</span></>
+          ) : (
+            <>
+              <a href={`/laden/${publicSlug}/impressum`}>Impressum</a>
+              <a href={`/laden/${publicSlug}/datenschutz`}>Datenschutz</a>
+            </>
+          )}
+        </nav>
+        <span className="storefront-footer__powered">Erstellt mit Kebapp</span>
       </footer>
     </div>
   );

@@ -4,11 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import {
+  requestStorefrontDomain,
+  StorefrontDomainRequestError,
   StorefrontPermissionDeniedError,
   StorefrontPublicationError,
   updateStorefrontProfile,
 } from "@/server/storefront/mutations";
-import { storefrontUpdateSchema } from "@/server/storefront/validation";
+import {
+  requestedDomainSchema,
+  storefrontUpdateSchema,
+} from "@/server/storefront/validation";
 
 function formString(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -60,4 +65,37 @@ export async function saveStorefrontAction(formData: FormData): Promise<void> {
   revalidatePath("/app");
   revalidatePath(`/laden/${saved.publicSlug}`);
   redirectWithMessage(saved.isPublished ? "veroeffentlicht" : "gespeichert");
+}
+
+export async function requestStorefrontDomainAction(
+  formData: FormData,
+): Promise<void> {
+  const { actor, organization } = await requireActiveOrganizationPage(
+    "/app/website",
+  );
+  const requestedDomain = requestedDomainSchema.safeParse(
+    formString(formData, "requestedDomain"),
+  );
+  if (!requestedDomain.success) {
+    return redirectWithMessage("domain-ungueltig");
+  }
+
+  try {
+    await requestStorefrontDomain({
+      actor,
+      organizationId: organization.organizationId,
+      requestedDomain: requestedDomain.data,
+    });
+  } catch (error) {
+    if (error instanceof StorefrontPermissionDeniedError) {
+      redirect("/app");
+    }
+    if (error instanceof StorefrontDomainRequestError) {
+      return redirectWithMessage("domain-fehler");
+    }
+    throw error;
+  }
+
+  revalidatePath("/app/website");
+  redirectWithMessage("domain-vorgemerkt");
 }

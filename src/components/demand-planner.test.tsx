@@ -103,10 +103,22 @@ describe("DemandPlanner", () => {
     const { unmount } = render(
       <DemandPlanner {...ownerActions} planning={planning} role="OWNER" />,
     );
-    const confirm = screen.getByRole("button", { name: "Bedarf bestätigen" });
+    const confirm = screen.getByRole("button", { name: "Bestätigung prüfen" });
 
     await act(async () => {
       fireEvent.click(confirm);
+    });
+    expect(ownerActions.confirmAction).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", {
+      name: "Bedarf verbindlich bestätigen?",
+    });
+    expect(within(dialog).getByText("86 kg")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(
+        within(dialog).getByRole("button", {
+          name: "Jetzt für die Demo-Gruppenmenge bestätigen",
+        }),
+      );
     });
     await waitFor(() =>
       expect(ownerActions.confirmAction).toHaveBeenCalledOnce(),
@@ -121,8 +133,20 @@ describe("DemandPlanner", () => {
       />,
     );
     expect(
-      screen.queryByRole("button", { name: "Bedarf bestätigen" }),
+      screen.queryByRole("button", { name: "Bestätigung prüfen" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("closes the confirmation review with Escape and restores focus", () => {
+    render(<DemandPlanner {...createActions()} planning={planning} role="OWNER" />);
+    const trigger = screen.getByRole("button", { name: "Bestätigung prüfen" });
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
   it("renders a confirmed submission as read-only", () => {

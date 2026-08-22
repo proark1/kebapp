@@ -3,6 +3,7 @@ import Link from "next/link";
 import { signInAction } from "../actions";
 import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: "Anmelden",
@@ -22,6 +23,7 @@ function firstValue(value?: string | string[]): string | undefined {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const resetWasSuccessful = firstValue(params.reset) === "erfolgreich";
+  const demoMode = isPublicDemo();
 
   return (
     <AuthCard
@@ -29,7 +31,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       eyebrow="Betriebszugang"
       footer={
         <p>
-          Noch kein Kebapp-Zugang? <Link href="/registrieren">Jetzt registrieren</Link>
+          {demoMode ? "Direkt testen? " : "Noch kein Kebapp-Zugang? "}
+          <Link href={demoMode ? "/#demo-roles" : "/registrieren"}>
+            {demoMode ? "Demo-Rolle auswählen" : "Jetzt registrieren"}
+          </Link>
         </p>
       }
       title="Willkommen zurück."
@@ -39,7 +44,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Dein Passwort wurde geändert. Du kannst dich jetzt anmelden.
         </p>
       ) : null}
-      <LoginForm action={signInAction} continueTo={firstValue(params.weiter)} />
+      <LoginForm
+        action={signInAction}
+        continueTo={firstValue(params.weiter)}
+        demoMode={demoMode}
+      />
     </AuthCard>
   );
 }

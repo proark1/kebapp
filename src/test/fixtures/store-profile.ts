@@ -6,6 +6,13 @@ export const demoStoreProfile: StoreProfile = {
   description:
     "Drehspieß, frisches Gemüse und unsere Saucen aus eigener Küche – mitten in Rheydt.",
   eyebrow: "Seit 1998 in Rheydt",
+  features: [
+    "HALAL",
+    "FRESH_VEGETABLES",
+    "HOMEMADE_SAUCES",
+    "PREPARED_ON_SITE",
+  ],
+  logoUrl: "",
   menu: [
     {
       category: "Döner",
@@ -44,7 +51,7 @@ export const demoStoreProfile: StoreProfile = {
   ],
   phone: "+49 2166 123456",
   postalCode: "41236",
-  schemaVersion: 1,
+  schemaVersion: 2,
   shortName: "OR",
   street: "Demo-Straße 24",
   tagline: "Schicht für Schicht. Jeden Tag frisch.",

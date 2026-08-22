@@ -8,6 +8,7 @@ import { organizations, storeProfiles } from "@/server/db/schema";
 import { withTenantContext } from "@/server/db/tenant-context";
 import {
   isStorefrontProfilePublishable,
+  requestedDomainSchema,
   storefrontOrganizationIdSchema,
   storefrontUpdateSchema,
 } from "@/server/storefront/validation";
@@ -29,6 +30,13 @@ export class StorefrontPublicationError extends Error {
       "Vor der Veröffentlichung müssen Kontakt, Adresse, Öffnungszeiten und Speisekarte vollständig sein.",
     );
     this.name = "StorefrontPublicationError";
+  }
+}
+
+export class StorefrontDomainRequestError extends Error {
+  constructor() {
+    super("Die gewünschte Domain konnte nicht zur Prüfung vorgemerkt werden.");
+    this.name = "StorefrontDomainRequestError";
   }
 }
 
@@ -102,7 +110,9 @@ export async function updateStorefrontProfile(input: {
         city: values.profile.city,
         description: values.profile.description,
         eyebrow: values.profile.eyebrow,
+        features: values.profile.features,
         isPublished: values.isPublished,
+        logoUrl: values.profile.logoUrl || null,
         menu: values.profile.menu.map((item) => ({
           ...item,
           price: item.price.toFixed(2),
@@ -161,6 +171,70 @@ export async function updateStorefrontProfile(input: {
         isPublished: values.isPublished,
         publicSlug: saved!.publicSlug,
       };
+    },
+  );
+}
+
+export async function requestStorefrontDomain(input: {
+  actor: { userId: string };
+  database?: KebappDatabase;
+  organizationId: string;
+  requestedDomain: string;
+  supportReason?: string;
+}): Promise<{ requestedDomain: string }> {
+  const organizationId = storefrontOrganizationIdSchema.parse(
+    input.organizationId,
+  );
+  const requestedDomain = requestedDomainSchema.parse(input.requestedDomain);
+
+  return withTenantContext(
+    { actor: input.actor, database: input.database, organizationId },
+    async (transaction) => {
+      let authorization: Awaited<
+        ReturnType<typeof authorizeOperationalMutation>
+      >;
+      try {
+        authorization = await authorizeOperationalMutation(transaction, {
+          actorUserId: input.actor.userId,
+          allowedMembershipRoles: ["OWNER"],
+          organizationId,
+          supportReason: input.supportReason,
+        });
+      } catch (error) {
+        if (error instanceof SupportOperationDeniedError) {
+          throw new StorefrontPermissionDeniedError();
+        }
+        throw error;
+      }
+
+      const [saved] = await transaction
+        .update(storeProfiles)
+        .set({
+          domainRequestedAt: new Date(),
+          domainRequestStatus: "REVIEW_REQUESTED",
+          requestedDomain,
+          updatedAt: new Date(),
+        })
+        .where(eq(storeProfiles.organizationId, organizationId))
+        .returning({ id: storeProfiles.id });
+      if (!saved) {
+        throw new StorefrontDomainRequestError();
+      }
+
+      await writeAuditEvent(transaction, {
+        action:
+          authorization.kind === "SUPPORT"
+            ? "SUPPORT_STOREFRONT_DOMAIN_REVIEW_REQUESTED"
+            : "STOREFRONT_DOMAIN_REVIEW_REQUESTED",
+        actorUserId: input.actor.userId,
+        metadata: { requestedDomain },
+        objectId: saved.id,
+        objectType: "store_profile",
+        organizationId,
+        reason: authorization.reason,
+      });
+
+      return { requestedDomain };
     },
   );
 }

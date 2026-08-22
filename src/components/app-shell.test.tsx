@@ -25,6 +25,7 @@ describe("AppShell role navigation", () => {
   it("shows owner management areas and organization switching", () => {
     render(
       <AppShell
+        demoMode={false}
         organization={baseOrganization}
         signOutAction={vi.fn()}
         user={{ initials: "MB", name: "Meral Betreiberin" }}
@@ -37,18 +38,17 @@ describe("AppShell role navigation", () => {
       "href",
       "/app/organisation-waehlen",
     );
-    expect(screen.getByText("Team & Rollen")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Team" })).toHaveAttribute(
-      "href",
-      "/app/einstellungen/team",
-    );
-    expect(screen.getByText("Domain & Sicherheit")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Website" })).not.toHaveLength(0);
+    expect(screen.getAllByRole("link", { name: "Übersicht" })[0]).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   it("hides owner, domain, security, and website controls from employees", () => {
     render(
       <AppShell
+        demoMode={false}
         organization={{
           ...baseOrganization,
           organizationCount: 1,
@@ -62,9 +62,6 @@ describe("AppShell role navigation", () => {
       </AppShell>,
     );
 
-    expect(screen.queryByText("Team & Rollen")).not.toBeInTheDocument();
-    expect(screen.queryByText("Domain & Sicherheit")).not.toBeInTheDocument();
-    expect(screen.queryByText("Team")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Website" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Einkauf" })).not.toHaveLength(0);
   });

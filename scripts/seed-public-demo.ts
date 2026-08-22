@@ -323,6 +323,12 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             description:
               "Drehspieß, frisches Gemüse und Saucen aus eigener Küche – mitten in Rheydt.",
             eyebrow: "Seit 1998 in Rheydt",
+            features: [
+              "HALAL",
+              "FRESH_VEGETABLES",
+              "HOMEMADE_SAUCES",
+              "PREPARED_ON_SITE",
+            ],
             id: publicDemoIds.storeA,
             isPublished: true,
             menu: [
@@ -359,6 +365,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             postalCode: "41236",
             publicSlug: "ocakbasi-rheydt",
             publishedAt: now,
+            schemaVersion: 2,
             shortName: "OR",
             street: "Demo-Straße 24",
             tagline: "Schicht für Schicht. Jeden Tag frisch.",
@@ -369,6 +376,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             description:
               "Ein zweiter Demo-Betrieb für die Prüfung der Mandantentrennung.",
             eyebrow: "Demo-Betrieb in Viersen",
+            features: [],
             id: publicDemoIds.storeB,
             isPublished: false,
             menu: [
@@ -389,6 +397,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             postalCode: "41747",
             publicSlug: "mangal-am-markt",
             publishedAt: null,
+            schemaVersion: 2,
             shortName: "MM",
             street: "Marktstraße 10",
             tagline: "Vom Grill direkt auf den Teller.",
@@ -401,6 +410,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             city: sql`excluded.city`,
             description: sql`excluded.description`,
             eyebrow: sql`excluded.eyebrow`,
+            features: sql`excluded.features`,
             isPublished: sql`excluded.is_published`,
             menu: sql`excluded.menu`,
             name: sql`excluded.name`,
@@ -409,6 +419,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             postalCode: sql`excluded.postal_code`,
             publicSlug: sql`excluded.public_slug`,
             publishedAt: sql`excluded.published_at`,
+            schemaVersion: sql`excluded.schema_version`,
             shortName: sql`excluded.short_name`,
             street: sql`excluded.street`,
             tagline: sql`excluded.tagline`,
