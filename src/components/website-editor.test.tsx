@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebsiteEditor } from "@/components/website-editor";
-import { demoStoreProfile } from "@/lib/demo-data";
 import type { StorefrontEditorData } from "@/lib/types";
+import { demoStoreProfile } from "@/test/fixtures/store-profile";
 
 const initialData: StorefrontEditorData = {
   customDomain: null,

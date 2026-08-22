@@ -18,26 +18,23 @@ export async function getPostLoginDestination(userId: string): Promise<string> {
         set_config('kebapp.organization_id', '', true)
     `);
 
-    const [roleRows, membershipRows, requestRows, profileRows] =
-      await Promise.all([
-        transaction
-          .select({ role: platformRoles.role })
-          .from(platformRoles)
-          .where(eq(platformRoles.userId, userId)),
-        transaction
-          .select({ status: memberships.status })
-          .from(memberships)
-          .where(eq(memberships.userId, userId)),
-        transaction
-          .select({ id: registrationRequests.id })
-          .from(registrationRequests)
-          .where(eq(registrationRequests.userId, userId)),
-        transaction
-          .select({ status: userProfiles.status })
-          .from(userProfiles)
-          .where(eq(userProfiles.userId, userId))
-          .limit(1),
-      ]);
+    const roleRows = await transaction
+      .select({ role: platformRoles.role })
+      .from(platformRoles)
+      .where(eq(platformRoles.userId, userId));
+    const membershipRows = await transaction
+      .select({ status: memberships.status })
+      .from(memberships)
+      .where(eq(memberships.userId, userId));
+    const requestRows = await transaction
+      .select({ id: registrationRequests.id })
+      .from(registrationRequests)
+      .where(eq(registrationRequests.userId, userId));
+    const profileRows = await transaction
+      .select({ status: userProfiles.status })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId))
+      .limit(1);
 
     return choosePostLoginDestination({
       accountStatus: profileRows[0]?.status ?? "ACTIVE",

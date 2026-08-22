@@ -21,7 +21,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:e2e": "playwright test"
+    "e2e:build": "tsx scripts/e2e-next.ts build",
+    "e2e:serve": "tsx scripts/e2e-next.ts start -p 3100",
+    "test:e2e": "pnpm e2e:build && playwright test"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.1",
