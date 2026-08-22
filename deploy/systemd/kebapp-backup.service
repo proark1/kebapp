@@ -10,6 +10,7 @@ User=deploy
 Group=deploy
 WorkingDirectory=/opt/kebapp/current
 Environment=KEBAPP_ROOT=/opt/kebapp
+Environment=DOCKER_CONFIG=/tmp/docker-config
 ExecStart=/opt/kebapp/current/deploy/scripts/backup-postgres.sh
 Nice=10
 IOSchedulingClass=best-effort
