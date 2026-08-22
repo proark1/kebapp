@@ -6,6 +6,7 @@ import { z } from "zod";
 import { parseProductionEnv } from "./production-env";
 
 const optionsSchema = z.object({
+  accessOutput: z.string().min(1).optional(),
   host: z
     .string()
     .min(1)
@@ -108,6 +109,45 @@ export function createProductionEnvContent(
   ].join("\n");
 }
 
+export function createDemoAccessContent(
+  host: string,
+  secrets: Pick<
+    GeneratedSecrets,
+    | "adminPassword"
+    | "employeePassword"
+    | "ownerPassword"
+    | "secondOwnerPassword"
+    | "supportPassword"
+  >,
+): string {
+  const parsedHost = optionsSchema.shape.host.parse(host);
+  return [
+    "Kebapp · öffentliche Demo",
+    `URL: https://${parsedHost}`,
+    "",
+    "Admin",
+    "E-Mail: admin@demo.kebapp.local",
+    `Passwort: ${secrets.adminPassword}`,
+    "",
+    "Support",
+    "E-Mail: support@demo.kebapp.local",
+    `Passwort: ${secrets.supportPassword}`,
+    "",
+    "Inhaber:in Ocakbasi Rheydt",
+    "E-Mail: inhaber@demo.kebapp.local",
+    `Passwort: ${secrets.ownerPassword}`,
+    "",
+    "Mitarbeiter:in Ocakbasi Rheydt",
+    "E-Mail: mitarbeiter@demo.kebapp.local",
+    `Passwort: ${secrets.employeePassword}`,
+    "",
+    "Inhaber:in Mangal am Markt",
+    "E-Mail: inhaber-b@demo.kebapp.local",
+    `Passwort: ${secrets.secondOwnerPassword}`,
+    "",
+  ].join("\n");
+}
+
 function readArgument(name: string): string | undefined {
   const index = process.argv.indexOf(name);
   return index === -1 ? undefined : process.argv[index + 1];
@@ -115,12 +155,14 @@ function readArgument(name: string): string | undefined {
 
 async function main(): Promise<void> {
   const options = optionsSchema.parse({
+    accessOutput: readArgument("--access-output"),
     host: readArgument("--host"),
     output: readArgument("--output") ?? ".env.kebapp-production",
     project: readArgument("--project") ?? "kebapp-demo",
   });
   const outputPath = path.resolve(process.cwd(), options.output);
-  const content = createProductionEnvContent(options, createSecrets());
+  const secrets = createSecrets();
+  const content = createProductionEnvContent(options, secrets);
 
   await writeFile(outputPath, content, {
     encoding: "utf8",
@@ -128,6 +170,18 @@ async function main(): Promise<void> {
     mode: 0o600,
   });
   await chmod(outputPath, 0o600);
+  if (options.accessOutput) {
+    const accessOutputPath = path.resolve(process.cwd(), options.accessOutput);
+    await writeFile(
+      accessOutputPath,
+      createDemoAccessContent(options.host, secrets),
+      { encoding: "utf8", flag: "wx", mode: 0o600 },
+    );
+    await chmod(accessOutputPath, 0o600);
+    console.info(
+      `Getrennte Demo-Zugangsdaten wurden exklusiv angelegt: ${accessOutputPath}`,
+    );
+  }
   console.info(`Produktionsumgebung wurde exklusiv angelegt: ${outputPath}`);
 }
 

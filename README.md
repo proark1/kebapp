@@ -162,7 +162,9 @@ Compose-Netzwerk. `.env.production.example` dokumentiert die erforderlichen
 Werte, darf aber nicht mit den Platzhaltern produktiv verwendet werden.
 
 ```bash
-pnpm prod:env:create -- --host HOST --output .env.kebapp-production
+pnpm prod:env:create -- --host HOST \
+  --output .env.kebapp-production \
+  --access-output .env.kebapp-demo-access.txt
 scp .env.kebapp-production deploy@SERVER:/opt/kebapp/shared/.env.production
 # Anschließend auf dem Server:
 docker compose --env-file /opt/kebapp/shared/.env.production \

@@ -34,7 +34,9 @@ temporäre Hostname wird aus der IPv4 gebildet, zum Beispiel
 5. Die Secret-Datei lokal erzeugen, ohne ihren Inhalt im Terminal auszugeben:
 
    ```bash
-   pnpm prod:env:create -- --host HOST --output .env.kebapp-production
+   pnpm prod:env:create -- --host HOST \
+     --output .env.kebapp-production \
+     --access-output .env.kebapp-demo-access.txt
    ```
 
    Diese Datei per Standard-Eingabe oder SCP nach

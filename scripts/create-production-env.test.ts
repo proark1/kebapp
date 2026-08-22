@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseProductionEnv } from "./production-env";
-import { createProductionEnvContent } from "./create-production-env";
+import {
+  createDemoAccessContent,
+  createProductionEnvContent,
+} from "./create-production-env";
 
 const secrets = {
   adminPassword: "a".repeat(48),
@@ -54,5 +57,16 @@ describe("createProductionEnvContent", () => {
         secrets,
       ),
     ).toThrow();
+  });
+
+  it("creates a separate access sheet without infrastructure secrets", () => {
+    const content = createDemoAccessContent("example.test", secrets);
+
+    expect(content).toContain("https://example.test");
+    expect(content).toContain(secrets.adminPassword);
+    expect(content).toContain(secrets.ownerPassword);
+    expect(content).not.toContain(secrets.appPassword);
+    expect(content).not.toContain(secrets.authSecret);
+    expect(content).not.toContain(secrets.ownerRolePassword);
   });
 });
