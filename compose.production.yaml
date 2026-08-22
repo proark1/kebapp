@@ -1,0 +1,141 @@
+name: ${COMPOSE_PROJECT_NAME:-kebapp-demo}
+
+x-json-logging: &json-logging
+  driver: json-file
+  options:
+    max-file: "3"
+    max-size: 10m
+
+x-app-environment: &app-environment
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET fehlt}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL fehlt}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL fehlt}
+  DEMO_MODE: ${DEMO_MODE:-true}
+
+x-tooling-environment: &tooling-environment
+  <<: *app-environment
+  DATABASE_OWNER_URL: ${DATABASE_OWNER_URL:?DATABASE_OWNER_URL fehlt}
+  DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:?DEMO_ADMIN_EMAIL fehlt}
+  DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:?DEMO_ADMIN_PASSWORD fehlt}
+  DEMO_EMPLOYEE_EMAIL: ${DEMO_EMPLOYEE_EMAIL:?DEMO_EMPLOYEE_EMAIL fehlt}
+  DEMO_EMPLOYEE_PASSWORD: ${DEMO_EMPLOYEE_PASSWORD:?DEMO_EMPLOYEE_PASSWORD fehlt}
+  DEMO_OWNER_EMAIL: ${DEMO_OWNER_EMAIL:?DEMO_OWNER_EMAIL fehlt}
+  DEMO_OWNER_PASSWORD: ${DEMO_OWNER_PASSWORD:?DEMO_OWNER_PASSWORD fehlt}
+  DEMO_SECOND_OWNER_EMAIL: ${DEMO_SECOND_OWNER_EMAIL:?DEMO_SECOND_OWNER_EMAIL fehlt}
+  DEMO_SECOND_OWNER_PASSWORD: ${DEMO_SECOND_OWNER_PASSWORD:?DEMO_SECOND_OWNER_PASSWORD fehlt}
+  DEMO_SUPPORT_EMAIL: ${DEMO_SUPPORT_EMAIL:?DEMO_SUPPORT_EMAIL fehlt}
+  DEMO_SUPPORT_PASSWORD: ${DEMO_SUPPORT_PASSWORD:?DEMO_SUPPORT_PASSWORD fehlt}
+  POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD fehlt}
+  POSTGRES_APP_USER: ${POSTGRES_APP_USER:-kebapp_app}
+  POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB fehlt}
+  POSTGRES_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD fehlt}
+  POSTGRES_OWNER_USER: ${POSTGRES_OWNER_USER:?POSTGRES_OWNER_USER fehlt}
+
+services:
+  postgres:
+    image: postgres:17.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD fehlt}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-kebapp_app}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB fehlt}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD fehlt}
+      POSTGRES_USER: ${POSTGRES_OWNER_USER:?POSTGRES_OWNER_USER fehlt}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init/002-create-production-runtime-role.sh:/docker-entrypoint-initdb.d/002-create-production-runtime-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    logging: *json-logging
+    networks: [database]
+    shm_size: 128mb
+    mem_limit: 1g
+
+  migrate:
+    image: ${KEBAPP_TOOLING_IMAGE:-kebapp-tooling:local}
+    build:
+      context: .
+      target: tooling
+    command: ["pnpm", "prod:migrate"]
+    environment: *tooling-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    logging: *json-logging
+    networks: [database]
+    mem_limit: 768m
+
+  seed:
+    image: ${KEBAPP_TOOLING_IMAGE:-kebapp-tooling:local}
+    command: ["pnpm", "prod:seed:demo"]
+    environment: *tooling-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    logging: *json-logging
+    networks: [database]
+    mem_limit: 768m
+
+  app:
+    image: ${KEBAPP_APP_IMAGE:-kebapp-app:local}
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    logging: *json-logging
+    networks: [database, web]
+    mem_limit: 768m
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      KEBAPP_HOST: ${KEBAPP_HOST:?KEBAPP_HOST fehlt}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging: *json-logging
+    networks: [web]
+    mem_limit: 256m
+
+networks:
+  database:
+    internal: true
+  web:
+
+volumes:
+  postgres_data:
+  caddy_config:
+  caddy_data:
