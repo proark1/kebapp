@@ -20,6 +20,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
+    "prod:migrate": "tsx scripts/migrate-production.ts",
+    "prod:seed:demo": "tsx scripts/seed-public-demo.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "e2e:build": "tsx scripts/e2e-next.ts build",
     "e2e:serve": "tsx scripts/e2e-next.ts start -p 3100",
