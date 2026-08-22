@@ -322,6 +322,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             city: "Mönchengladbach",
             description:
               "Drehspieß, frisches Gemüse und Saucen aus eigener Küche – mitten in Rheydt.",
+            deliveryEnabled: true,
             eyebrow: "Seit 1998 in Rheydt",
             features: [
               "HALAL",
@@ -362,19 +363,22 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             ],
             organizationId: publicDemoIds.organizationA,
             phone: "+49 2166 123456",
+            pickupEnabled: true,
             postalCode: "41236",
             publicSlug: "ocakbasi-rheydt",
             publishedAt: now,
-            schemaVersion: 2,
+            schemaVersion: 3,
             shortName: "OR",
             street: "Demo-Straße 24",
             tagline: "Schicht für Schicht. Jeden Tag frisch.",
+            whatsappPhone: "+49 2166 123456",
           },
           {
             accentColor: "#d9653b",
             city: "Viersen",
             description:
               "Ein zweiter Demo-Betrieb für die Prüfung der Mandantentrennung.",
+            deliveryEnabled: false,
             eyebrow: "Demo-Betrieb in Viersen",
             features: [],
             id: publicDemoIds.storeB,
@@ -394,13 +398,15 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             ],
             organizationId: publicDemoIds.organizationB,
             phone: "+49 2162 654321",
+            pickupEnabled: true,
             postalCode: "41747",
             publicSlug: "mangal-am-markt",
             publishedAt: null,
-            schemaVersion: 2,
+            schemaVersion: 3,
             shortName: "MM",
             street: "Marktstraße 10",
             tagline: "Vom Grill direkt auf den Teller.",
+            whatsappPhone: null,
           },
         ])
         .onConflictDoUpdate({
@@ -408,6 +414,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
           set: {
             accentColor: sql`excluded.accent_color`,
             city: sql`excluded.city`,
+            deliveryEnabled: sql`excluded.delivery_enabled`,
             description: sql`excluded.description`,
             eyebrow: sql`excluded.eyebrow`,
             features: sql`excluded.features`,
@@ -416,6 +423,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             name: sql`excluded.name`,
             openingHours: sql`excluded.opening_hours`,
             phone: sql`excluded.phone`,
+            pickupEnabled: sql`excluded.pickup_enabled`,
             postalCode: sql`excluded.postal_code`,
             publicSlug: sql`excluded.public_slug`,
             publishedAt: sql`excluded.published_at`,
@@ -423,6 +431,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             shortName: sql`excluded.short_name`,
             street: sql`excluded.street`,
             tagline: sql`excluded.tagline`,
+            whatsappPhone: sql`excluded.whatsapp_phone`,
             updatedAt: now,
           },
         });

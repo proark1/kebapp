@@ -1,6 +1,17 @@
-import { ArrowDown, Clock3, MapPin, Navigation, Phone } from "lucide-react";
+import {
+  Clock3,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+} from "lucide-react";
 import Image from "next/image";
 import type { CSSProperties } from "react";
+import { StorefrontOrderSheet } from "@/components/storefront-order-sheet";
+import {
+  formatStorefrontPrice,
+  normalizeWhatsappPhone,
+} from "@/lib/storefront-order";
 import type { StoreFeature, StoreProfile } from "@/lib/types";
 
 type StorefrontProps = {
@@ -15,13 +26,6 @@ const featureLabels: Record<StoreFeature, string> = {
   HOMEMADE_SAUCES: "Hausgemachte Saucen",
   PREPARED_ON_SITE: "Vor Ort zubereitet",
 };
-
-function menuPrice(price: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(price);
-}
 
 function StoreLogo({ profile }: { profile: StoreProfile }) {
   return profile.logoUrl ? (
@@ -46,133 +50,202 @@ export function Storefront({
   const style = { "--store-accent": profile.accent } as CSSProperties;
   const address = `${profile.street}, ${profile.postalCode} ${profile.city}`;
   const mapQuery = encodeURIComponent(address);
-  const phoneHref = `tel:${profile.phone.replace(/\s/g, "")}`;
+  const phoneHref = `tel:${profile.phone.replace(/[^\d+]/g, "")}`;
+  const hasWhatsapp = Boolean(
+    normalizeWhatsappPhone(profile.whatsappPhone) &&
+      (profile.pickupEnabled || profile.deliveryEnabled),
+  );
+  const heroImage =
+    profile.heroImageUrl || "/images/storefront/kebapp-doener-hero.webp";
+  const orderModes = [
+    profile.pickupEnabled ? "Abholung" : null,
+    profile.deliveryEnabled ? "Lieferung" : null,
+  ].filter(Boolean);
 
-  return (
-    <div className={`storefront ${preview ? "storefront--preview" : ""}`} style={style}>
+  const content = (
+    <div
+      className={`storefront ${preview ? "storefront--preview" : ""}`}
+      style={style}
+    >
       {!preview ? (
-        <div className="demo-ribbon">Informationsseite · keine Bestellfunktion</div>
+        <div className="demo-ribbon">
+          Öffentliche Demo · Kontaktdaten und Speisekarte sind Beispieldaten
+        </div>
       ) : null}
 
       <header className="storefront-header">
-        <a className="storefront-logo" href="#start" aria-label={`${profile.name} Startseite`}>
-          <StoreLogo profile={profile} />
-          <strong>{profile.name}</strong>
-        </a>
-        <nav aria-label="Seitennavigation">
-          <a href="#speisekarte">Speisekarte</a>
-          <a href="#zeiten">Öffnungszeiten</a>
-          <a href="#kontakt">Kontakt</a>
-        </nav>
-        <a className="storefront-call" href={phoneHref}>
-          <Phone size={16} aria-hidden="true" />
-          Anrufen
-        </a>
+        <div className="storefront-header__meta">
+          <span>{profile.street} · {profile.postalCode} {profile.city}</span>
+          <a aria-disabled={preview} href={preview ? undefined : phoneHref}>
+            {profile.phone}
+          </a>
+        </div>
+        <div className="storefront-header__nav">
+          <a
+            aria-label={`${profile.name} Startseite`}
+            className="storefront-logo"
+            href="#start"
+          >
+            <StoreLogo profile={profile} />
+            <strong>{profile.name}</strong>
+          </a>
+          <nav aria-label="Seitennavigation">
+            <a href="#speisekarte">Speisekarte</a>
+            <a href="#ueber-uns">Über uns</a>
+            <a href="#zeiten">Öffnungszeiten</a>
+            <a href="#kontakt">Kontakt</a>
+          </nav>
+          {hasWhatsapp ? (
+            <button
+              className="storefront-header__order"
+              data-storefront-order-trigger
+              type="button"
+            >
+              Jetzt bestellen
+            </button>
+          ) : (
+            <a
+              aria-disabled={preview}
+              className="storefront-header__order"
+              href={preview ? undefined : phoneHref}
+            >
+              Jetzt anrufen
+            </a>
+          )}
+        </div>
       </header>
 
       <main>
         <section className="storefront-hero" id="start">
+          <Image
+            alt=""
+            className="storefront-hero__image"
+            fill
+            preload={!preview}
+            sizes="100vw"
+            src={heroImage}
+            unoptimized={Boolean(profile.heroImageUrl)}
+          />
+          <div className="storefront-hero__shade" aria-hidden="true" />
           <div className="storefront-hero__copy">
             <span className="storefront-eyebrow">{profile.eyebrow}</span>
             <h1>{profile.tagline}</h1>
             <p>{profile.description}</p>
             <div className="storefront-hero__actions">
-              <a className="storefront-button storefront-button--primary" href={phoneHref}>
-                <Phone size={18} aria-hidden="true" />
+              {hasWhatsapp ? (
+                <button
+                  className="storefront-button storefront-button--whatsapp"
+                  data-storefront-order-trigger
+                  type="button"
+                >
+                  <MessageCircle aria-hidden="true" size={18} />
+                  Über WhatsApp bestellen
+                </button>
+              ) : null}
+              <a
+                aria-disabled={preview}
+                className="storefront-button storefront-button--secondary"
+                href={preview ? undefined : phoneHref}
+              >
+                <Phone aria-hidden="true" size={18} />
                 Jetzt anrufen
               </a>
-              <a
-                className="storefront-button storefront-button--secondary"
-                href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Navigation size={18} aria-hidden="true" />
-                Route öffnen
-              </a>
             </div>
-            <a className="storefront-scroll" href="#speisekarte">
-              Speisekarte ansehen
-              <ArrowDown size={16} aria-hidden="true" />
-            </a>
           </div>
-
-          <div className="storefront-hero__visual" aria-hidden="true">
-            <span className="storefront-hero__stamp">DEIN LADEN<br />IN {profile.city.toUpperCase()}</span>
-            <div className="hero-skewer">
-              <i className="hero-skewer__rod" />
-              <span className="hero-skewer__slice hero-skewer__slice--1" />
-              <span className="hero-skewer__slice hero-skewer__slice--2" />
-              <span className="hero-skewer__slice hero-skewer__slice--3" />
-              <span className="hero-skewer__slice hero-skewer__slice--4" />
-              <span className="hero-skewer__slice hero-skewer__slice--5" />
-              <span className="hero-skewer__slice hero-skewer__slice--6" />
-              <i className="hero-skewer__tray" />
-            </div>
-            <span className="hero-skewer__caption">Speisekarte &amp; Öffnungszeiten</span>
+          <div className="storefront-hero__facts">
+            <div><small>Bestellung</small><strong>Direkt beim Restaurant</strong></div>
+            <div><small>Optionen</small><strong>{orderModes.join(" & ") || "Telefonisch anfragen"}</strong></div>
+            <div><small>Standort</small><strong>{profile.city}</strong></div>
           </div>
         </section>
 
-        {profile.features.length > 0 ? (
-          <div className="storefront-marquee" aria-label="Merkmale des Ladens">
-            {profile.features.map((feature, index) => (
-              <span key={feature}>
-                {featureLabels[feature]}
-                {index < profile.features.length - 1 ? <i aria-hidden="true" /> : null}
-              </span>
-            ))}
+        <section className="storefront-about" id="ueber-uns">
+          <div>
+            <span className="storefront-section-label">Unser Laden</span>
+            <h2>Direkt, persönlich und frisch zubereitet.</h2>
           </div>
-        ) : null}
+          <div>
+            <p>{profile.description}</p>
+            {profile.features.length > 0 ? (
+              <ul aria-label="Merkmale des Ladens">
+                {profile.features.map((feature) => (
+                  <li key={feature}>{featureLabels[feature]}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </section>
 
         <section className="storefront-menu" id="speisekarte">
           <div className="storefront-section-heading">
-            <span>Was wir machen</span>
-            <h2>Unsere Speisekarte</h2>
-            <p>Unsere Auswahl auf einen Blick. Allergene und Zusatzstoffe erfährst du bei unserem Team.</p>
+            <div>
+              <span className="storefront-section-label">Unsere Auswahl</span>
+              <h2>Speisekarte</h2>
+            </div>
+            <p>
+              Wähle ein Gericht und bereite deine Bestellung direkt für
+              WhatsApp vor. Allergene und Zusatzstoffe erfährst du bei unserem
+              Team.
+            </p>
           </div>
           <div className="storefront-menu__grid">
-            {profile.menu.map((item, index) => (
+            {profile.menu.map((item) => (
               <article className="storefront-menu-item" key={item.id}>
-                <span className="storefront-menu-item__number">{String(index + 1).padStart(2, "0")}</span>
                 <div>
                   <small>{item.category}</small>
                   <h3>{item.name}</h3>
                   <p>{item.description}</p>
                 </div>
-                <strong>{menuPrice(item.price)}</strong>
+                <div className="storefront-menu-item__order">
+                  <strong>{formatStorefrontPrice(item.price)}</strong>
+                  {hasWhatsapp ? (
+                    <button
+                      data-storefront-order-item={item.id}
+                      data-storefront-order-trigger
+                      type="button"
+                    >
+                      <MessageCircle aria-hidden="true" size={15} />
+                      Per WhatsApp bestellen
+                    </button>
+                  ) : null}
+                </div>
               </article>
             ))}
           </div>
-          <p className="storefront-menu__note">Alle Preise inklusive gesetzlicher Umsatzsteuer. Über diese Website werden keine Onlinebestellungen angenommen.</p>
+          <p className="storefront-menu__note">
+            Alle Preise inklusive gesetzlicher Umsatzsteuer. Die Bestellung
+            wird erst versendet, wenn du sie selbst in WhatsApp bestätigst.
+          </p>
         </section>
 
         <section className="storefront-contact" id="kontakt">
           <div className="storefront-contact__statement">
-            <span className="storefront-eyebrow">Komm vorbei</span>
-            <h2>Dein Platz ist schon warm.</h2>
+            <span className="storefront-eyebrow">Direkter Kontakt</span>
+            <h2>Bestellen oder einfach vorbeikommen.</h2>
             <p>Du findest uns in {profile.city}.</p>
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-              target="_blank"
+              aria-disabled={preview}
+              href={preview ? undefined : `https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
               rel="noreferrer"
+              target={preview ? undefined : "_blank"}
             >
               Route in Karten öffnen
-              <Navigation size={17} aria-hidden="true" />
+              <Navigation aria-hidden="true" size={17} />
             </a>
           </div>
           <div className="storefront-contact__facts">
             <div>
-              <MapPin size={21} aria-hidden="true" />
+              <MapPin aria-hidden="true" size={21} />
               <span>
                 <small>Adresse</small>
                 <strong>{profile.street}<br />{profile.postalCode} {profile.city}</strong>
               </span>
             </div>
             <div>
-              <Phone size={21} aria-hidden="true" />
+              <Phone aria-hidden="true" size={21} />
               <span>
                 <small>Telefon</small>
-                <a href={phoneHref}>{profile.phone}</a>
+                <a aria-disabled={preview} href={preview ? undefined : phoneHref}>{profile.phone}</a>
               </span>
             </div>
           </div>
@@ -180,8 +253,11 @@ export function Storefront({
 
         <section className="storefront-hours" id="zeiten">
           <div>
-            <Clock3 size={24} aria-hidden="true" />
-            <h2>Öffnungszeiten</h2>
+            <Clock3 aria-hidden="true" size={24} />
+            <span>
+              <small className="storefront-section-label">Heute vorbeikommen</small>
+              <h2>Öffnungszeiten</h2>
+            </span>
           </div>
           <dl>
             {profile.openingHours.map((entry) => (
@@ -200,7 +276,10 @@ export function Storefront({
             <StoreLogo profile={profile} />
             <strong>{profile.name}</strong>
           </span>
-          <p>Informationswebsite mit Kebapp · keine Onlinebestellung.</p>
+          <p>
+            Direkter Kontakt zum Restaurant. Kebapp speichert oder versendet
+            keine Endkundenbestellungen.
+          </p>
         </div>
         <nav className="storefront-footer__legal" aria-label="Rechtliche Informationen">
           {preview || !publicSlug ? (
@@ -214,6 +293,32 @@ export function Storefront({
         </nav>
         <span className="storefront-footer__powered">Erstellt mit Kebapp</span>
       </footer>
+
+      <div className="storefront-mobile-actions">
+        {hasWhatsapp ? (
+          <button data-storefront-order-trigger type="button">
+            <MessageCircle aria-hidden="true" size={18} />
+            WhatsApp
+          </button>
+        ) : null}
+        <a aria-disabled={preview} href={preview ? undefined : phoneHref}>
+          <Phone aria-hidden="true" size={18} />
+          Anrufen
+        </a>
+      </div>
     </div>
   );
+
+  return hasWhatsapp ? (
+    <StorefrontOrderSheet
+      deliveryEnabled={profile.deliveryEnabled}
+      menu={profile.menu}
+      pickupEnabled={profile.pickupEnabled}
+      preview={preview}
+      storeName={profile.name}
+      whatsappPhone={profile.whatsappPhone}
+    >
+      {content}
+    </StorefrontOrderSheet>
+  ) : content;
 }

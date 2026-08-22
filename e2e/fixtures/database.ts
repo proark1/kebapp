@@ -239,6 +239,7 @@ async function seedE2eDatabase() {
         accentColor: "#d97706",
         city: "Mönchengladbach",
         description: "Frischer Drehspieß, Salate und hausgemachte Saucen.",
+        deliveryEnabled: true,
         email: "hallo@e2e-kebaphaus.local",
         eyebrow: "NRW Familienbetrieb",
         isPublished: true,
@@ -253,10 +254,12 @@ async function seedE2eDatabase() {
         ],
         openingHours: [{ days: "Montag–Samstag", hours: "11:00–22:00" }],
         phone: "+49 2161 123456",
+        pickupEnabled: true,
         postalCode: "41061",
         publishedAt: new Date(),
         street: "Marktstraße 12",
         tagline: "Aus der Nachbarschaft. Jeden Tag frisch.",
+        whatsappPhone: "+49 2161 123456",
       };
 
       await transaction.insert(storeProfiles).values([

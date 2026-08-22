@@ -27,7 +27,7 @@ export class StorefrontPermissionDeniedError extends Error {
 export class StorefrontPublicationError extends Error {
   constructor() {
     super(
-      "Vor der Veröffentlichung müssen Kontakt, Adresse, Öffnungszeiten und Speisekarte vollständig sein.",
+      "Vor der Veröffentlichung müssen Kontakt, Adresse, Öffnungszeiten, Speisekarte und Bestelloptionen vollständig sein.",
     );
     this.name = "StorefrontPublicationError";
   }
@@ -108,9 +108,11 @@ export async function updateStorefrontProfile(input: {
       const storedValues = {
         accentColor: values.profile.accent,
         city: values.profile.city,
+        deliveryEnabled: values.profile.deliveryEnabled,
         description: values.profile.description,
         eyebrow: values.profile.eyebrow,
         features: values.profile.features,
+        heroImageUrl: values.profile.heroImageUrl || null,
         isPublished: values.isPublished,
         logoUrl: values.profile.logoUrl || null,
         menu: values.profile.menu.map((item) => ({
@@ -120,12 +122,14 @@ export async function updateStorefrontProfile(input: {
         name: values.profile.name,
         openingHours: values.profile.openingHours,
         phone: values.profile.phone,
+        pickupEnabled: values.profile.pickupEnabled,
         postalCode: values.profile.postalCode,
         publishedAt: values.isPublished ? (existing?.publishedAt ?? now) : null,
         schemaVersion: values.profile.schemaVersion,
         shortName: values.profile.shortName,
         street: values.profile.street,
         tagline: values.profile.tagline,
+        whatsappPhone: values.profile.whatsappPhone || null,
         updatedAt: now,
       };
 

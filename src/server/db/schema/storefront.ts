@@ -56,7 +56,11 @@ export const storeProfiles = pgTable(
     accentColor: varchar("accent_color", { length: 7 })
       .default("#f3b83f")
       .notNull(),
+    heroImageUrl: text("hero_image_url"),
     logoUrl: text("logo_url"),
+    whatsappPhone: varchar("whatsapp_phone", { length: 40 }),
+    pickupEnabled: boolean("pickup_enabled").default(true).notNull(),
+    deliveryEnabled: boolean("delivery_enabled").default(false).notNull(),
     customDomain: varchar("custom_domain", { length: 253 }),
     requestedDomain: varchar("requested_domain", { length: 253 }),
     domainRequestStatus: text("domain_request_status")
@@ -78,7 +82,7 @@ export const storeProfiles = pgTable(
       .$type<StoreMenuItem[]>()
       .default(sql`'[]'::jsonb`)
       .notNull(),
-    schemaVersion: integer("schema_version").default(2).notNull(),
+    schemaVersion: integer("schema_version").default(3).notNull(),
     isPublished: boolean("is_published").default(false).notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })

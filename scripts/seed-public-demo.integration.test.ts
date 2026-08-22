@@ -187,7 +187,15 @@ describe("seedPublicDemo", () => {
         database: harness.runtimeDatabase,
         slug: "ocakbasi-rheydt",
       }),
-    ).resolves.toMatchObject({ publicSlug: "ocakbasi-rheydt" });
+    ).resolves.toMatchObject({
+      profile: {
+        deliveryEnabled: true,
+        pickupEnabled: true,
+        schemaVersion: 3,
+        whatsappPhone: "+49 2166 123456",
+      },
+      publicSlug: "ocakbasi-rheydt",
+    });
     await expect(
       getPublicStorefrontBySlug({
         database: harness.runtimeDatabase,

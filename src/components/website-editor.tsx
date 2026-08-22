@@ -29,6 +29,7 @@ import {
 } from "@/lib/types";
 
 const MAX_LOGO_BYTES = 350 * 1_024;
+const MAX_HERO_BYTES = 1_024 * 1_024;
 const logoTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const menuCategories: MenuItem["category"][] = [
   "Döner",
@@ -69,7 +70,7 @@ const messages: Record<string, { text: string; tone: "error" | "success" }> = {
     tone: "error",
   },
   unvollstaendig: {
-    text: "Zum Veröffentlichen fehlen Kontakt, Adresse, Öffnungszeiten oder Speisekarte.",
+    text: "Zum Veröffentlichen fehlen Kontakt, Adresse, Öffnungszeiten, Speisekarte oder Bestelloptionen.",
     tone: "error",
   },
   veroeffentlicht: {
@@ -116,6 +117,7 @@ export function WebsiteEditor({
   const [isPublished, setIsPublished] = useState(initialData.isPublished);
   const [dirty, setDirty] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [heroError, setHeroError] = useState<string | null>(null);
   const [requestedDomain, setRequestedDomain] = useState(
     initialData.requestedDomain ?? "",
   );
@@ -201,6 +203,25 @@ export function WebsiteEditor({
       if (typeof reader.result !== "string") return;
       setLogoError(null);
       updateField("logoUrl", reader.result);
+    });
+    reader.readAsDataURL(file);
+  }
+
+  function handleHeroImage(file?: File) {
+    if (!file) return;
+    if (!logoTypes.has(file.type)) {
+      setHeroError("Bitte PNG, JPEG oder WebP auswählen. SVG-Dateien sind nicht erlaubt.");
+      return;
+    }
+    if (file.size > MAX_HERO_BYTES) {
+      setHeroError("Das Headerbild ist größer als 1 MiB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result !== "string") return;
+      setHeroError(null);
+      updateField("heroImageUrl", reader.result);
     });
     reader.readAsDataURL(file);
   }
@@ -296,6 +317,36 @@ export function WebsiteEditor({
                   {logoError ? <p className="editor-field-error" role="alert">{logoError}</p> : null}
                 </div>
               </div>
+              <div className="hero-image-editor">
+                <div className="hero-image-editor__preview">
+                  <Image
+                    alt={`Headerbild-Vorschau von ${profile.name}`}
+                    fill
+                    sizes="360px"
+                    src={profile.heroImageUrl || "/images/storefront/kebapp-doener-hero.webp"}
+                    unoptimized={Boolean(profile.heroImageUrl)}
+                  />
+                  <span>{profile.heroImageUrl ? "Eigenes Headerbild" : "Professionelles Standardmotiv"}</span>
+                </div>
+                <div>
+                  <label className="button button--secondary hero-image-editor__upload">
+                    <ImagePlus size={17} aria-hidden="true" /> Headerbild auswählen
+                    <input
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      onChange={(event) => handleHeroImage(event.target.files?.[0])}
+                      type="file"
+                    />
+                  </label>
+                  {profile.heroImageUrl ? (
+                    <button className="button button--quiet" onClick={() => updateField("heroImageUrl", "")} type="button">
+                      Eigenes Bild entfernen
+                    </button>
+                  ) : null}
+                  <small>Breites PNG, JPEG oder WebP · maximal 1 MiB · kein SVG</small>
+                  {heroError ? <p className="editor-field-error" role="alert">{heroError}</p> : null}
+                </div>
+              </div>
               <label className="field">
                 <span>Ladenname</span>
                 <input maxLength={180} required value={profile.name} onChange={(event) => updateField("name", event.target.value)} />
@@ -348,6 +399,46 @@ export function WebsiteEditor({
             </div>
             <div className="form-stack">
               <label className="field"><span>Telefon</span><input maxLength={40} required={isPublished} type="tel" value={profile.phone} onChange={(event) => updateField("phone", event.target.value)} /></label>
+              <div className="whatsapp-editor-row">
+                <label className="field">
+                  <span>WhatsApp-Nummer</span>
+                  <input
+                    maxLength={40}
+                    placeholder="+49 2166 123456"
+                    type="tel"
+                    value={profile.whatsappPhone}
+                    onChange={(event) => updateField("whatsappPhone", event.target.value)}
+                  />
+                  <small>Internationales Format mit +49. Leer lassen, um WhatsApp auszublenden.</small>
+                </label>
+                <button
+                  className="button button--secondary"
+                  disabled={!profile.phone.trim()}
+                  onClick={() => updateField("whatsappPhone", profile.phone)}
+                  type="button"
+                >
+                  Telefonnummer übernehmen
+                </button>
+              </div>
+              <fieldset className="order-options-editor">
+                <legend>Bestellarten</legend>
+                <label>
+                  <input
+                    checked={profile.pickupEnabled}
+                    onChange={(event) => updateField("pickupEnabled", event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span><strong>Abholung anbieten</strong><small>Kund:innen holen die Bestellung im Laden ab.</small></span>
+                </label>
+                <label>
+                  <input
+                    checked={profile.deliveryEnabled}
+                    onChange={(event) => updateField("deliveryEnabled", event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span><strong>Lieferung anbieten</strong><small>Die Lieferadresse wird im Bestellzettel abgefragt.</small></span>
+                </label>
+              </fieldset>
               <label className="field"><span>Straße und Hausnummer</span><input maxLength={220} required={isPublished} value={profile.street} onChange={(event) => updateField("street", event.target.value)} /></label>
               <div className="address-field-row">
                 <label className="field"><span>PLZ</span><input maxLength={16} required={isPublished} value={profile.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} /></label>

@@ -1,22 +1,24 @@
 import "server-only";
 
 import { z } from "zod";
+import { normalizeWhatsappPhone } from "@/lib/storefront-order";
 import { STORE_FEATURES } from "@/lib/types";
 
 const MAX_LOGO_BYTES = 350 * 1_024;
-const logoDataUrlPattern = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
+const MAX_HERO_BYTES = 1_024 * 1_024;
+const imageDataUrlPattern = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 
-function isValidLogoDataUrl(value: string): boolean {
+function isValidImageDataUrl(value: string, maxBytes: number): boolean {
   if (value === "") {
     return true;
   }
-  const match = logoDataUrlPattern.exec(value);
+  const match = imageDataUrlPattern.exec(value);
   if (!match?.[2]) {
     return false;
   }
   const padding = match[2].endsWith("==") ? 2 : match[2].endsWith("=") ? 1 : 0;
   const byteLength = Math.floor((match[2].length * 3) / 4) - padding;
-  return byteLength > 0 && byteLength <= MAX_LOGO_BYTES;
+  return byteLength > 0 && byteLength <= maxBytes;
 }
 
 export const storefrontOrganizationIdSchema = z.uuid();
@@ -54,8 +56,15 @@ const menuItemSchema = z
 const logoUrlSchema = z
   .string()
   .max(500_000)
-  .refine(isValidLogoDataUrl, {
+  .refine((value) => isValidImageDataUrl(value, MAX_LOGO_BYTES), {
     message: "Das Logo muss PNG, JPEG oder WebP sein und darf höchstens 350 KiB groß sein.",
+  });
+
+const heroImageUrlSchema = z
+  .string()
+  .max(1_500_000)
+  .refine((value) => isValidImageDataUrl(value, MAX_HERO_BYTES), {
+    message: "Das Headerbild muss PNG, JPEG oder WebP sein und darf höchstens 1 MiB groß sein.",
   });
 
 export const storefrontProfileSchema = z
@@ -64,17 +73,27 @@ export const storefrontProfileSchema = z
     city: z.string().trim().max(120),
     description: z.string().trim().max(2_000),
     eyebrow: z.string().trim().max(180),
+    deliveryEnabled: z.boolean(),
     features: z.array(z.enum(STORE_FEATURES)).max(STORE_FEATURES.length),
+    heroImageUrl: heroImageUrlSchema,
     logoUrl: logoUrlSchema,
     menu: z.array(menuItemSchema).max(40),
     name: z.string().trim().min(1).max(180),
     openingHours: z.array(openingHourSchema).max(14),
     phone: z.string().trim().max(40),
+    pickupEnabled: z.boolean(),
     postalCode: z.string().trim().max(16),
-    schemaVersion: z.literal(2),
+    schemaVersion: z.literal(3),
     shortName: z.string().trim().min(1).max(12),
     street: z.string().trim().max(220),
     tagline: z.string().trim().max(240),
+    whatsappPhone: z
+      .string()
+      .trim()
+      .max(40)
+      .refine((value) => value === "" || normalizeWhatsappPhone(value) !== null, {
+        message: "Die WhatsApp-Nummer muss im internationalen Format angegeben werden.",
+      }),
   })
   .strict();
 
@@ -110,6 +129,9 @@ export function isStorefrontProfilePublishable(
       profile.postalCode.trim() &&
       profile.city.trim() &&
       profile.openingHours.length > 0 &&
-      profile.menu.length > 0,
+      profile.menu.length > 0 &&
+      (!profile.whatsappPhone.trim() ||
+        profile.pickupEnabled ||
+        profile.deliveryEnabled),
   );
 }

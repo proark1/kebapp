@@ -4,6 +4,7 @@ import {
   requestStorefrontDomain,
   updateStorefrontProfile,
   StorefrontPermissionDeniedError,
+  StorefrontPublicationError,
 } from "@/server/storefront/mutations";
 import {
   getPublicStorefrontBySlug,
@@ -163,13 +164,14 @@ describe.sequential("tenant storefronts", () => {
     expect(persisted.rows[0]?.name).toBe("Kebap Haus am Markt");
   });
 
-  it("stores selected features, a validated logo, and a domain review request", async () => {
+  it("stores storefront media, ordering settings, and a domain review request", async () => {
     const editor = await getStorefrontEditor({
       actor: actors.ownerA,
       database: harness.runtimeDatabase,
       organizationId: ids.organizationA,
     });
     const logoUrl = "data:image/png;base64,iVBORw0KGgo=";
+    const heroImageUrl = "data:image/webp;base64,UklGRg==";
 
     await updateStorefrontProfile({
       actor: actors.ownerA,
@@ -178,8 +180,12 @@ describe.sequential("tenant storefronts", () => {
       organizationId: ids.organizationA,
       profile: {
         ...editor.profile,
+        deliveryEnabled: true,
         features: ["HALAL", "HOMEMADE_SAUCES"],
+        heroImageUrl,
         logoUrl,
+        pickupEnabled: true,
+        whatsappPhone: "+49 2161 111111",
       },
     });
     await requestStorefrontDomain({
@@ -199,7 +205,9 @@ describe.sequential("tenant storefronts", () => {
       domainRequestStatus: "REVIEW_REQUESTED",
       profile: {
         features: ["HALAL", "HOMEMADE_SAUCES"],
+        heroImageUrl,
         logoUrl,
+        whatsappPhone: "+49 2161 111111",
       },
       requestedDomain: "laden-a.de",
     });
@@ -209,8 +217,38 @@ describe.sequential("tenant storefronts", () => {
         slug: "laden-a",
       }),
     ).resolves.toMatchObject({
-      profile: { features: ["HALAL", "HOMEMADE_SAUCES"], logoUrl },
+      profile: {
+        deliveryEnabled: true,
+        features: ["HALAL", "HOMEMADE_SAUCES"],
+        heroImageUrl,
+        logoUrl,
+        pickupEnabled: true,
+        whatsappPhone: "+49 2161 111111",
+      },
     });
+  });
+
+  it("rejects publishing WhatsApp ordering without an available order mode", async () => {
+    const editor = await getStorefrontEditor({
+      actor: actors.ownerA,
+      database: harness.runtimeDatabase,
+      organizationId: ids.organizationA,
+    });
+
+    await expect(
+      updateStorefrontProfile({
+        actor: actors.ownerA,
+        database: harness.runtimeDatabase,
+        isPublished: true,
+        organizationId: ids.organizationA,
+        profile: {
+          ...editor.profile,
+          deliveryEnabled: false,
+          pickupEnabled: false,
+          whatsappPhone: "+49 2161 111111",
+        },
+      }),
+    ).rejects.toBeInstanceOf(StorefrontPublicationError);
   });
 
   it("rejects domain review requests from employees", async () => {

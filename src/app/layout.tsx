@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/figtree";
 import "@fontsource-variable/roboto-condensed";
 import "./globals.css";
+import "./professional-storefront.css";
 
 export const metadata: Metadata = {
   title: {

@@ -20,37 +20,45 @@ type StoredProfile = {
   accentColor: string;
   city: string | null;
   description: string | null;
+  deliveryEnabled: boolean;
   eyebrow: string | null;
   features: unknown;
+  heroImageUrl: string | null;
   logoUrl: string | null;
   menu: unknown;
   name: string;
   openingHours: unknown;
   phone: string | null;
+  pickupEnabled: boolean;
   postalCode: string | null;
   schemaVersion: number;
   shortName: string;
   street: string | null;
   tagline: string | null;
+  whatsappPhone: string | null;
 };
 
 type PublicStorefrontRow = {
   accent_color: string;
   city: string | null;
   description: string | null;
+  delivery_enabled: boolean;
   eyebrow: string | null;
   features: unknown;
+  hero_image_url: string | null;
   logo_url: string | null;
   menu: unknown;
   name: string;
   opening_hours: unknown;
   phone: string | null;
+  pickup_enabled: boolean;
   postal_code: string | null;
   public_slug: string;
   schema_version: number;
   short_name: string;
   street: string | null;
   tagline: string | null;
+  whatsapp_phone: string | null;
 };
 
 export class StorefrontDataInvalidError extends Error {
@@ -65,18 +73,22 @@ function toStoreProfile(record: StoredProfile): StoreProfile {
     accent: record.accentColor,
     city: record.city ?? "",
     description: record.description ?? "",
+    deliveryEnabled: record.deliveryEnabled,
     eyebrow: record.eyebrow ?? "",
     features: record.features,
+    heroImageUrl: record.heroImageUrl ?? "",
     logoUrl: record.logoUrl ?? "",
     menu: record.menu,
     name: record.name,
     openingHours: record.openingHours,
     phone: record.phone ?? "",
+    pickupEnabled: record.pickupEnabled,
     postalCode: record.postalCode ?? "",
     schemaVersion: record.schemaVersion,
     shortName: record.shortName,
     street: record.street ?? "",
     tagline: record.tagline ?? "",
+    whatsappPhone: record.whatsappPhone ?? "",
   });
 
   if (!parsed.success) {
@@ -102,8 +114,10 @@ function createDefaultProfile(storeName: string): StoreProfile {
     city: "",
     description:
       "Döner, Tellergerichte und vegetarische Auswahl – frisch für dich zubereitet.",
+    deliveryEnabled: false,
     eyebrow: `Willkommen bei ${storeName}`,
     features: [],
+    heroImageUrl: "",
     logoUrl: "",
     menu: [
       {
@@ -142,11 +156,13 @@ function createDefaultProfile(storeName: string): StoreProfile {
       { days: "Sonntag", hours: "12:00–22:00" },
     ],
     phone: "",
+    pickupEnabled: true,
     postalCode: "",
-    schemaVersion: 2,
+    schemaVersion: 3,
     shortName: createShortName(storeName),
     street: "",
     tagline: "Frisch zubereitet. Direkt bei uns im Laden.",
+    whatsappPhone: "",
   };
 }
 
@@ -168,15 +184,18 @@ export async function getStorefrontEditor(input: {
           city: storeProfiles.city,
           customDomain: storeProfiles.customDomain,
           description: storeProfiles.description,
+          deliveryEnabled: storeProfiles.deliveryEnabled,
           domainRequestStatus: storeProfiles.domainRequestStatus,
           eyebrow: storeProfiles.eyebrow,
           features: storeProfiles.features,
+          heroImageUrl: storeProfiles.heroImageUrl,
           isPublished: storeProfiles.isPublished,
           logoUrl: storeProfiles.logoUrl,
           menu: storeProfiles.menu,
           name: storeProfiles.name,
           openingHours: storeProfiles.openingHours,
           phone: storeProfiles.phone,
+          pickupEnabled: storeProfiles.pickupEnabled,
           postalCode: storeProfiles.postalCode,
           profileId: storeProfiles.id,
           publicSlug: storeProfiles.publicSlug,
@@ -186,6 +205,7 @@ export async function getStorefrontEditor(input: {
           storeName: organizations.storeName,
           street: storeProfiles.street,
           tagline: storeProfiles.tagline,
+          whatsappPhone: storeProfiles.whatsappPhone,
           organizationSlug: organizations.slug,
         })
         .from(organizations)
@@ -206,18 +226,22 @@ export async function getStorefrontEditor(input: {
             accentColor: row.accentColor!,
             city: row.city,
             description: row.description,
+            deliveryEnabled: row.deliveryEnabled!,
             eyebrow: row.eyebrow,
             features: row.features,
+            heroImageUrl: row.heroImageUrl,
             logoUrl: row.logoUrl,
             menu: row.menu,
             name: row.name!,
             openingHours: row.openingHours,
             phone: row.phone,
+            pickupEnabled: row.pickupEnabled!,
             postalCode: row.postalCode,
             schemaVersion: row.schemaVersion!,
             shortName: row.shortName!,
             street: row.street,
             tagline: row.tagline,
+            whatsappPhone: row.whatsappPhone,
           })
         : createDefaultProfile(row.storeName);
 
@@ -260,18 +284,22 @@ export async function getPublicStorefrontBySlug(input: {
       accentColor: row.accent_color,
       city: row.city,
       description: row.description,
+      deliveryEnabled: row.delivery_enabled,
       eyebrow: row.eyebrow,
       features: row.features,
+      heroImageUrl: row.hero_image_url,
       logoUrl: row.logo_url,
       menu: row.menu,
       name: row.name,
       openingHours: row.opening_hours,
       phone: row.phone,
+      pickupEnabled: row.pickup_enabled,
       postalCode: row.postal_code,
       schemaVersion: row.schema_version,
       shortName: row.short_name,
       street: row.street,
       tagline: row.tagline,
+      whatsappPhone: row.whatsapp_phone,
     });
   } catch (error) {
     if (error instanceof StorefrontDataInvalidError) {

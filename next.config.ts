@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["nodemailer"],
   experimental: {
     optimizePackageImports: ["lucide-react"],
+    serverActions: {
+      bodySizeLimit: "3mb",
+    },
   },
   async headers() {
     return [

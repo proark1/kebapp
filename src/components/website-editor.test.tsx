@@ -163,4 +163,56 @@ describe("WebsiteEditor", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent("SVG-Dateien sind nicht erlaubt");
   });
+
+  it("rejects oversized header images without replacing the standard image", () => {
+    render(
+      <WebsiteEditor
+        domainAction={createDomainAction()}
+        initialData={initialData}
+        saveAction={createSaveAction()}
+      />,
+    );
+    const file = new File([new Uint8Array(1_024 * 1_024 + 1)], "hero.webp", {
+      type: "image/webp",
+    });
+
+    fireEvent.change(screen.getByLabelText("Headerbild auswählen"), {
+      target: { files: [file] },
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("größer als 1 MiB");
+    expect(screen.getByText("Professionelles Standardmotiv")).toBeInTheDocument();
+  });
+
+  it("copies the phone number to WhatsApp and persists delivery options", async () => {
+    const saveAction = createSaveAction();
+    render(
+      <WebsiteEditor
+        domainAction={createDomainAction()}
+        initialData={{
+          ...initialData,
+          profile: { ...demoStoreProfile, whatsappPhone: "" },
+        }}
+        saveAction={saveAction}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Telefonnummer übernehmen" }),
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Lieferung anbieten/ }),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Änderungen speichern" }));
+    });
+
+    await waitFor(() => expect(saveAction).toHaveBeenCalledOnce());
+    const submitted = JSON.parse(
+      String(saveAction.mock.calls[0]?.[0].get("profile")),
+    );
+    expect(submitted.whatsappPhone).toBe("+49 2166 123456");
+    expect(submitted.deliveryEnabled).toBe(false);
+    expect(submitted.pickupEnabled).toBe(true);
+  });
 });

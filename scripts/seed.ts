@@ -209,6 +209,7 @@ async function seed() {
           city: "Mönchengladbach",
           description:
             "Drehspieß, frisches Gemüse und unsere Saucen aus eigener Küche – mitten in Rheydt.",
+          deliveryEnabled: true,
           eyebrow: "Seit 1998 in Rheydt",
           features: [
             "HALAL",
@@ -256,13 +257,15 @@ async function seed() {
           ],
           organizationId: ids.organization,
           phone: "+49 2166 123456",
+          pickupEnabled: true,
           postalCode: "41236",
           publicSlug: "ocakbasi-rheydt-pilot",
           publishedAt: new Date(),
-          schemaVersion: 2,
+          schemaVersion: 3,
           shortName: "OR",
           street: "Demo-Straße 24",
           tagline: "Schicht für Schicht. Jeden Tag frisch.",
+          whatsappPhone: "+49 2166 123456",
         })
         .onConflictDoNothing({ target: storeProfiles.organizationId });
 

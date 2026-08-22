@@ -62,7 +62,7 @@ export type StoreFeature = (typeof STORE_FEATURES)[number];
 export type StoreDomainRequestStatus = "NONE" | "REVIEW_REQUESTED";
 
 export type StoreProfile = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   name: string;
   shortName: string;
   eyebrow: string;
@@ -74,7 +74,11 @@ export type StoreProfile = {
   city: string;
   accent: string;
   features: StoreFeature[];
+  heroImageUrl: string;
   logoUrl: string;
+  pickupEnabled: boolean;
+  deliveryEnabled: boolean;
+  whatsappPhone: string;
   openingHours: OpeningHour[];
   menu: MenuItem[];
 };

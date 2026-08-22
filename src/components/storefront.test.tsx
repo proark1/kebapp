@@ -18,7 +18,7 @@ describe("Storefront", () => {
     expect(screen.queryByText("Vor Ort zubereitet")).not.toBeInTheDocument();
   });
 
-  it("links to the real legal routes and never offers online ordering", () => {
+  it("links to legal routes and offers direct WhatsApp ordering", () => {
     render(<Storefront profile={demoStoreProfile} publicSlug="ocakbasi-rheydt" />);
 
     expect(screen.getByRole("link", { name: "Impressum" })).toHaveAttribute(
@@ -29,6 +29,24 @@ describe("Storefront", () => {
       "href",
       "/laden/ocakbasi-rheydt/datenschutz",
     );
-    expect(screen.queryByRole("button", { name: /bestellen/i })).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /bestellen|whatsapp/i }).length,
+    ).toBeGreaterThan(1);
+    expect(screen.getAllByRole("link", { name: /anrufen/i })[0]).toHaveAttribute(
+      "href",
+      "tel:+492166123456",
+    );
+  });
+
+  it("uses telephone as the primary fallback without a WhatsApp number", () => {
+    render(
+      <Storefront
+        profile={{ ...demoStoreProfile, whatsappPhone: "" }}
+        publicSlug="ocakbasi-rheydt"
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /whatsapp|bestellen/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /anrufen/i }).length).toBeGreaterThan(1);
   });
 });
