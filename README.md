@@ -14,6 +14,10 @@ umfasst:
 Die Ladenwebsite ist eine reine Informationsseite. Warenkorb, Onlinebestellung,
 Zahlung sowie Domain-/SSL-Automation sind bewusst noch nicht enthalten.
 
+Die öffentliche Demo-Variante läuft ohne Registrierung, Passwort-E-Mails und
+Teameinladungsversand. Sie verwendet ausschließlich vorbereitete, synthetische
+Konten; Anmeldung und serverseitige Rollenprüfung bleiben aktiv.
+
 ## Lokal starten
 
 Voraussetzungen sind Node.js 20.9 oder neuer, pnpm und Docker Compose. Unter
@@ -145,10 +149,25 @@ Release muss diese Kette regulär aktualisiert und der Audit erneut ausgeführt
 werden; ein ungetesteter Zwangs-Override ist nicht eingecheckt.
 
 Diese technische Prüfung ersetzt weder eine Lizenz- noch eine
-Datenschutzberatung. Vor Hetzner-Hosting, echten Kundendaten, Domainregistrierung
-oder Auftragsverarbeitung sind insbesondere AV-Verträge, Löschkonzept,
-Datenschutzerklärung, TOMs, Backup/Restore und Drittanbietertexte fachkundig zu
-prüfen.
+Datenschutzberatung. Die veröffentlichte Demo enthält deshalb keine echten
+Kunden- oder Zahlungsdaten. Eine formale DSGVO-Prüfung ist für diesen
+Demo-Schritt bewusst nicht Bestandteil der technischen Freigabe; vor echten
+Kundendaten oder Auftragsverarbeitung bleibt sie separat nachzuholen.
+
+## Öffentliche Demo betreiben
+
+Die Produktionsvariante nutzt ein Standalone-App-Image, PostgreSQL und Caddy.
+Nur Caddy veröffentlicht Ports; die Datenbank bleibt im internen
+Compose-Netzwerk. `.env.production.example` dokumentiert die erforderlichen
+Werte, darf aber nicht mit den Platzhaltern produktiv verwendet werden.
+
+```bash
+docker compose --env-file .env.production \
+  -f compose.production.yaml up -d
+```
+
+Provisionierung, Deployment, tägliche Dumps, Restore-Probe und Rollback sind im
+[Hetzner-Demo-Runbook](docs/runbooks/hetzner-demo.md) beschrieben.
 
 ## Dokumentation
 
@@ -156,3 +175,4 @@ prüfen.
 - Auth-/Mandantenentwurf: `docs/superpowers/specs/2026-08-21-kebapp-auth-mandanten-postgresql-design.md`
 - MVP-Plan: `docs/superpowers/plans/2026-08-21-kebapp-mvp-vertical-slice.md`
 - Auth-/Mandantenplan: `docs/superpowers/plans/2026-08-21-kebapp-auth-mandanten-postgresql.md`
+- Hetzner-Demo-Runbook: `docs/runbooks/hetzner-demo.md`

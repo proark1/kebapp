@@ -1,0 +1,85 @@
+#cloud-config
+timezone: Europe/Berlin
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - docker-compose-v2
+  - docker.io
+  - fail2ban
+  - unattended-upgrades
+  - ufw
+
+users:
+  - default
+  - name: deploy
+    gecos: Kebapp deployment
+    groups: [docker]
+    lock_passwd: true
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+
+ssh_pwauth: false
+disable_root: true
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/90-kebapp-hardening.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      AllowUsers deploy
+  - path: /etc/fail2ban/jail.d/kebapp-sshd.conf
+    permissions: "0644"
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 5
+      findtime = 10m
+      bantime = 1h
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {
+        "live-restore": true,
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-file": "3",
+          "max-size": "10m"
+        }
+      }
+  - path: /etc/apt/apt.conf.d/52kebapp-unattended-upgrades
+    permissions: "0644"
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+
+runcmd:
+  - [install, -d, -m, "0750", -o, deploy, -g, deploy, /opt/kebapp]
+  - [install, -d, -m, "0750", -o, deploy, -g, deploy, /opt/kebapp/releases]
+  - [install, -d, -m, "0750", -o, deploy, -g, deploy, /opt/kebapp/shared]
+  - [install, -d, -m, "0750", -o, deploy, -g, deploy, /opt/kebapp/state]
+  - [install, -d, -m, "0700", -o, deploy, -g, deploy, /var/backups/kebapp]
+  - [sh, -c, "test -f /swapfile || fallocate -l 2G /swapfile"]
+  - [chmod, "0600", /swapfile]
+  - [mkswap, /swapfile]
+  - [sh, -c, "swapon --show=NAME --noheadings | grep -qx /swapfile || swapon /swapfile"]
+  - [sh, -c, "grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab"]
+  - [ufw, default, deny, incoming]
+  - [ufw, default, allow, outgoing]
+  - [ufw, allow, from, __ADMIN_CIDR__, to, any, port, "22", proto, tcp]
+  - [ufw, allow, "80/tcp"]
+  - [ufw, allow, "443/tcp"]
+  - [ufw, allow, "443/udp"]
+  - [ufw, --force, enable]
+  - [systemctl, enable, --now, docker]
+  - [systemctl, restart, ssh]
+  - [systemctl, enable, --now, fail2ban]
+  - [systemctl, enable, --now, unattended-upgrades]
+
+final_message: "Kebapp-Basis ist nach $UPTIME Sekunden bereit."
