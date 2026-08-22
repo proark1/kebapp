@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getRuntimeEnv } from "@/lib/env";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
+import { isPublicDemo, publicDemoMessage } from "@/server/demo/demo-mode";
 import {
   createEmployeeInvitation,
   ExistingMembershipError,
@@ -31,6 +32,10 @@ export async function createInvitationAction(
   _previousState: InvitationFormState,
   formData: FormData,
 ): Promise<InvitationFormState> {
+  if (isPublicDemo()) {
+    return { message: publicDemoMessage, status: "ERROR" };
+  }
+
   const { actor, organization } = await requireActiveOrganizationPage(
     "/app/einstellungen/team",
   );

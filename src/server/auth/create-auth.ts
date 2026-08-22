@@ -14,9 +14,20 @@ import {
 export type CreateKebappAuthOptions = {
   baseURL: string;
   database: KebappDatabase;
+  demoMode?: boolean;
   secret: string;
   sendEmail: (message: AuthEmail) => Promise<void>;
 };
+
+const demoDisabledPaths = [
+  "/change-email",
+  "/change-password",
+  "/delete-user",
+  "/request-password-reset",
+  "/reset-password",
+  "/send-verification-email",
+  "/sign-up/email",
+] as const;
 
 function dispatchEmail(
   sendEmail: CreateKebappAuthOptions["sendEmail"],
@@ -49,6 +60,7 @@ export function createKebappAuth(options: CreateKebappAuthOptions) {
       schema,
       transaction: true,
     }),
+    disabledPaths: options.demoMode ? [...demoDisabledPaths] : [],
     emailAndPassword: {
       autoSignIn: false,
       enabled: true,

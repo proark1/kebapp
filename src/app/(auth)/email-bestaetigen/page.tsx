@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { resendVerificationAction } from "../actions";
 import { AuthCard } from "@/components/auth/auth-card";
 import { EmailVerificationForm } from "@/components/auth/email-verification-form";
+import { isPublicDemo, publicDemoMessage } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: "E-Mail bestätigen",
@@ -22,7 +24,9 @@ function firstValue(value?: string | string[]): string | undefined {
 export default async function VerificationPage({
   searchParams,
 }: VerificationPageProps) {
+  await connection();
   const params = await searchParams;
+  const demoMode = isPublicDemo();
   const status = firstValue(params.status);
   const verified = status === "verified" && !firstValue(params.error);
 
@@ -45,7 +49,11 @@ export default async function VerificationPage({
 
   return (
     <AuthCard
-      description="Öffne die Nachricht von Kebapp in Mailpit und klicke dort auf den Bestätigungslink."
+      description={
+        demoMode
+          ? "E-Mail-Bestätigungen sind in dieser öffentlichen Demo abgeschaltet."
+          : "Öffne die Nachricht von Kebapp in Mailpit und klicke dort auf den Bestätigungslink."
+      }
       eyebrow="Ein Schritt fehlt"
       footer={
         <p>
@@ -55,12 +63,17 @@ export default async function VerificationPage({
       title="Postfach prüfen."
     >
       <p className="auth-page-message" role="status">
-        {status === "offen"
+        {demoMode
+          ? publicDemoMessage
+          : status === "offen"
           ? "Deine E-Mail ist noch nicht bestätigt. Beim Anmeldeversuch wurde eine neue Nachricht angefordert."
           : "Wenn ein nutzbarer Zugang angelegt werden konnte, liegt eine Bestätigungs-E-Mail in Mailpit bereit."}
       </p>
       <div className="auth-divider"><span>Keine Nachricht gefunden?</span></div>
-      <EmailVerificationForm action={resendVerificationAction} />
+      <EmailVerificationForm
+        action={resendVerificationAction}
+        disabled={demoMode}
+      />
     </AuthCard>
   );
 }

@@ -6,9 +6,13 @@ import { initialAuthFormState } from "@/lib/auth-form-state";
 
 type EmailVerificationFormProps = {
   action: AuthFormAction;
+  disabled?: boolean;
 };
 
-export function EmailVerificationForm({ action }: EmailVerificationFormProps) {
+export function EmailVerificationForm({
+  action,
+  disabled = false,
+}: EmailVerificationFormProps) {
   const [state, formAction, pending] = useActionState(
     action,
     initialAuthFormState,
@@ -24,6 +28,7 @@ export function EmailVerificationForm({ action }: EmailVerificationFormProps) {
           }
           aria-invalid={state.fieldErrors?.email ? true : undefined}
           autoComplete="email"
+          disabled={disabled}
           id="verification-email"
           inputMode="email"
           maxLength={320}
@@ -50,9 +55,17 @@ export function EmailVerificationForm({ action }: EmailVerificationFormProps) {
         ) : null}
       </div>
 
-      <button className="auth-submit auth-submit--secondary" disabled={pending} type="submit">
+      <button
+        className="auth-submit auth-submit--secondary"
+        disabled={disabled || pending}
+        type="submit"
+      >
         {pending ? <span className="auth-spinner" aria-hidden="true" /> : null}
-        {pending ? "E-Mail wird angefordert …" : "E-Mail erneut senden"}
+        {disabled
+          ? "In der Demo deaktiviert"
+          : pending
+            ? "E-Mail wird angefordert …"
+            : "E-Mail erneut senden"}
       </button>
     </form>
   );

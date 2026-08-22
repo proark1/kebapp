@@ -17,6 +17,10 @@ import type {
 } from "@/lib/auth-form-state";
 import { chooseSafeContinueDestination } from "@/lib/post-login-destination";
 import { getPostLoginDestination } from "@/server/auth/destination";
+import {
+  isPublicDemo,
+  publicDemoAuthState,
+} from "@/server/demo/demo-mode";
 
 const infrastructureMessage =
   "Das hat gerade nicht geklappt. Prüfe bitte, ob PostgreSQL und Mailpit lokal laufen, und versuche es erneut.";
@@ -135,6 +139,8 @@ export async function registerAction(
   _previousState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (isPublicDemo()) return publicDemoAuthState();
+
   const parsed = registrationFormSchema.safeParse({
     confirmPassword: stringValue(formData, "confirmPassword"),
     email: stringValue(formData, "email"),
@@ -181,6 +187,8 @@ export async function resendVerificationAction(
   _previousState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (isPublicDemo()) return publicDemoAuthState();
+
   const parsed = emailOnlyFormSchema.safeParse({
     email: stringValue(formData, "email"),
   });
@@ -223,6 +231,8 @@ export async function requestPasswordResetAction(
   _previousState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (isPublicDemo()) return publicDemoAuthState();
+
   const parsed = emailOnlyFormSchema.safeParse({
     email: stringValue(formData, "email"),
   });
@@ -265,6 +275,8 @@ export async function resetPasswordAction(
   _previousState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
+  if (isPublicDemo()) return publicDemoAuthState();
+
   const parsed = resetPasswordFormSchema.safeParse({
     confirmPassword: stringValue(formData, "confirmPassword"),
     password: stringValue(formData, "password"),

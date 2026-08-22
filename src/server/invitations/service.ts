@@ -119,6 +119,9 @@ function isUniqueViolation(error: unknown): boolean {
 
 async function sendInvitationEmail(message: AuthEmail): Promise<void> {
   const env = getRuntimeEnv();
+  if (!env.SMTP_FROM || !env.SMTP_HOST || !env.SMTP_PORT) {
+    throw new Error("SMTP ist in dieser Umgebung nicht konfiguriert.");
+  }
   const mailer = createMailer({
     from: env.SMTP_FROM,
     host: env.SMTP_HOST,

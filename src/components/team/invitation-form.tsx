@@ -7,22 +7,32 @@ import type { InvitationFormState } from "@/app/app/einstellungen/team/actions";
 
 const initialState: InvitationFormState = { status: "IDLE" };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button className="team-invite-form__submit" disabled={pending} type="submit">
+    <button
+      className="team-invite-form__submit"
+      disabled={disabled || pending}
+      type="submit"
+    >
       <MailPlus size={18} aria-hidden="true" />
-      {pending ? "Wird versendet …" : "Einladung senden"}
+      {disabled
+        ? "In der Demo deaktiviert"
+        : pending
+          ? "Wird versendet …"
+          : "Einladung senden"}
     </button>
   );
 }
 export function InvitationForm({
   action,
+  disabled = false,
 }: {
   action: (
     state: InvitationFormState,
     formData: FormData,
   ) => Promise<InvitationFormState>;
+  disabled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -39,16 +49,19 @@ export function InvitationForm({
       <div className="team-invite-form__row">
         <input
           autoComplete="email"
+          disabled={disabled}
           id="team-email"
           name="email"
           placeholder="mitarbeiter@beispiel.de"
           required
           type="email"
         />
-        <SubmitButton />
+        <SubmitButton disabled={disabled} />
       </div>
       <p className="team-invite-form__hint">
-        Die Einladung gilt 72 Stunden und ausschließlich für diese E-Mail-Adresse.
+        {disabled
+          ? "Diese öffentliche Demo versendet keine Einladungs-E-Mails."
+          : "Die Einladung gilt 72 Stunden und ausschließlich für diese E-Mail-Adresse."}
       </p>
       {state.message ? (
         <p

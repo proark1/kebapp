@@ -6,15 +6,22 @@ import { database } from "@/server/db/client";
 import { createMailer } from "@/server/email/mailer";
 
 const runtimeEnv = getRuntimeEnv();
-const runtimeMailer = createMailer({
-  from: runtimeEnv.SMTP_FROM,
-  host: runtimeEnv.SMTP_HOST,
-  port: runtimeEnv.SMTP_PORT,
-});
+const runtimeMailer = runtimeEnv.DEMO_MODE
+  ? null
+  : createMailer({
+      from: runtimeEnv.SMTP_FROM!,
+      host: runtimeEnv.SMTP_HOST!,
+      port: runtimeEnv.SMTP_PORT!,
+    });
 
 export const auth = createKebappAuth({
   baseURL: runtimeEnv.BETTER_AUTH_URL,
   database,
+  demoMode: runtimeEnv.DEMO_MODE,
   secret: runtimeEnv.BETTER_AUTH_SECRET,
-  sendEmail: runtimeMailer.send,
+  sendEmail:
+    runtimeMailer?.send ??
+    (async () => {
+      throw new Error("E-Mail-Versand ist im öffentlichen Demo-Modus deaktiviert.");
+    }),
 });

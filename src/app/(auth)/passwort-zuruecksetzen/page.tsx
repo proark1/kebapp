@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { resetPasswordAction } from "../actions";
 import { AuthCard } from "@/components/auth/auth-card";
 import { PasswordResetForm } from "@/components/auth/password-reset-form";
+import { isPublicDemo, publicDemoMessage } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
   title: "Passwort zurücksetzen",
@@ -22,7 +24,9 @@ function firstValue(value?: string | string[]): string | undefined {
 export default async function ResetPasswordPage({
   searchParams,
 }: ResetPasswordPageProps) {
+  await connection();
   const params = await searchParams;
+  const demoMode = isPublicDemo();
   const token = firstValue(params.token);
   const hasCallbackError = Boolean(firstValue(params.error));
 
@@ -37,7 +41,16 @@ export default async function ResetPasswordPage({
       }
       title="Neues Passwort festlegen."
     >
-      {!token || hasCallbackError ? (
+      {demoMode ? (
+        <>
+          <p className="auth-page-message" role="status">
+            {publicDemoMessage}
+          </p>
+          <Link className="auth-submit" href="/anmelden">
+            Zur Anmeldung
+          </Link>
+        </>
+      ) : !token || hasCallbackError ? (
         <>
           <p className="auth-page-message auth-page-message--error" role="alert">
             Der Link ist ungültig oder abgelaufen. Fordere bitte einen neuen an.

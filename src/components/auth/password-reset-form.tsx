@@ -7,6 +7,7 @@ import { initialAuthFormState } from "@/lib/auth-form-state";
 type PasswordResetFormProps =
   | {
       action: AuthFormAction;
+      disabled?: boolean;
       mode: "request";
     }
   | {
@@ -33,6 +34,7 @@ export function PasswordResetForm(props: PasswordResetFormProps) {
             }
             aria-invalid={state.fieldErrors?.email ? true : undefined}
             autoComplete="email"
+            disabled={props.disabled}
             autoFocus
             id="reset-email"
             inputMode="email"
@@ -120,9 +122,15 @@ export function PasswordResetForm(props: PasswordResetFormProps) {
         ) : null}
       </div>
 
-      <button className="auth-submit" disabled={pending} type="submit">
+      <button
+        className="auth-submit"
+        disabled={(requestMode && props.disabled) || pending}
+        type="submit"
+      >
         {pending ? <span className="auth-spinner" aria-hidden="true" /> : null}
-        {pending
+        {requestMode && props.disabled
+          ? "In der Demo deaktiviert"
+          : pending
           ? requestMode
             ? "E-Mail wird vorbereitet …"
             : "Passwort wird gespeichert …"

@@ -83,6 +83,7 @@ function emailLink(message: string, pathname: string): URL {
 
 describe.sequential("Better Auth with PostgreSQL and Mailpit", () => {
   let auth: AuthInstance;
+  let demoAuth: AuthInstance;
   let harness: TestDatabaseHarness;
   let mailer: ReturnType<typeof createMailer>;
   let mailpitURL: string;
@@ -134,6 +135,44 @@ describe.sequential("Better Auth with PostgreSQL and Mailpit", () => {
       secret: testSecret,
       sendEmail: mailer.send,
     });
+    demoAuth = createKebappAuth({
+      baseURL,
+      database: harness.runtimeDatabase,
+      demoMode: true,
+      secret: testSecret,
+      sendEmail: async () => {
+        throw new Error("Die Demo darf keine E-Mail versenden.");
+      },
+    });
+  });
+
+  it("blocks account and email mutations at the Better Auth router in demo mode", async () => {
+    for (const path of [
+      "/change-email",
+      "/change-password",
+      "/delete-user",
+      "/request-password-reset",
+      "/reset-password",
+      "/send-verification-email",
+      "/sign-up/email",
+    ]) {
+      const response = await demoAuth.handler(
+        new Request(`${baseURL}/api/auth${path}`, {
+          body: JSON.stringify({
+            email: uniqueEmail(),
+            name: "Demo Versuch",
+            password: initialPassword,
+          }),
+          headers: {
+            "content-type": "application/json",
+            origin: baseURL,
+          },
+          method: "POST",
+        }),
+      );
+
+      expect(response.status, path).toBe(404);
+    }
   });
 
   afterAll(async () => {

@@ -13,13 +13,39 @@ const validRuntimeEnv = {
   SMTP_PORT: "1025",
   SMTP_FROM: "Kebapp lokal <no-reply@kebapp.local>",
 };
+const validDemoEnv = {
+  DATABASE_URL: validRuntimeEnv.DATABASE_URL,
+  BETTER_AUTH_SECRET: validRuntimeEnv.BETTER_AUTH_SECRET,
+  BETTER_AUTH_URL: validRuntimeEnv.BETTER_AUTH_URL,
+  DEMO_MODE: "true",
+};
 
 describe("parseRuntimeEnv", () => {
   it("parses the local runtime configuration", () => {
     expect(parseRuntimeEnv(validRuntimeEnv)).toEqual({
       ...validRuntimeEnv,
+      DEMO_MODE: false,
       SMTP_PORT: 1025,
     });
+  });
+
+  it("allows the public demo without SMTP configuration", () => {
+    expect(parseRuntimeEnv(validDemoEnv)).toEqual({
+      DATABASE_URL: validDemoEnv.DATABASE_URL,
+      BETTER_AUTH_SECRET: validDemoEnv.BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: validDemoEnv.BETTER_AUTH_URL,
+      DEMO_MODE: true,
+    });
+  });
+
+  it("requires SMTP configuration outside the public demo", () => {
+    expect(() =>
+      parseRuntimeEnv({
+        DATABASE_URL: validRuntimeEnv.DATABASE_URL,
+        BETTER_AUTH_SECRET: validRuntimeEnv.BETTER_AUTH_SECRET,
+        BETTER_AUTH_URL: validRuntimeEnv.BETTER_AUTH_URL,
+      }),
+    ).toThrow("Außerhalb des Demo-Modus ist SMTP erforderlich.");
   });
 
   it("rejects a short Better Auth secret", () => {

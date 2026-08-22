@@ -45,6 +45,24 @@ describe("Kebapp authentication forms", () => {
     expect(confirmation).toHaveAttribute("autocomplete", "new-password");
   });
 
+  it("makes registration and password email controls inert in demo mode", () => {
+    const { unmount } = render(
+      <RegistrationForm action={idleAction} disabled />,
+    );
+
+    expect(screen.getByLabelText("E-Mail-Adresse")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "In der Demo deaktiviert" }),
+    ).toBeDisabled();
+
+    unmount();
+    render(<PasswordResetForm action={idleAction} disabled mode="request" />);
+    expect(screen.getByLabelText("E-Mail-Adresse")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "In der Demo deaktiviert" }),
+    ).toBeDisabled();
+  });
+
   it("rejects malformed server input and unsafe continuation paths", () => {
     expect(
       loginFormSchema.safeParse({

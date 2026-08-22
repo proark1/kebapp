@@ -8,6 +8,7 @@ import {
 import { InvitationForm } from "@/components/team/invitation-form";
 import { MemberList } from "@/components/team/member-list";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
+import { isPublicDemo, publicDemoMessage } from "@/server/demo/demo-mode";
 import { listOrganizationTeam } from "@/server/invitations/service";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default async function TeamPage() {
     actor,
     organizationId: organization.organizationId,
   });
+  const demoMode = isPublicDemo();
 
   return (
     <div className="team-page">
@@ -53,7 +55,12 @@ export default async function TeamPage() {
             <p>Ein Konto kann erst nach Anmeldung mit bestätigter E-Mail beitreten.</p>
           </div>
         </div>
-        <InvitationForm action={createInvitationAction} />
+        {demoMode ? (
+          <p className="team-invite-form__message" role="status">
+            {publicDemoMessage}
+          </p>
+        ) : null}
+        <InvitationForm action={createInvitationAction} disabled={demoMode} />
       </section>
 
       <MemberList

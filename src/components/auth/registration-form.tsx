@@ -6,11 +6,13 @@ import { initialAuthFormState } from "@/lib/auth-form-state";
 
 type RegistrationFormProps = {
   action: AuthFormAction;
+  disabled?: boolean;
 };
 
 type RegistrationFieldProps = {
   autoComplete: string;
   error?: string;
+  disabled?: boolean;
   label: string;
   name: Extract<AuthFieldName, "confirmPassword" | "email" | "name" | "password">;
   placeholder?: string;
@@ -19,6 +21,7 @@ type RegistrationFieldProps = {
 
 function RegistrationField({
   autoComplete,
+  disabled,
   error,
   label,
   name,
@@ -35,6 +38,7 @@ function RegistrationField({
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={error ? true : undefined}
         autoComplete={autoComplete}
+        disabled={disabled}
         id={id}
         inputMode={type === "email" ? "email" : undefined}
         maxLength={isPassword ? 128 : name === "email" ? 320 : 160}
@@ -53,7 +57,10 @@ function RegistrationField({
   );
 }
 
-export function RegistrationForm({ action }: RegistrationFormProps) {
+export function RegistrationForm({
+  action,
+  disabled = false,
+}: RegistrationFormProps) {
   const [state, formAction, pending] = useActionState(
     action,
     initialAuthFormState,
@@ -63,6 +70,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
     <form action={formAction} className="auth-form">
       <RegistrationField
         autoComplete="name"
+        disabled={disabled}
         error={state.fieldErrors?.name}
         label="Dein Name"
         name="name"
@@ -71,6 +79,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
       />
       <RegistrationField
         autoComplete="email"
+        disabled={disabled}
         error={state.fieldErrors?.email}
         label="E-Mail-Adresse"
         name="email"
@@ -79,6 +88,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
       />
       <RegistrationField
         autoComplete="new-password"
+        disabled={disabled}
         error={state.fieldErrors?.password}
         label="Passwort"
         name="password"
@@ -86,6 +96,7 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
       />
       <RegistrationField
         autoComplete="new-password"
+        disabled={disabled}
         error={state.fieldErrors?.confirmPassword}
         label="Passwort wiederholen"
         name="confirmPassword"
@@ -107,9 +118,17 @@ export function RegistrationForm({ action }: RegistrationFormProps) {
         ) : null}
       </div>
 
-      <button className="auth-submit" disabled={pending} type="submit">
+      <button
+        className="auth-submit"
+        disabled={disabled || pending}
+        type="submit"
+      >
         {pending ? <span className="auth-spinner" aria-hidden="true" /> : null}
-        {pending ? "Zugang wird angelegt …" : "Zugang anlegen"}
+        {disabled
+          ? "In der Demo deaktiviert"
+          : pending
+            ? "Zugang wird angelegt …"
+            : "Zugang anlegen"}
       </button>
     </form>
   );
