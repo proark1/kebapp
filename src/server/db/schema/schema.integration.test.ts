@@ -14,6 +14,7 @@ const expectedTables = [
   "incoming_invoices",
   "hygiene_entries",
   "hygiene_items",
+  "incoming_invoices",
   "invitations",
   "memberships",
   "organizations",
