@@ -142,6 +142,12 @@ export default async function AdminRoundDetailPage({
             </button>
           </form>
         ) : null}
+        <Link
+          className="button button--secondary"
+          href={`/admin/runden?klon=${round.id}`}
+        >
+          Runde klonen
+        </Link>
         {bundle.length > 0 ? (
           <a
             className="button button--secondary"

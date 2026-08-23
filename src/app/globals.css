@@ -7935,3 +7935,58 @@ a {
   font-weight: 750;
   border-top: 1px solid var(--line);
 }
+
+/* === Preisstufen-Editor === */
+
+.tier-editor {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  background: #f7f9f5;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.tier-editor legend {
+  padding-right: 8px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.tier-editor > small {
+  color: var(--muted);
+}
+
+.tier-editor__rows {
+  display: grid;
+  gap: 8px;
+}
+
+.tier-editor__row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.6fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.tier-editor__row .field input {
+  min-height: 40px;
+}
+
+.tier-editor__remove {
+  width: 40px;
+  height: 40px;
+}
+
+.rounds-clone-hint {
+  margin: -6px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .tier-editor__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

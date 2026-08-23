@@ -6,7 +6,10 @@ import {
 } from "@/server/organizations/admin";
 import {
   createBuyingRound,
+  DuplicateTierThresholdError,
+  getBuyingRoundDetail,
   getConfirmedRoundBundle,
+  getRoundCloneTemplate,
   listActiveOrganizations,
   listBuyingRounds,
   RoundTransitionError,
@@ -357,5 +360,70 @@ describe.sequential("admin buying rounds and demand templates", () => {
         ),
     );
     expect(bundle).toEqual([]);
+  });
+
+  it("stores pricing tiers sorted and rejects duplicate thresholds", async () => {
+    const withTiers = await createBuyingRound({
+      actor: actors.admin,
+      database: harness.runtimeDatabase,
+      input: {
+        ...roundInput({ name: "Stufenrunde" }),
+        pricingTiers: [
+          { label: "Gruppe", minimumQuantity: 300, unitPrice: 8.9 },
+          { label: "Einzelkondition", minimumQuantity: 0, unitPrice: 9.4 },
+        ],
+      },
+    });
+
+    const detail = await getBuyingRoundDetail({
+      actor: actors.admin,
+      database: harness.runtimeDatabase,
+      roundId: withTiers.roundId,
+    });
+    expect(detail.detail.pricingTiers).toEqual([
+      { label: "Einzelkondition", minimumQuantity: "0.000", unitPrice: "9.40" },
+      { label: "Gruppe", minimumQuantity: "300.000", unitPrice: "8.90" },
+    ]);
+
+    await expect(
+      createBuyingRound({
+        actor: actors.admin,
+        database: harness.runtimeDatabase,
+        input: {
+          ...roundInput({ name: "Kaputte Stufen" }),
+          pricingTiers: [
+            { label: "A", minimumQuantity: 0, unitPrice: 9.4 },
+            { label: "B", minimumQuantity: 0, unitPrice: 8.9 },
+          ],
+        },
+      }),
+    ).rejects.toBeInstanceOf(DuplicateTierThresholdError);
+  });
+
+  it("provides a clone template without dates for a follow-up round", async () => {
+    const source = await createBuyingRound({
+      actor: actors.admin,
+      database: harness.runtimeDatabase,
+      input: {
+        ...roundInput({ name: "Klonquelle" }),
+        pricingTiers: [
+          { label: "Einzelkondition", minimumQuantity: 0, unitPrice: 9.4 },
+        ],
+      },
+    });
+    const template = await getRoundCloneTemplate({
+      actor: actors.admin,
+      database: harness.runtimeDatabase,
+      roundId: source.roundId,
+    });
+
+    expect(template.name).toBe("Klonquelle · Folgerunde");
+    expect(template.organizationId).toBe(ids.organizationA);
+    expect(template.regionalKey).toBe("mg-test-region");
+    expect(template.targetQuantity).toBe(400);
+    expect(template.referenceUnitPrice).toBeCloseTo(9.18, 2);
+    expect(template.pricingTiers).toEqual([
+      { label: "Einzelkondition", minimumQuantity: "0", unitPrice: "9.4" },
+    ]);
   });
 });

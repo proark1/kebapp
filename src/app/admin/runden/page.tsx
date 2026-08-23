@@ -4,6 +4,7 @@ import { transitionBuyingRoundAction } from "@/app/admin/runden/actions";
 import { RoundCreateForm } from "@/components/admin-rounds/round-create-form";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
 import {
+  getRoundCloneTemplate,
   listActiveOrganizations,
   listBuyingRounds,
 } from "@/server/procurement/rounds";
@@ -38,7 +39,7 @@ function formatDate(date: Date): string {
 export default async function AdminRoundsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ meldung?: string }>;
+  searchParams: Promise<{ klon?: string; meldung?: string }>;
 }) {
   const actor = await requirePlatformAdminPage("/admin/runden");
   const [rounds, organizations, query] = await Promise.all([
@@ -47,6 +48,36 @@ export default async function AdminRoundsPage({
     searchParams,
   ]);
   const meldung = query.meldung ? meldungMessages[query.meldung] : undefined;
+
+  let cloneInitial: import("@/components/admin-rounds/round-create-form").RoundFormInitial | undefined;
+  if (query.klon) {
+    try {
+      const template = await getRoundCloneTemplate({
+        actor,
+        roundId: query.klon,
+      });
+      cloneInitial = {
+        name: template.name,
+        organizationId: organizations.some(
+          (organization) =>
+            organization.organizationId === template.organizationId,
+        )
+          ? template.organizationId
+          : undefined,
+        pricingTiers: template.pricingTiers.length
+          ? template.pricingTiers
+          : [{ label: "", minimumQuantity: "", unitPrice: "" }],
+        referenceUnitPrice:
+          template.referenceUnitPrice === null
+            ? ""
+            : String(template.referenceUnitPrice),
+        regionalKey: template.regionalKey,
+        targetQuantity: String(template.targetQuantity),
+      };
+    } catch {
+      meldungMessages["nicht-gefunden"] ??= "Aktion nicht möglich: Runde nicht gefunden";
+    }
+  }
 
   const nextActions: Record<string, Array<{
     action: "OPEN" | "CLOSE" | "SUBMIT" | "CANCEL";
@@ -84,8 +115,15 @@ export default async function AdminRoundsPage({
       ) : null}
 
       <section className="panel rounds-create-panel" aria-labelledby="create-title">
-        <h2 id="create-title">Neue Sammelrunde anlegen</h2>
-        <RoundCreateForm organizations={organizations} />
+        <h2 id="create-title">
+          {cloneInitial ? "Folgerunde anlegen (vorausgefüllt)" : "Neue Sammelrunde anlegen"}
+        </h2>
+        {cloneInitial ? (
+          <p className="rounds-clone-hint">
+            Name, Region, Zielmenge und Preisstufen sind übernommen — Bestellschluss und Lieferfenster legst du neu fest.
+          </p>
+        ) : null}
+        <RoundCreateForm initial={cloneInitial} organizations={organizations} />
       </section>
 
       <section className="request-file request-file--rounds" aria-label="Liste der Sammelrunden">

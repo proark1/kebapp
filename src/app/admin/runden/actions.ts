@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   createBuyingRound,
+  DuplicateTierThresholdError,
   RoundNotFoundError,
   RoundTransitionError,
   transitionBuyingRound,
@@ -23,6 +24,7 @@ const createSchema = z.object({
   deliveryStartsAt: z.string().min(1),
   name: z.string().trim().min(2).max(180),
   organizationId: z.uuid(),
+  pricingTiersJson: z.string().optional(),
   referenceUnitPrice: z
     .string()
     .trim()
@@ -30,6 +32,12 @@ const createSchema = z.object({
     .transform((value) => (value ? value : undefined)),
   regionalKey: z.string().trim().min(2).max(120),
   targetQuantity: z.string().trim().min(1),
+});
+
+const tiersJsonSchema = z.object({
+  label: z.string(),
+  minimumQuantity: z.number(),
+  unitPrice: z.number(),
 });
 
 function value(formData: FormData, field: string): string {
@@ -57,22 +65,36 @@ export async function createBuyingRoundAction(
     deliveryStartsAt: value(formData, "deliveryStartsAt"),
     name: value(formData, "name"),
     organizationId: value(formData, "organizationId"),
+    pricingTiersJson: value(formData, "pricingTiersJson") || undefined,
     referenceUnitPrice: value(formData, "referenceUnitPrice") || undefined,
     regionalKey: value(formData, "regionalKey"),
     targetQuantity: value(formData, "targetQuantity"),
   });
 
   if (!parsed.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0] ?? "form");
-      fieldErrors[key] ??= issue.message;
+    return fieldErrorState(parsed.error);
+  }
+
+  let pricingTiers: Array<{
+    label: string;
+    minimumQuantity: number;
+    unitPrice: number;
+  }> = [];
+  if (parsed.data.pricingTiersJson) {
+    let rawTiers: unknown;
+    try {
+      rawTiers = JSON.parse(parsed.data.pricingTiersJson);
+    } catch {
+      return {
+        message: "Die Preisstufen konnten nicht gelesen werden.",
+        status: "error",
+      };
     }
-    return {
-      fieldErrors,
-      message: "Bitte prüfe die markierten Felder.",
-      status: "error",
-    };
+    const tiers = z.array(tiersJsonSchema).safeParse(rawTiers);
+    if (!tiers.success) {
+      return fieldErrorState(tiers.error, "pricingTiers");
+    }
+    pricingTiers = tiers.data;
   }
 
   let roundId: string;
@@ -85,6 +107,7 @@ export async function createBuyingRoundAction(
         deliveryStartsAt: parsed.data.deliveryStartsAt,
         name: parsed.data.name,
         organizationId: parsed.data.organizationId,
+        pricingTiers,
         referenceUnitPrice: parsed.data.referenceUnitPrice
           ? Number(parsed.data.referenceUnitPrice.replace(",", "."))
           : undefined,
@@ -94,6 +117,13 @@ export async function createBuyingRoundAction(
     });
     roundId = result.roundId;
   } catch (error) {
+    if (error instanceof DuplicateTierThresholdError) {
+      return {
+        fieldErrors: { pricingTiers: error.message },
+        message: error.message,
+        status: "error",
+      };
+    }
     console.error("Das Anlegen der Sammelrunde ist fehlgeschlagen.");
     return {
       message:
@@ -107,6 +137,22 @@ export async function createBuyingRoundAction(
   revalidatePath("/admin/runden");
   revalidatePath("/admin");
   redirect(`/admin/runden/${roundId}?aktion=angelegt`);
+}
+
+function fieldErrorState(
+  error: z.ZodError,
+  fallbackField = "form",
+): AdminRoundFormState {
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? fallbackField);
+    fieldErrors[key] ??= issue.message;
+  }
+  return {
+    fieldErrors,
+    message: "Bitte prüfe die markierten Felder.",
+    status: "error",
+  };
 }
 
 export async function transitionBuyingRoundAction(

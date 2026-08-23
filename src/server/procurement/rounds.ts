@@ -27,6 +27,16 @@ export class RoundTransitionError extends Error {
   }
 }
 
+export const pricingTierInputSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  minimumQuantity: z.coerce.number().finite().min(0).max(1_000_000),
+  unitPrice: z.coerce.number().finite().min(0.01).max(100_000),
+});
+
+const tiersSchema = z
+  .array(pricingTierInputSchema)
+  .max(8, "Höchstens acht Preisstufen sind möglich.");
+
 export const buyingRoundInputSchema = z
   .object({
     organizationId: z.uuid(),
@@ -50,7 +60,41 @@ export const buyingRoundInputSchema = z
     },
   );
 
-export type BuyingRoundInput = z.input<typeof buyingRoundInputSchema>;
+export type BuyingRoundInput = z.input<typeof buyingRoundInputSchema> & {
+  pricingTiers?: Array<{ label: string; minimumQuantity: number; unitPrice: number }>;
+};
+
+export class DuplicateTierThresholdError extends Error {
+  constructor() {
+    super(
+      "Jede Preisstufe braucht eine eigene Mindestmenge.",
+    );
+    this.name = "DuplicateTierThresholdError";
+  }
+}
+
+function normalizePricingTiers(
+  input: BuyingRoundInput["pricingTiers"],
+): Array<{ label: string; minimumQuantity: string; unitPrice: string }> {
+  if (!input || input.length === 0) {
+    return [];
+  }
+  const parsed = tiersSchema.parse(input);
+  const seenThresholds = new Set<number>();
+  for (const tier of parsed) {
+    if (seenThresholds.has(tier.minimumQuantity)) {
+      throw new DuplicateTierThresholdError();
+    }
+    seenThresholds.add(tier.minimumQuantity);
+  }
+  return [...parsed]
+    .sort((first, second) => first.minimumQuantity - second.minimumQuantity)
+    .map((tier) => ({
+      label: tier.label,
+      minimumQuantity: tier.minimumQuantity.toFixed(3),
+      unitPrice: tier.unitPrice.toFixed(2),
+    }));
+}
 
 const roundActionSchema = z.object({
   roundId: z.uuid(),
@@ -141,6 +185,7 @@ export async function createBuyingRound(input: {
   input: BuyingRoundInput;
 }): Promise<{ roundId: string }> {
   const parsed = buyingRoundInputSchema.parse(input.input);
+  const pricingTiers = normalizePricingTiers(input.input.pricingTiers);
   const database =
     input.database ?? (await import("@/server/db/client")).database;
 
@@ -157,7 +202,7 @@ export async function createBuyingRound(input: {
         deliveryStartsAt: parsed.deliveryStartsAt,
         name: parsed.name,
         organizationId: parsed.organizationId,
-        pricingTiers: [],
+        pricingTiers,
         referenceUnitPrice:
           parsed.referenceUnitPrice !== undefined
             ? parsed.referenceUnitPrice.toFixed(2)
@@ -174,6 +219,7 @@ export async function createBuyingRound(input: {
       metadata: {
         closesAt: parsed.closesAt.toISOString(),
         name: parsed.name,
+        pricingTierCount: pricingTiers.length,
         regionalKey: parsed.regionalKey,
       },
       objectId: created!.id,
@@ -183,6 +229,48 @@ export async function createBuyingRound(input: {
 
     return { roundId: created!.id };
   });
+}
+
+export type RoundCloneTemplate = {
+  name: string;
+  organizationId: string;
+  pricingTiers: Array<{
+    label: string;
+    minimumQuantity: string;
+    unitPrice: string;
+  }>;
+  referenceUnitPrice: number | null;
+  regionalKey: string;
+  targetQuantity: number;
+};
+
+export async function getRoundCloneTemplate(input: {
+  actor: AdminActor;
+  database?: KebappDatabase;
+  roundId: string;
+}): Promise<RoundCloneTemplate> {
+  const detail = await getBuyingRoundDetail({
+    actor: input.actor,
+    database: input.database,
+    roundId: input.roundId,
+  });
+  const { detail: round } = detail;
+
+  return {
+    name: `${round.name} · Folgerunde`,
+    organizationId: round.organizationId,
+    pricingTiers: round.pricingTiers.map((tier) => ({
+      label: tier.label,
+      minimumQuantity: String(Number(tier.minimumQuantity)),
+      unitPrice: String(Number(tier.unitPrice)),
+    })),
+    referenceUnitPrice:
+      round.referenceUnitPrice === null
+        ? null
+        : Number(round.referenceUnitPrice),
+    regionalKey: round.regionalKey,
+    targetQuantity: Number(round.targetQuantity),
+  };
 }
 
 export async function transitionBuyingRound(input: {
@@ -327,6 +415,7 @@ export async function getBuyingRoundDetail(input: {
         deliveryStartsAt: buyingRounds.deliveryStartsAt,
         id: buyingRounds.id,
         name: buyingRounds.name,
+        organizationId: buyingRounds.organizationId,
         pricingTiers: buyingRounds.pricingTiers,
         referenceUnitPrice: buyingRounds.referenceUnitPrice,
         regionalKey: buyingRounds.regionalKey,

@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
-import { useActionState } from "react";
+import { ChevronDown, Minus, Plus } from "lucide-react";
+import { useActionState, useState } from "react";
 import {
   createBuyingRoundAction,
   type AdminRoundFormState,
@@ -9,7 +9,18 @@ import {
 
 const initialState: AdminRoundFormState = { status: "idle" };
 
-function FieldError({ id, errors }: { errors?: string; id: string }) {
+export type RoundFormInitial = {
+  name: string;
+  organizationId?: string;
+  pricingTiers: Array<{ label: string; minimumQuantity: string; unitPrice: string }>;
+  referenceUnitPrice: string;
+  regionalKey: string;
+  targetQuantity: string;
+};
+
+type TierRow = { label: string; minimumQuantity: string; unitPrice: string };
+
+function FieldError({ errors, id }: { errors?: string; id: string }) {
   if (!errors) return null;
   return (
     <p className="editor-field-error" id={id} role="alert">
@@ -19,15 +30,30 @@ function FieldError({ id, errors }: { errors?: string; id: string }) {
 }
 
 export function RoundCreateForm({
+  initial,
   organizations,
 }: {
+  initial?: RoundFormInitial;
   organizations: Array<{ organizationId: string; organizationName: string }>;
 }) {
   const [state, formAction, pending] = useActionState(
     createBuyingRoundAction,
     initialState,
   );
+  const [tiers, setTiers] = useState<TierRow[]>(
+    initial?.pricingTiers.length
+      ? initial.pricingTiers
+      : [{ label: "Einzelkondition", minimumQuantity: "0", unitPrice: "" }],
+  );
   const fieldErrors = state.fieldErrors ?? {};
+
+  function updateTier(index: number, patch: Partial<TierRow>) {
+    setTiers((current) =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...patch } : row,
+      ),
+    );
+  }
 
   if (organizations.length === 0) {
     return (
@@ -39,11 +65,21 @@ export function RoundCreateForm({
 
   return (
     <form action={formAction} className="form-stack rounds-create">
+      <input
+        name="pricingTiersJson"
+        type="hidden"
+        value={JSON.stringify(tiers)}
+      />
+
       <div className="form-grid form-grid--two">
         <label className="field">
           <span>Laden</span>
           <span className="select-wrap">
-            <select name="organizationId" required defaultValue="">
+            <select
+              defaultValue={initial?.organizationId ?? ""}
+              name="organizationId"
+              required
+            >
               <option disabled value="">
                 Laden auswählen
               </option>
@@ -65,6 +101,7 @@ export function RoundCreateForm({
           <input
             aria-describedby={fieldErrors.name ? "round-name-error" : undefined}
             aria-invalid={fieldErrors.name ? true : undefined}
+            defaultValue={initial?.name}
             name="name"
             placeholder="Sammelrunde Fleisch · Mönchengladbach"
             required
@@ -73,7 +110,7 @@ export function RoundCreateForm({
         </label>
       </div>
 
-      <div className="form-grid form-grid--two">
+      <div className="form-grid form-grid--three">
         <label className="field">
           <span>Regions-Schlüssel</span>
           <input
@@ -81,6 +118,7 @@ export function RoundCreateForm({
               fieldErrors.regionalKey ? "round-region-error" : undefined
             }
             aria-invalid={fieldErrors.regionalKey ? true : undefined}
+            defaultValue={initial?.regionalKey}
             name="regionalKey"
             placeholder="mg-fleisch-2026-09"
             required
@@ -92,6 +130,7 @@ export function RoundCreateForm({
           <span>Zielmenge in kg</span>
           <input
             aria-invalid={fieldErrors.targetQuantity ? true : undefined}
+            defaultValue={initial?.targetQuantity}
             min="0.001"
             name="targetQuantity"
             required
@@ -103,7 +142,107 @@ export function RoundCreateForm({
             id="round-target-error"
           />
         </label>
+        <label className="field">
+          <span>Richtpreis pro kg (optional)</span>
+          <input
+            aria-invalid={fieldErrors.referenceUnitPrice ? true : undefined}
+            defaultValue={initial?.referenceUnitPrice}
+            min="0"
+            name="referenceUnitPrice"
+            placeholder="9.18"
+            step="0.01"
+            type="number"
+          />
+          <FieldError
+            errors={fieldErrors.referenceUnitPrice}
+            id="round-price-error"
+          />
+        </label>
       </div>
+
+      <fieldset className="tier-editor">
+        <legend>Preisstufen</legend>
+        <small>
+          Aktive Stufe für den Ersparnis-Report = höchste erreichte
+          Mindestmenge der Gruppe.
+        </small>
+        <div className="tier-editor__rows">
+          {tiers.map((tier, index) => (
+            <div className="tier-editor__row" key={index}>
+              <label className="field">
+                <span className="sr-only">Bezeichnung Stufe {index + 1}</span>
+                <input
+                  aria-label={`Bezeichnung Preisstufe ${index + 1}`}
+                  maxLength={80}
+                  onChange={(event) =>
+                    updateTier(index, { label: event.target.value })
+                  }
+                  placeholder="Einzelkondition"
+                  value={tier.label}
+                />
+              </label>
+              <label className="field">
+                <span className="sr-only">Mindestmenge Stufe {index + 1}</span>
+                <input
+                  aria-label={`Mindestmenge in kg für Preisstufe ${index + 1}`}
+                  inputMode="decimal"
+                  min="0"
+                  onChange={(event) =>
+                    updateTier(index, { minimumQuantity: event.target.value })
+                  }
+                  placeholder="300"
+                  value={tier.minimumQuantity}
+                />
+              </label>
+              <label className="field">
+                <span className="sr-only">Preis pro kg Stufe {index + 1}</span>
+                <input
+                  aria-label={`Preis pro kg für Preisstufe ${index + 1}`}
+                  inputMode="decimal"
+                  min="0.01"
+                  onChange={(event) =>
+                    updateTier(index, { unitPrice: event.target.value })
+                  }
+                  placeholder="9.05"
+                  step="0.01"
+                  value={tier.unitPrice}
+                />
+              </label>
+              <button
+                aria-label={`Preisstufe ${index + 1} entfernen`}
+                className="icon-button icon-button--bordered tier-editor__remove"
+                disabled={tiers.length <= 1}
+                onClick={() =>
+                  setTiers((current) =>
+                    current.filter((_, rowIndex) => rowIndex !== index),
+                  )
+                }
+                type="button"
+              >
+                <Minus size={16} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          className="button button--secondary button--small"
+          disabled={tiers.length >= 8}
+          onClick={() =>
+            setTiers((current) => [
+              ...current,
+              { label: "", minimumQuantity: "", unitPrice: "" },
+            ])
+          }
+          type="button"
+        >
+          <Plus size={15} aria-hidden="true" />
+          Stufe hinzufügen
+        </button>
+        <FieldError
+          errors={fieldErrors.pricingTiers}
+          id="round-tiers-error"
+        />
+      </fieldset>
 
       <div className="form-grid form-grid--three">
         <label className="field">
@@ -142,21 +281,7 @@ export function RoundCreateForm({
       </div>
 
       <div className="rounds-create__footer">
-        <label className="field">
-          <span>Richtpreis pro kg (optional)</span>
-          <input
-            aria-invalid={fieldErrors.referenceUnitPrice ? true : undefined}
-            min="0"
-            name="referenceUnitPrice"
-            placeholder="9.18"
-            step="0.01"
-            type="number"
-          />
-          <FieldError
-            errors={fieldErrors.referenceUnitPrice}
-            id="round-price-error"
-          />
-        </label>
+        <span />
         <button className="button button--primary" disabled={pending} type="submit">
           <Plus size={17} aria-hidden="true" />
           {pending ? "Wird angelegt …" : "Runde anlegen"}
