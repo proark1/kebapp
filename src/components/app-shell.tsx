@@ -5,6 +5,7 @@ import {
   Globe2,
   LayoutDashboard,
   Menu,
+  PackageCheck,
   PackageOpen,
   X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import type { ActiveOrganizationDTO } from "@/server/organizations/organization-
 const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
+  { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
 ];
 
@@ -175,7 +177,13 @@ export function AppShell({
         {children}
       </main>
 
-      <nav className="mobile-tabbar" aria-label="Mobile Navigation">
+      <nav
+        className="mobile-tabbar"
+        aria-label="Mobile Navigation"
+        style={{
+          gridTemplateColumns: `repeat(${visiblePrimaryNavigation.length}, 1fr)`,
+        }}
+      >
         {visiblePrimaryNavigation.map((item) => {
           const Icon = item.icon;
           const active =

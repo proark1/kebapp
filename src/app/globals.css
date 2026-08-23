@@ -7990,3 +7990,54 @@ a {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* === Wareneingang === */
+
+.receipt-table td small {
+  display: block;
+  color: var(--muted);
+}
+
+.receipt-quantity input {
+  max-width: 120px;
+  min-height: 40px;
+}
+
+.receipt-table select,
+.receipt-table input[type="text"] {
+  min-height: 36px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.receipt-missing {
+  color: var(--red-dark);
+}
+
+.receipt-summary {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  margin: 0;
+  padding: 16px 20px;
+  background: #fffaf0;
+  border-radius: var(--radius-sm);
+}
+
+.receipt-summary dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.receipt-summary dd {
+  margin: 2px 0 0;
+  font-weight: 750;
+}
+
+.receipt-form__footer {
+  display: flex;
+  justify-content: flex-end;
+}

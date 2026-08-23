@@ -33,6 +33,13 @@ export const demandSubmissionStatus = pgEnum("demand_submission_status", [
 
 export const demandUnit = pgEnum("demand_unit", ["KG", "PIECE"]);
 
+export const goodsReceiptReason = pgEnum("goods_receipt_reason", [
+  "SHORTAGE",
+  "QUALITY",
+  "WRONG_ITEM",
+  "OTHER",
+]);
+
 export type PricingTier = {
   label: string;
   minimumQuantity: string;
@@ -238,5 +245,71 @@ export const demandTemplateItems = pgTable(
       sql`${table.quantity} > 0`,
     ),
     index("demand_template_items_template_idx").on(table.templateId),
+  ],
+).enableRLS();
+
+export const goodsReceipts = pgTable(
+  "goods_receipts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    buyingRoundId: uuid("buying_round_id")
+      .notNull()
+      .references(() => buyingRounds.id, { onDelete: "cascade" }),
+    note: text("note"),
+    savedByUserId: text("saved_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...mutableTimestamps(),
+  },
+  (table) => [
+    uniqueIndex("goods_receipts_organization_round_unique").on(
+      table.organizationId,
+      table.buyingRoundId,
+    ),
+  ],
+).enableRLS();
+
+export const goodsReceiptItems = pgTable(
+  "goods_receipt_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    receiptId: uuid("receipt_id").notNull(),
+    demandItemId: uuid("demand_item_id"),
+    productName: varchar("product_name", { length: 180 }).notNull(),
+    specification: text("specification"),
+    unit: demandUnit("unit").notNull(),
+    orderedQuantity: numeric("ordered_quantity", {
+      precision: 12,
+      scale: 3,
+    }).notNull(),
+    receivedQuantity: numeric("received_quantity", {
+      precision: 12,
+      scale: 3,
+    }).notNull(),
+    missingReason: goodsReceiptReason("missing_reason"),
+    reasonNote: varchar("reason_note", { length: 300 }),
+    ...mutableTimestamps(),
+  },
+  (table) => [
+    foreignKey({
+      name: "goods_receipt_items_receipt_organization_fk",
+      columns: [table.receiptId, table.organizationId],
+      foreignColumns: [goodsReceipts.id, goodsReceipts.organizationId],
+    }).onDelete("cascade"),
+    check(
+      "goods_receipt_items_received_non_negative",
+      sql`${table.receivedQuantity} >= 0`,
+    ),
+    check(
+      "goods_receipt_items_ordered_positive",
+      sql`${table.orderedQuantity} > 0`,
+    ),
+    index("goods_receipt_items_receipt_idx").on(table.receiptId),
   ],
 ).enableRLS();
