@@ -9,6 +9,7 @@ import {
   PackageCheck,
   PackageOpen,
   ShieldCheck,
+  BookOpenCheck,
   TrendingUp,
   X,
 } from "lucide-react";
@@ -26,6 +27,7 @@ const primaryNavigation = [
   { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
   { href: "/app/hygiene", label: "Hygiene", icon: ShieldCheck, tabbar: false },
   { href: "/app/umsatz", label: "Umsätze", icon: TrendingUp, tabbar: false },
+  { href: "/app/buchhaltung", label: "Buchhaltung", icon: BookOpenCheck, tabbar: false },
   { href: "/app/zeit", label: "Zeit", icon: Clock3 },
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true, tabbar: false },
 ];

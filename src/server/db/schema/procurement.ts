@@ -351,3 +351,48 @@ export const salesDaily = pgTable(
     index("sales_daily_org_date_idx").on(table.organizationId, table.businessDate),
   ],
 ).enableRLS();
+
+export const invoiceStatus = pgEnum("invoice_status", ["OFFEN", "BEZAHLT"]);
+
+export const incomingInvoices = pgTable(
+  "incoming_invoices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    supplierName: varchar("supplier_name", { length: 180 }).notNull(),
+    invoiceNumber: varchar("invoice_number", { length: 80 }).notNull(),
+    documentDate: date("document_date", { mode: "string" }).notNull(),
+    dueDate: date("due_date", { mode: "string" }),
+    netCents7: integer("net_cents_7").default(0).notNull(),
+    netCents19: integer("net_cents_19").default(0).notNull(),
+    status: invoiceStatus("status").default("OFFEN").notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("incoming_invoices_org_number_unique").on(
+      table.organizationId,
+      table.supplierName,
+      table.invoiceNumber,
+    ),
+    check(
+      "incoming_invoices_amounts_present",
+      sql`${table.netCents7} > 0 or ${table.netCents19} > 0`,
+    ),
+    index("incoming_invoices_org_date_idx").on(
+      table.organizationId,
+      table.documentDate,
+    ),
+  ],
+).enableRLS();
