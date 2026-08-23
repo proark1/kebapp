@@ -8041,3 +8041,77 @@ a {
   display: flex;
   justify-content: flex-end;
 }
+
+/* === Zeiterfassung === */
+
+.clock-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+}
+
+.clock-card__timer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.clock-card__timer strong {
+  font-family: var(--display);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.clock-card__timer span,
+.clock-card__idle {
+  color: var(--muted);
+}
+
+.clock-card__out {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.clock-card__out input {
+  min-width: 220px;
+}
+
+.team-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.chip {
+  padding: 7px 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.chip--active {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgb(31 107 79 / 20%);
+}
+
+.correction summary {
+  cursor: pointer;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.correction form {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}

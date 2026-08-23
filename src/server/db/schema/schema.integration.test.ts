@@ -20,6 +20,7 @@ const expectedTables = [
   "session",
   "store_profiles",
   "support_assignments",
+  "time_entries",
   "user",
   "user_profiles",
   "verification",

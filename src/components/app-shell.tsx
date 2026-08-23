@@ -2,6 +2,7 @@
 
 import {
   ChevronsUpDown,
+  Clock3,
   Globe2,
   LayoutDashboard,
   Menu,
@@ -21,6 +22,7 @@ const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
   { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
+  { href: "/app/zeit", label: "Zeit", icon: Clock3 },
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
 ];
 
