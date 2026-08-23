@@ -88,7 +88,7 @@ export default async function AdminRoundsPage({
         <RoundCreateForm organizations={organizations} />
       </section>
 
-      <section className="request-file" aria-label="Liste der Sammelrunden">
+      <section className="request-file request-file--rounds" aria-label="Liste der Sammelrunden">
         <header className="request-file__columns request-file__columns--rounds" aria-hidden="true">
           <span>Runde / Region</span>
           <span>Laden</span>

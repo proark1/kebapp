@@ -578,6 +578,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
     expect(functions.rows.map((row) => row.function_name)).toEqual([
       "admin_active_organizations",
       "admin_organization_name",
+      "admin_store_directory",
       "can_accept_employee_invitation",
       "can_access_organization",
       "can_administer_organization",
@@ -603,6 +604,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "mark_round_reminder_sent",
       "public_storefront",
       "regional_confirmed_demand_kg",
+      "regional_savings_report",
       "round_bundle",
       "round_recipients",
     ]);

@@ -7828,13 +7828,13 @@ a {
 
 /* === Admin Sammelrunden === */
 
-.request-file__columns--rounds,
-.request-file li {
+.request-file--rounds li,
+.request-file__columns--rounds {
   grid-template-columns: 1.4fr 1fr 1.1fr auto auto;
 }
 
-.request-file__columns--bundle,
-.request-file--bundle li {
+.request-file--bundle li,
+.request-file__columns--bundle {
   grid-template-columns: 1.6fr 1fr auto;
 }
 
@@ -7919,4 +7919,19 @@ a {
 
 .round-facts p {
   color: #4d5a52;
+}
+
+.request-file--directory li,
+.request-file__columns--directory {
+  grid-template-columns: 1.3fr auto 1.4fr 1.2fr auto;
+}
+
+.request-file__columns--savings,
+.request-file--savings li {
+  grid-template-columns: 1.5fr 1fr 1.2fr 1fr;
+}
+
+.rounds-total-row {
+  font-weight: 750;
+  border-top: 1px solid var(--line);
 }

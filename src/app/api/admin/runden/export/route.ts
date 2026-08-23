@@ -10,8 +10,12 @@ import {
   setAdminContext,
   setOrganizationContext,
 } from "@/server/organizations/admin";
+import { getRegionalSavings } from "@/server/organizations/directory";
 
-const querySchema = z.object({ round: z.uuid() });
+const querySchema = z.object({
+  report: z.enum(["bundle", "savings"]).default("bundle"),
+  round: z.uuid(),
+});
 
 function csvEscape(value: string): string {
   if (/[",;\n]/.test(value)) {
@@ -28,6 +32,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
+    report: url.searchParams.get("report") ?? undefined,
     round: url.searchParams.get("round") ?? "",
   });
   if (!parsed.success) {
@@ -35,16 +40,14 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const bundle = await database.transaction(async (transaction) => {
+    const context = await database.transaction(async (transaction) => {
       await setAdminContext(transaction, actor);
       const roundRow = await transaction.execute<{
-        closes_at: Date;
         name: string;
         organization_id: string;
         regional_key: string;
       }>(sql`
         select
-          closes_at,
           name,
           organization_id,
           regional_key
@@ -57,28 +60,54 @@ export async function GET(request: Request): Promise<Response> {
         throw new RoundNotFoundError();
       }
       await setOrganizationContext(transaction, round.organization_id);
-      const entries = await getConfirmedRoundBundle(
-        transaction,
-        parsed.data.round,
-      );
-      return { entries, round };
+      return round;
     });
 
-    const lines = [
-      ["Produkt", "Spezifikation", "Einheit", "Menge gesamt", "Positionen", "Läden"].join(";"),
-      ...bundle.entries.map((entry) =>
-        [
-          csvEscape(entry.productName),
-          csvEscape(entry.specification),
-          entry.unit === "PIECE" ? "Stueck" : "kg",
-          entry.totalQuantity,
-          String(entry.positionCount),
-          String(entry.shopCount),
-        ].join(";"),
-      ),
-    ];
+    const fileName =
+      parsed.data.report === "savings"
+        ? `ersparnis-${context.regional_key}.csv`
+        : `buendel-${context.regional_key}.csv`;
 
-    const fileName = `buendel-${bundle.round.regional_key}.csv`;
+    const lines: string[] = [];
+
+    if (parsed.data.report === "savings") {
+      const savings = await getRegionalSavings({
+        actor,
+        roundId: parsed.data.round,
+      });
+      lines.push(
+        ["Laden", "Bestaetigte kg", "Referenzpreis EUR/kg", "Effektiver Preis EUR/kg", "Ersparnis EUR"].join(";"),
+        ...savings.map((entry) =>
+          [
+            csvEscape(entry.storeName),
+            entry.confirmedKg.toFixed(3),
+            entry.referencePrice?.toFixed(2) ?? "",
+            entry.effectivePrice?.toFixed(2) ?? "",
+            entry.savingsEur?.toFixed(2) ?? "",
+          ].join(";"),
+        ),
+      );
+    } else {
+      const entries = await database.transaction(async (transaction) => {
+        await setAdminContext(transaction, actor);
+        await setOrganizationContext(transaction, context.organization_id);
+        return getConfirmedRoundBundle(transaction, parsed.data.round);
+      });
+      lines.push(
+        ["Produkt", "Spezifikation", "Einheit", "Menge gesamt", "Positionen", "Läden"].join(";"),
+        ...entries.map((entry) =>
+          [
+            csvEscape(entry.productName),
+            csvEscape(entry.specification),
+            entry.unit === "PIECE" ? "Stueck" : "kg",
+            entry.totalQuantity,
+            String(entry.positionCount),
+            String(entry.shopCount),
+          ].join(";"),
+        ),
+      );
+    }
+
     return new Response(`\uFEFF${lines.join("\r\n")}`, {
       headers: {
         "Content-Disposition": `attachment; filename="${fileName}"`,

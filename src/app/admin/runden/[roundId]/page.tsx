@@ -7,6 +7,7 @@ import {
   getBuyingRoundDetail,
   RoundNotFoundError,
 } from "@/server/procurement/rounds";
+import { getRegionalSavings } from "@/server/organizations/directory";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
 
 export const metadata: Metadata = { title: "Sammelrunde" };
@@ -24,6 +25,12 @@ const dateFormatter = new Intl.DateTimeFormat("de-DE", {
   timeStyle: "short",
   timeZone: "Europe/Berlin",
 });
+
+function formatPrice(price: number | null): string {
+  return price === null
+    ? "—"
+    : price.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+}
 
 export default async function AdminRoundDetailPage({
   params,
@@ -44,6 +51,14 @@ export default async function AdminRoundDetailPage({
   }
 
   const { bundle, detail: round, submissionCounts } = detail;
+  const savings =
+    round.status === "CLOSED" || round.status === "SUBMITTED"
+      ? await getRegionalSavings({ actor, roundId: round.id })
+      : [];
+  const totalSavings = savings.reduce(
+    (sum, entry) => sum + (entry.savingsEur ?? 0),
+    0,
+  );
   const confirmedCount =
     submissionCounts.find((entry) => entry.status === "CONFIRMED")?.count ?? 0;
   const draftCount =
@@ -137,9 +152,68 @@ export default async function AdminRoundDetailPage({
             Bündel als CSV
           </a>
         ) : null}
+        {savings.length > 0 ? (
+          <a
+            className="button button--secondary"
+            download={`ersparnis-${round.regionalKey}.csv`}
+            href={`/api/admin/runden/export?round=${round.id}&report=savings`}
+          >
+            <Download size={17} aria-hidden="true" />
+            Ersparnis als CSV
+          </a>
+        ) : null}
       </section>
 
-      <section className="request-file" aria-labelledby="bundle-title">
+      {savings.length > 0 ? (
+        <section className="request-file request-file--savings" aria-labelledby="savings-title">
+          <header className="request-file__columns request-file__columns--savings" aria-hidden="true">
+            <span>Laden</span>
+            <span>Bestätigte kg</span>
+            <span>Referenz / effektiv</span>
+            <span>Ersparnis</span>
+          </header>
+          <ol>
+            {savings.map((entry) => (
+              <li key={entry.organizationId}>
+                <span className="request-file__store">{entry.storeName}</span>
+                <span className="rounds-cell-strong">
+                  {entry.confirmedKg.toLocaleString("de-DE")} kg
+                </span>
+                <span className="rounds-cell-muted">
+                  {formatPrice(entry.referencePrice)} /{" "}
+                  {formatPrice(entry.effectivePrice)}
+                </span>
+                <span className="rounds-cell-strong value-positive">
+                  {entry.savingsEur === null
+                    ? "—"
+                    : entry.savingsEur.toLocaleString("de-DE", {
+                        style: "currency",
+                        currency: "EUR",
+                      })}
+                </span>
+              </li>
+            ))}
+            <li className="rounds-total-row">
+              <span>Summe Region</span>
+              <span>
+                {savings
+                  .reduce((sum, entry) => sum + entry.confirmedKg, 0)
+                  .toLocaleString("de-DE")}{" "}
+                kg
+              </span>
+              <span />
+              <span className="rounds-cell-strong value-positive">
+                {totalSavings.toLocaleString("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                })}
+              </span>
+            </li>
+          </ol>
+        </section>
+      ) : null}
+
+      <section className="request-file request-file--bundle" aria-labelledby="bundle-title">
         <header className="request-file__columns request-file__columns--bundle" aria-hidden="true">
           <span>Produkt / Spezifikation</span>
           <span>Menge gesamt</span>
