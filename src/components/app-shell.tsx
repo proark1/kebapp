@@ -8,6 +8,7 @@ import {
   Menu,
   PackageCheck,
   PackageOpen,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -22,8 +23,9 @@ const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
   { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
+  { href: "/app/hygiene", label: "Hygiene", icon: ShieldCheck, tabbar: false },
   { href: "/app/zeit", label: "Zeit", icon: Clock3 },
-  { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true },
+  { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true, tabbar: false },
 ];
 
 type AppShellProps = {
@@ -130,7 +132,7 @@ export function AppShell({
 
         <nav className="app-nav" aria-label="Hauptnavigation">
           <span className="app-nav__label">Heute</span>
-          {visiblePrimaryNavigation.map((item) => {
+          {visiblePrimaryNavigation.filter((item) => item.tabbar !== false).map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/app"

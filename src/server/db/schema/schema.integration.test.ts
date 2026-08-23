@@ -11,6 +11,8 @@ const expectedTables = [
   "demand_templates",
   "goods_receipt_items",
   "goods_receipts",
+  "hygiene_entries",
+  "hygiene_items",
   "invitations",
   "memberships",
   "organizations",
