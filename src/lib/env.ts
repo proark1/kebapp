@@ -10,6 +10,10 @@ const postgresUrl = z
 
 const runtimeEnvSchema = z
   .object({
+    ALLOW_PUBLIC_DEMO: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
     DATABASE_URL: postgresUrl,
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
@@ -32,6 +36,19 @@ const runtimeEnvSchema = z
     SMTP_FROM: z.string().min(3).optional(),
   })
   .superRefine((value, context) => {
+    if (
+      value.DEMO_MODE &&
+      process.env.NODE_ENV === "production" &&
+      !value.ALLOW_PUBLIC_DEMO
+    ) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "DEMO_MODE=true ist in der Produktionsumgebung gesperrt. Für eine bewusst öffentliche Demo zusätzlich ALLOW_PUBLIC_DEMO=true setzen.",
+        path: ["ALLOW_PUBLIC_DEMO"],
+      });
+    }
+
     if (value.DEMO_MODE) return;
 
     for (const field of ["SMTP_HOST", "SMTP_PORT", "SMTP_FROM"] as const) {

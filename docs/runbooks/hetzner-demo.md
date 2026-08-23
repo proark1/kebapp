@@ -46,7 +46,12 @@ temporäre Hostname wird aus der IPv4 gebildet, zum Beispiel
 
 Alle geheimen Werte werden zufällig erzeugt. Datenbankpasswörter in den URLs
 müssen mit den separaten Passwortfeldern übereinstimmen. Für den öffentlichen
-Demo-Modus gilt zwingend `DEMO_MODE=true`; SMTP-Werte bleiben abwesend.
+Demo-Modus gilt zwingend `DEMO_MODE=true` **zusammen mit**
+`ALLOW_PUBLIC_DEMO=true`; SMTP-Werte bleiben abwesend. Ohne
+`ALLOW_PUBLIC_DEMO=true` verweigert die Anwendung in der Produktionsumgebung
+den Start mit `DEMO_MODE=true` (Sicherheitsriegel gegen versehentlich
+öffentliche Ein-Klick-Zugänge). Für echten Betrieb beide Werte auf `false`
+setzen bzw. weglassen und SMTP konfigurieren.
 
 ## Status und Logs
 

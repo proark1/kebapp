@@ -1,5 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  initialWebsiteSaveState,
+  type WebsiteSaveState,
+} from "@/lib/website-save-state";
 import { WebsiteEditor } from "@/components/website-editor";
 import type { StorefrontEditorData } from "@/lib/types";
 import { demoStoreProfile } from "@/test/fixtures/store-profile";
@@ -15,7 +19,12 @@ const initialData: StorefrontEditorData = {
 };
 
 function createSaveAction() {
-  return vi.fn<(formData: FormData) => Promise<void>>(async () => undefined);
+  return vi.fn<
+    (
+      state: WebsiteSaveState,
+      formData: FormData,
+    ) => Promise<WebsiteSaveState>
+  >(async () => initialWebsiteSaveState);
 }
 
 function createDomainAction() {
@@ -64,7 +73,7 @@ describe("WebsiteEditor", () => {
     });
 
     await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
-    const submitted = saveAction.mock.calls[0]?.[0];
+    const submitted = saveAction.mock.calls[0]?.[1];
     expect(JSON.parse(String(submitted?.get("profile")))).toMatchObject({
       name: "Kebap Haus am Markt",
       postalCode: "41236",
@@ -90,7 +99,7 @@ describe("WebsiteEditor", () => {
     });
 
     await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
-    expect(saveAction.mock.calls[0]?.[0].get("isPublished")).toBeNull();
+    expect(saveAction.mock.calls[0]?.[1].get("isPublished")).toBeNull();
   });
 
   it("adds complete menu and opening-hour rows and persists selected features", async () => {
@@ -112,7 +121,7 @@ describe("WebsiteEditor", () => {
 
     await waitFor(() => expect(saveAction).toHaveBeenCalledOnce());
     const submitted = JSON.parse(
-      String(saveAction.mock.calls[0]?.[0].get("profile")),
+      String(saveAction.mock.calls[0]?.[1].get("profile")),
     );
     expect(submitted.menu).toHaveLength(5);
     expect(submitted.menu[4]).toMatchObject({
@@ -209,7 +218,7 @@ describe("WebsiteEditor", () => {
 
     await waitFor(() => expect(saveAction).toHaveBeenCalledOnce());
     const submitted = JSON.parse(
-      String(saveAction.mock.calls[0]?.[0].get("profile")),
+      String(saveAction.mock.calls[0]?.[1].get("profile")),
     );
     expect(submitted.whatsappPhone).toBe("+49 2166 123456");
     expect(submitted.deliveryEnabled).toBe(false);

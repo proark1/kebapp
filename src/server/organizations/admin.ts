@@ -38,7 +38,7 @@ export class RegistrationTransitionError extends Error {
 
 type AdminActor = { userId: string };
 
-async function setAdminContext(
+export async function setAdminContext(
   transaction: TenantTransaction,
   actor: AdminActor,
 ) {
@@ -64,7 +64,7 @@ async function setAdminContext(
   }
 }
 
-async function setOrganizationContext(
+export async function setOrganizationContext(
   transaction: TenantTransaction,
   organizationId: string,
 ) {

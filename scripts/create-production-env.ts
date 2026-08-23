@@ -55,6 +55,7 @@ export function createProductionEnvContent(
   const ownerUrl = `postgresql://kebapp_owner:${secrets.ownerRolePassword}@postgres:5432/kebapp`;
   const appUrl = `postgresql://kebapp_app:${secrets.appPassword}@postgres:5432/kebapp`;
   const environment = {
+    ALLOW_PUBLIC_DEMO: "true" as const,
     BETTER_AUTH_SECRET: secrets.authSecret,
     BETTER_AUTH_URL: `https://${options.host}`,
     DATABASE_OWNER_URL: ownerUrl,
@@ -94,6 +95,7 @@ export function createProductionEnvContent(
     `BETTER_AUTH_SECRET=${secrets.authSecret}`,
     `BETTER_AUTH_URL=https://${options.host}`,
     "DEMO_MODE=true",
+    "ALLOW_PUBLIC_DEMO=true",
     "",
     "DEMO_ADMIN_EMAIL=admin@demo.kebapp.local",
     `DEMO_ADMIN_PASSWORD=${secrets.adminPassword}`,

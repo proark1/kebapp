@@ -24,6 +24,7 @@ describe("parseRuntimeEnv", () => {
   it("parses the local runtime configuration", () => {
     expect(parseRuntimeEnv(validRuntimeEnv)).toEqual({
       ...validRuntimeEnv,
+      ALLOW_PUBLIC_DEMO: false,
       DEMO_MODE: false,
       SMTP_PORT: 1025,
     });
@@ -34,8 +35,26 @@ describe("parseRuntimeEnv", () => {
       DATABASE_URL: validDemoEnv.DATABASE_URL,
       BETTER_AUTH_SECRET: validDemoEnv.BETTER_AUTH_SECRET,
       BETTER_AUTH_URL: validDemoEnv.BETTER_AUTH_URL,
+      ALLOW_PUBLIC_DEMO: false,
       DEMO_MODE: true,
     });
+  });
+
+  it("rejects demo mode in production without the explicit opt-in", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      expect(() => parseRuntimeEnv(validDemoEnv)).toThrow(
+        /ALLOW_PUBLIC_DEMO=true setzen/,
+      );
+      expect(() =>
+        parseRuntimeEnv({
+          ...validDemoEnv,
+          ALLOW_PUBLIC_DEMO: "true",
+        }),
+      ).not.toThrow();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("requires SMTP configuration outside the public demo", () => {

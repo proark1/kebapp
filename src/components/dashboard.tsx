@@ -22,6 +22,21 @@ const todayLabel = new Intl.DateTimeFormat("de-DE", {
   day: "2-digit",
   month: "long",
 }).format(new Date());
+
+function daytimeGreeting(now: Date): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("de-DE", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "Europe/Berlin",
+    }).format(now),
+  );
+  if (hour < 5) return "Gute Nacht";
+  if (hour < 11) return "Guten Morgen";
+  if (hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
 const deadlineLabel = new Intl.DateTimeFormat("de-DE", {
   day: "2-digit",
   hour: "2-digit",
@@ -54,7 +69,7 @@ export function Dashboard({
       <header className="page-header page-header--dashboard">
         <div>
           <span className="eyebrow">{todayLabel}</span>
-          <h1>Guten Morgen, {firstName}.</h1>
+          <h1>{daytimeGreeting(new Date())}, {firstName}.</h1>
           <p>
             {canManageWebsite
               ? "Zwei Dinge kannst du heute direkt erledigen."

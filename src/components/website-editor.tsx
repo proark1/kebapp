@@ -8,17 +8,24 @@ import {
   Eye,
   Globe2,
   ImagePlus,
+  Monitor,
   Palette,
   Plus,
   Save,
   ShieldCheck,
+  Smartphone,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Storefront } from "@/components/storefront";
+import {
+  initialWebsiteSaveState,
+  type WebsiteSaveState,
+} from "@/lib/website-save-state";
 import {
   STORE_FEATURES,
   type MenuItem,
@@ -44,11 +51,42 @@ const featureLabels: Record<StoreFeature, string> = {
   PREPARED_ON_SITE: "Vor Ort zubereitet",
 };
 
+const accentPalette = [
+  { label: "Kebapp Grün", value: "#1f6b4f" },
+  { label: "Ziegelrot", value: "#b5482c" },
+  { label: "Kupfer", value: "#8a5a2b" },
+  { label: "Pflaume", value: "#6d2f4e" },
+  { label: "Nachtblau", value: "#23405e" },
+  { label: "Ocker", value: "#9a6a12" },
+];
+
+const weekdayOptions = [
+  "Montag",
+  "Dienstag",
+  "Mittwoch",
+  "Donnerstag",
+  "Freitag",
+  "Samstag",
+  "Sonntag",
+];
+
+function nextOpeningHourLabel(existing: OpeningHour[]): string {
+  const used = new Set(existing.map((entry) => entry.days));
+  const freeWeekday = weekdayOptions.find((day) => !used.has(day));
+  if (freeWeekday) {
+    return `${freeWeekday}–`;
+  }
+  return `Zeile ${existing.length + 1}`;
+}
+
 type WebsiteEditorProps = {
   domainAction: (formData: FormData) => Promise<void>;
   initialData: StorefrontEditorData;
   messageCode?: string;
-  saveAction: (formData: FormData) => Promise<void>;
+  saveAction: (
+    state: WebsiteSaveState,
+    formData: FormData,
+  ) => Promise<WebsiteSaveState>;
 };
 
 const messages: Record<string, { text: string; tone: "error" | "success" }> = {
@@ -121,14 +159,37 @@ export function WebsiteEditor({
   const [requestedDomain, setRequestedDomain] = useState(
     initialData.requestedDomain ?? "",
   );
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">(
+    "desktop",
+  );
+  const [saveState, formAction] = useActionState(
+    saveAction,
+    initialWebsiteSaveState,
+  );
   const resultMessage = messageCode ? messages[messageCode] : undefined;
   const message = dirty
     ? "Ungespeicherte Änderungen"
-    : (resultMessage?.text ?? "Noch nicht geändert");
-  const messageTone = dirty ? "neutral" : (resultMessage?.tone ?? "neutral");
+    : (saveState.message ?? resultMessage?.text ?? "Noch nicht geändert");
+  const messageTone =
+    !dirty && (saveState.status === "error" || resultMessage?.tone === "error")
+      ? "error"
+      : !dirty && (resultMessage?.tone === "success" || saveState.status === "idle")
+        ? "success"
+        : "neutral";
   const publicAddress = initialData.customDomain
     ? `https://${initialData.customDomain}`
     : initialData.publicPath;
+
+  useEffect(() => {
+    // Erst nach dem ersten Frame entscheiden, damit SSR-Markup und Client
+    // übereinstimmen (kein Hydration-Mismatch).
+    const frame = window.requestAnimationFrame(() => {
+      if (window.innerWidth < 900) {
+        setPreviewMode("mobile");
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (!dirty) return;
@@ -226,6 +287,14 @@ export function WebsiteEditor({
     reader.readAsDataURL(file);
   }
 
+  function addOpeningHour() {
+    if (profile.openingHours.length >= 14) return;
+    updateField("openingHours", [
+      ...profile.openingHours,
+      { days: nextOpeningHourLabel(profile.openingHours), hours: "11:00–22:00" },
+    ]);
+  }
+
   function toggleFeature(feature: StoreFeature, checked: boolean) {
     updateField(
       "features",
@@ -260,11 +329,7 @@ export function WebsiteEditor({
       </header>
 
       <div className="editor-layout">
-        <form
-          action={saveAction}
-          className="editor-panel"
-          onSubmit={() => setDirty(false)}
-        >
+        <form action={formAction} className="editor-panel">
           <input name="profile" type="hidden" value={JSON.stringify(profile)} />
 
           <section className="publication-section">
@@ -356,7 +421,7 @@ export function WebsiteEditor({
                 <input maxLength={12} required value={profile.shortName} onChange={(event) => updateField("shortName", event.target.value)} />
               </label>
               <label className="field">
-                <span>Kleine Zeile</span>
+                <span>Kurze Zeile über dem Titel</span>
                 <input maxLength={180} value={profile.eyebrow} onChange={(event) => updateField("eyebrow", event.target.value)} />
               </label>
               <label className="field">
@@ -367,13 +432,44 @@ export function WebsiteEditor({
                 <span>Kurzbeschreibung</span>
                 <textarea maxLength={2_000} required={isPublished} rows={3} value={profile.description} onChange={(event) => updateField("description", event.target.value)} />
               </label>
-              <label className="field color-field">
-                <span>Akzentfarbe</span>
-                <span>
-                  <input type="color" value={profile.accent} onChange={(event) => updateField("accent", event.target.value)} />
-                  <input aria-label="Akzentfarbe als Hexwert" pattern="#[0-9A-Fa-f]{6}" value={profile.accent.toUpperCase()} onChange={(event) => updateField("accent", event.target.value)} />
+              <fieldset className="field color-field">
+                <legend>Akzentfarbe</legend>
+                <div className="accent-chip-row" role="group" aria-label="Farbwelt auswählen">
+                  {accentPalette.map((option) => {
+                    const active = profile.accent.toLowerCase() === option.value;
+                    return (
+                      <button
+                        aria-pressed={active}
+                        className={`accent-chip${active ? " accent-chip--active" : ""}`}
+                        key={option.value}
+                        onClick={() => updateField("accent", option.value)}
+                        title={option.label}
+                        type="button"
+                      >
+                        <i style={{ background: option.value }} aria-hidden="true" />
+                        <span>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="color-field__custom">
+                  <label>
+                    <span className="sr-only">Eigene Akzentfarbe wählen</span>
+                    <input
+                      aria-label="Eigene Akzentfarbe"
+                      type="color"
+                      value={profile.accent}
+                      onChange={(event) => updateField("accent", event.target.value)}
+                    />
+                  </label>
+                  <input
+                    aria-label="Akzentfarbe als Hexwert"
+                    pattern="#[0-9A-Fa-f]{6}"
+                    value={profile.accent.toUpperCase()}
+                    onChange={(event) => updateField("accent", event.target.value)}
+                  />
                 </span>
-              </label>
+              </fieldset>
             </div>
           </section>
 
@@ -454,7 +550,7 @@ export function WebsiteEditor({
               <button
                 className="button button--secondary"
                 disabled={profile.openingHours.length >= 14}
-                onClick={() => updateField("openingHours", [...profile.openingHours, { days: "Montag", hours: "11:00–22:00" }])}
+                onClick={addOpeningHour}
                 type="button"
               ><Plus size={16} aria-hidden="true" /> Zeile</button>
             </div>
@@ -502,6 +598,11 @@ export function WebsiteEditor({
             <span className={`save-message save-message--${messageTone}`} role="status" aria-live="polite">
               {messageTone === "success" ? <Check size={15} aria-hidden="true" /> : <Save size={15} aria-hidden="true" />}{message}
             </span>
+            {saveState.fieldLabels && saveState.fieldLabels.length > 0 ? (
+              <p className="editor-field-summary" role="alert">
+                Betroffen: {saveState.fieldLabels.join(", ")}
+              </p>
+            ) : null}
             <div className="editor-panel__actions">
               {isPublished ? <Link className="button button--secondary editor-mobile-preview" href={initialData.publicPath} target="_blank"><ExternalLink size={17} aria-hidden="true" />Seite öffnen</Link> : null}
               <SaveButton />
@@ -510,8 +611,33 @@ export function WebsiteEditor({
         </form>
 
         <aside className="preview-panel" aria-label="Website-Vorschau">
-          <div className="preview-panel__toolbar"><span><i /><i /><i /></span><strong>Live-Vorschau</strong><small>Mobil &amp; Desktop</small></div>
-          <div className="preview-panel__viewport"><Storefront profile={profile} preview /></div>
+          <div className="preview-panel__toolbar">
+            <span aria-hidden="true"><i /><i /><i /></span>
+            <strong>Live-Vorschau</strong>
+            <div className="preview-mode-toggle" role="group" aria-label="Vorschau-Gerät wählen">
+              <button
+                aria-pressed={previewMode === "desktop"}
+                onClick={() => setPreviewMode("desktop")}
+                type="button"
+              >
+                <Monitor size={14} aria-hidden="true" />
+                Desktop
+              </button>
+              <button
+                aria-pressed={previewMode === "mobile"}
+                onClick={() => setPreviewMode("mobile")}
+                type="button"
+              >
+                <Smartphone size={14} aria-hidden="true" />
+                Mobil
+              </button>
+            </div>
+          </div>
+          <div
+            className={`preview-panel__viewport${previewMode === "mobile" ? " preview-panel__viewport--mobile" : ""}`}
+          >
+            <Storefront profile={profile} preview />
+          </div>
         </aside>
       </div>
 

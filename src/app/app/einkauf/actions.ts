@@ -15,6 +15,11 @@ import {
   updateDemandItemQuantity,
 } from "@/server/procurement/mutations";
 import {
+  applyDemandTemplate,
+  saveDemandTemplate,
+  TemplateNotFoundError,
+} from "@/server/procurement/templates";
+import {
   demandItemInputSchema,
   demandQuantitySchema,
   procurementIdSchema,
@@ -43,6 +48,9 @@ function handleExpectedError(error: unknown): never {
   if (error instanceof EmptyDemandSubmissionError) {
     return redirectWithMessage("leer");
   }
+  if (error instanceof TemplateNotFoundError) {
+    return redirectWithMessage("vorlage-fehlt");
+  }
   if (error instanceof DemandLockedError || error instanceof DemandNotFoundError) {
     return redirectWithMessage("gesperrt");
   }
@@ -52,6 +60,27 @@ function handleExpectedError(error: unknown): never {
 function refreshDemandPages() {
   revalidatePath("/app/einkauf");
   revalidatePath("/app");
+}
+
+type QuietResult = { ok: boolean; code?: string };
+
+async function quietMutation(run: () => Promise<void>): Promise<QuietResult> {
+  try {
+    await run();
+  } catch (error) {
+    if (
+      error instanceof DemandConfirmationDeniedError ||
+      error instanceof EmptyDemandSubmissionError ||
+      error instanceof DemandLockedError ||
+      error instanceof DemandNotFoundError ||
+      error instanceof TemplateNotFoundError
+    ) {
+      return { ok: false, code: "gesperrt" };
+    }
+    throw error;
+  }
+  refreshDemandPages();
+  return { ok: true };
 }
 
 export async function addDemandItemAction(formData: FormData): Promise<void> {
@@ -111,6 +140,50 @@ export async function updateDemandQuantityAction(
   redirectWithMessage("gespeichert");
 }
 
+export async function updateDemandQuantityQuietAction(
+  formData: FormData,
+): Promise<QuietResult> {
+  const { actor, organization } = await requireActiveOrganizationPage(
+    "/app/einkauf",
+  );
+  const parsed = updateSchema.safeParse({
+    demandItemId: formString(formData, "demandItemId"),
+    quantity: formString(formData, "quantity"),
+  });
+  if (!parsed.success) {
+    return { ok: false, code: "ungueltig" };
+  }
+  return quietMutation(() =>
+    updateDemandItemQuantity({
+      actor,
+      demandItemId: parsed.data.demandItemId,
+      organizationId: organization.organizationId,
+      quantity: parsed.data.quantity,
+    }),
+  );
+}
+
+export async function removeDemandItemQuietAction(
+  formData: FormData,
+): Promise<QuietResult> {
+  const { actor, organization } = await requireActiveOrganizationPage(
+    "/app/einkauf",
+  );
+  const parsed = itemIdSchema.safeParse({
+    demandItemId: formString(formData, "demandItemId"),
+  });
+  if (!parsed.success) {
+    return { ok: false, code: "ungueltig" };
+  }
+  return quietMutation(() =>
+    removeDemandItem({
+      actor,
+      demandItemId: parsed.data.demandItemId,
+      organizationId: organization.organizationId,
+    }),
+  );
+}
+
 export async function removeDemandItemAction(formData: FormData): Promise<void> {
   const { actor, organization } = await requireActiveOrganizationPage(
     "/app/einkauf",
@@ -159,4 +232,50 @@ export async function confirmDemandSubmissionAction(
   }
   refreshDemandPages();
   redirectWithMessage("bestaetigt");
+}
+
+export async function saveDemandTemplateAction(): Promise<void> {
+  const { actor, organization } = await requireActiveOrganizationPage(
+    "/app/einkauf",
+  );
+
+  try {
+    await saveDemandTemplate({
+      actor,
+      organizationId: organization.organizationId,
+    });
+  } catch (error) {
+    return handleExpectedError(error);
+  }
+  refreshDemandPages();
+  redirectWithMessage("vorlage-gespeichert");
+}
+
+export async function applyDemandTemplateAction(
+  formData: FormData,
+): Promise<void> {
+  const { actor, organization } = await requireActiveOrganizationPage(
+    "/app/einkauf",
+  );
+  const parsed = roundIdSchema.safeParse({
+    buyingRoundId: formString(formData, "buyingRoundId"),
+  });
+  if (!parsed.success) {
+    return redirectWithMessage("ungueltig");
+  }
+
+  try {
+    await applyDemandTemplate({
+      actor,
+      buyingRoundId: parsed.data.buyingRoundId,
+      defaultDeliveryDate: formString(formData, "defaultDeliveryDate"),
+      organizationId: organization.organizationId,
+      requestedDeliveryDate:
+        formString(formData, "requestedDeliveryDate") || undefined,
+    });
+  } catch (error) {
+    return handleExpectedError(error);
+  }
+  refreshDemandPages();
+  redirectWithMessage("vorlage-uebernommen");
 }

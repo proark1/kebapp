@@ -37,6 +37,7 @@ describe("createProductionEnvContent", () => {
     const environment = parseEnvFile(content);
 
     expect(parseProductionEnv(environment)).toMatchObject({
+      ALLOW_PUBLIC_DEMO: "true",
       BETTER_AUTH_URL: "https://203-0-113-10.sslip.io",
       DEMO_MODE: "true",
     });

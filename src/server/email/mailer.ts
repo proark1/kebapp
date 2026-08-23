@@ -7,6 +7,8 @@ export type MailerConfig = {
   from: string;
   host: string;
   port: number;
+  requireTls?: boolean;
+  secure?: boolean;
 };
 
 export type KebappMailer = {
@@ -15,10 +17,20 @@ export type KebappMailer = {
 };
 
 export function createMailer(config: MailerConfig): KebappMailer {
+  const implicitTls = config.port === 465;
+  // In Produktion wird STARTTLS erzwungen; lokal (Mailpit) und in Tests darf
+  // der Relay ohne TLS sprechen, damit die Entwicklungsumgebung funktioniert.
+  const requireTls =
+    config.requireTls ?? process.env.NODE_ENV === "production";
+
   const transporter = nodemailer.createTransport({
     host: config.host,
     port: config.port,
-    secure: false,
+    secure: config.secure ?? implicitTls,
+    requireTLS: !implicitTls && requireTls,
+    tls: {
+      rejectUnauthorized: true,
+    },
   });
 
   return {

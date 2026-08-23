@@ -2,6 +2,25 @@ import Link from "next/link";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
 import { listRegistrationRequests } from "@/server/organizations/admin";
 
+const weekdayLabel = new Intl.DateTimeFormat("de-DE", {
+  weekday: "long",
+  timeZone: "Europe/Berlin",
+}).format(new Date());
+
+function daytimeGreeting(now: Date): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("de-DE", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "Europe/Berlin",
+    }).format(now),
+  );
+  if (hour < 5) return "Gute Nacht";
+  if (hour < 11) return "Guten Morgen";
+  if (hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
 export default async function AdminOverviewPage() {
   const actor = await requirePlatformAdminPage("/admin");
 
@@ -14,8 +33,8 @@ export default async function AdminOverviewPage() {
     <div className="admin-page">
       <header className="admin-page__header">
         <div>
-          <p>Freitag · Prüflauf NRW</p>
-          <h1>Guten Abend, {actor.name.split(" ")[0]}.</h1>
+          <p>{weekdayLabel} · Prüflauf NRW</p>
+          <h1>{daytimeGreeting(new Date())}, {actor.name.split(" ")[0]}.</h1>
           <span>Hier liegen nur Antrags- und Freigabedaten – keine Betriebsdaten.</span>
         </div>
         <div className="admin-date-block">

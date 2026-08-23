@@ -9,6 +9,7 @@ const postgresUrl = z
 
 const productionEnvSchema = z
   .object({
+    ALLOW_PUBLIC_DEMO: z.literal("true"),
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
     DATABASE_OWNER_URL: postgresUrl,

@@ -27,6 +27,7 @@ function createTestProductionEnv(): ProductionEnv {
   );
 
   return parseProductionEnv({
+    ALLOW_PUBLIC_DEMO: "true",
     BETTER_AUTH_SECRET: "integration-test-auth-secret-with-32-characters",
     BETTER_AUTH_URL: "https://203-0-113-10.sslip.io",
     DATABASE_OWNER_URL: dbEnv.TEST_DATABASE_OWNER_URL,

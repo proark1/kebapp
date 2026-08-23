@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseProductionEnv } from "./production-env";
 
 const validEnv = {
+  ALLOW_PUBLIC_DEMO: "true",
   BETTER_AUTH_SECRET: "a-production-auth-secret-with-at-least-32-characters",
   BETTER_AUTH_URL: "https://203-0-113-10.sslip.io",
   DATABASE_OWNER_URL:
@@ -59,6 +60,9 @@ describe("parseProductionEnv", () => {
     ).toThrow();
     expect(() =>
       parseProductionEnv({ ...validEnv, BETTER_AUTH_SECRET: "short" }),
+    ).toThrow();
+    expect(() =>
+      parseProductionEnv({ ...validEnv, ALLOW_PUBLIC_DEMO: "false" }),
     ).toThrow();
   });
 });

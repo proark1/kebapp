@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import { CalendarX2 } from "lucide-react";
 import {
   addDemandItemAction,
+  applyDemandTemplateAction,
   confirmDemandSubmissionAction,
-  removeDemandItemAction,
+  removeDemandItemQuietAction,
+  saveDemandTemplateAction,
   updateDemandQuantityAction,
+  updateDemandQuantityQuietAction,
 } from "@/app/app/einkauf/actions";
 import { DemandPlanner } from "@/components/demand-planner";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { getDemandPlanning } from "@/server/procurement/queries";
+import { getDemandTemplateSummary } from "@/server/procurement/templates";
 import { isPublicDemo } from "@/server/demo/demo-mode";
 
 export const metadata: Metadata = {
@@ -23,11 +27,15 @@ export default async function BuyingPage({
   const { actor, organization } = await requireActiveOrganizationPage(
     "/app/einkauf",
   );
-  const [planning, query] = await Promise.all([
+  const [planning, templateSummary, query] = await Promise.all([
     getDemandPlanning({
       actor,
       organizationId: organization.organizationId,
     }),
+    getDemandTemplateSummary({
+      actor,
+      organizationId: organization.organizationId,
+    }).catch(() => null),
     searchParams,
   ]);
 
@@ -56,13 +64,17 @@ export default async function BuyingPage({
   return (
     <DemandPlanner
       addAction={addDemandItemAction}
+      applyTemplateAction={applyDemandTemplateAction}
       confirmAction={confirmDemandSubmissionAction}
       demoMode={isPublicDemo()}
       messageCode={query.meldung}
       planning={planning}
-      removeAction={removeDemandItemAction}
+      removeQuietAction={removeDemandItemQuietAction}
       role={organization.role}
+      saveTemplateAction={saveDemandTemplateAction}
+      templateItemCount={templateSummary?.itemCount ?? 0}
       updateAction={updateDemandQuantityAction}
+      updateQuietAction={updateDemandQuantityQuietAction}
     />
   );
 }

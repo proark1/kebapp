@@ -7,6 +7,8 @@ const expectedTables = [
   "buying_rounds",
   "demand_items",
   "demand_submissions",
+  "demand_template_items",
+  "demand_templates",
   "invitations",
   "memberships",
   "organizations",
@@ -27,6 +29,9 @@ const expectedForeignKeys = [
   "demand_items.submission_id->demand_submissions.id",
   "demand_submissions.buying_round_id->buying_rounds.id",
   "demand_submissions.organization_id->organizations.id",
+  "demand_template_items.organization_id->organizations.id",
+  "demand_template_items.template_id->demand_templates.id",
+  "demand_templates.organization_id->organizations.id",
   "memberships.organization_id->organizations.id",
   "memberships.user_id->user.id",
   "session.user_id->user.id",
@@ -36,6 +41,7 @@ const expectedForeignKeys = [
 
 const expectedUniqueIndexes = [
   "demand_submissions_organization_round_unique",
+  "demand_templates_organization_unique",
   "invitations_active_unique",
   "memberships_user_organization_unique",
   "organizations_slug_unique",

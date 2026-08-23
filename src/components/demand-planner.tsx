@@ -7,6 +7,7 @@ import {
   CircleHelp,
   Clock3,
   FlaskConical,
+  Layers,
   Minus,
   PackagePlus,
   Plus,
@@ -15,11 +16,12 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useOptimistic, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { BuyingRoundMeter } from "@/components/buying-round-meter";
 import { formatCurrency, getBuyingRoundSnapshot } from "@/lib/calculations";
-import type { DemandPlanningData } from "@/lib/types";
+import type { DemandItem, DemandPlanningData } from "@/lib/types";
 import type { StoreRole } from "@/server/organizations/organization-dto";
 
 const productSpecifications: Record<string, string> = {
@@ -59,9 +61,26 @@ const messages: Record<string, { text: string; tone: "error" | "success" }> = {
     tone: "error",
   },
   ungueltig: { text: "Bitte prüfe die eingegebenen Werte", tone: "error" },
+  "vorlage-fehlt": {
+    text: "Es gibt noch keinen gespeicherten Stammbedarf",
+    tone: "error",
+  },
+  "vorlage-gespeichert": {
+    text: "Stammbedarf gespeichert",
+    tone: "success",
+  },
+  "vorlage-uebernommen": {
+    text: "Stammbedarf in die Runde übernommen",
+    tone: "success",
+  },
 };
 
 type DemandAction = (formData: FormData) => Promise<void>;
+type QuietDemandAction = (formData: FormData) => Promise<{ ok: boolean }>;
+
+type OptimisticUpdate =
+  | { type: "quantity"; id: string; amount: number }
+  | { type: "remove"; id: string };
 
 function PendingButton({
   children,
@@ -98,31 +117,58 @@ function TextSubmitButton({
   );
 }
 
+function clampQuantity(amount: number): number {
+  if (!Number.isFinite(amount)) return 0.001;
+  return Math.min(500, Math.max(0.001, Math.round(amount * 1000) / 1000));
+}
+
 export function DemandPlanner({
   addAction,
+  applyTemplateAction,
   confirmAction,
   messageCode,
   planning,
-  removeAction,
+  removeQuietAction,
   role,
+  saveTemplateAction,
+  templateItemCount,
   updateAction,
+  updateQuietAction,
   demoMode = false,
 }: {
   addAction: DemandAction;
+  applyTemplateAction: DemandAction;
   confirmAction: DemandAction;
   messageCode?: string;
   planning: DemandPlanningData;
-  removeAction: DemandAction;
+  removeQuietAction: QuietDemandAction;
   role: StoreRole;
+  saveTemplateAction: DemandAction;
+  templateItemCount: number;
   updateAction: DemandAction;
+  updateQuietAction: QuietDemandAction;
   demoMode?: boolean;
 }) {
+  const router = useRouter();
   const [composerOpen, setComposerOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [product, setProduct] = useState("Kalb-Drehspieß");
   const confirmDialogRef = useRef<HTMLElement>(null);
   const confirmTriggerRef = useRef<HTMLButtonElement>(null);
-  const snapshot = getBuyingRoundSnapshot(planning.round, planning.items);
+  const [isMutating, startMutation] = useTransition();
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
+  const [optimisticItems, applyOptimisticUpdate] = useOptimistic(
+    planning.items,
+    (current: DemandItem[], update: OptimisticUpdate) => {
+      if (update.type === "remove") {
+        return current.filter((item) => item.id !== update.id);
+      }
+      return current.map((item) =>
+        item.id === update.id ? { ...item, amount: update.amount } : item,
+      );
+    },
+  );
+  const snapshot = getBuyingRoundSnapshot(planning.round, optimisticItems);
   const message = messageCode ? messages[messageCode] : undefined;
   const locked = !planning.editable;
 
@@ -168,6 +214,36 @@ export function DemandPlanner({
     };
   }, [confirmOpen]);
 
+  function mutateQuantity(item: DemandItem, nextAmount: number) {
+    const amount = clampQuantity(nextAmount);
+    startMutation(async () => {
+      applyOptimisticUpdate({ type: "quantity", id: item.id, amount });
+      const formData = new FormData();
+      formData.set("demandItemId", item.id);
+      formData.set("quantity", String(amount));
+      const result = await updateQuietAction(formData);
+      if (!result.ok) {
+        setLiveNotice(messages.gesperrt.text);
+      }
+      router.refresh();
+    });
+  }
+
+  function removeItem(item: DemandItem) {
+    startMutation(async () => {
+      applyOptimisticUpdate({ type: "remove", id: item.id });
+      const formData = new FormData();
+      formData.set("demandItemId", item.id);
+      const result = await removeQuietAction(formData);
+      if (!result.ok) {
+        setLiveNotice(messages.gesperrt.text);
+      } else {
+        setLiveNotice(messages.entfernt.text);
+      }
+      router.refresh();
+    });
+  }
+
   return (
     <div className="page-stack">
       <header className="page-header">
@@ -207,7 +283,7 @@ export function DemandPlanner({
         className="buying-summary-grid"
         aria-label="Zusammenfassung der Sammelrunde"
       >
-        <BuyingRoundMeter round={planning.round} demands={planning.items} compact />
+        <BuyingRoundMeter round={planning.round} demands={optimisticItems} compact />
 
         <article className="round-facts">
           <div>
@@ -239,14 +315,33 @@ export function DemandPlanner({
             <p>{planning.round.deliveryWindow}</p>
           </div>
           {planning.editable ? (
-            <button
-              className="button button--primary"
-              type="button"
-              onClick={() => setComposerOpen(true)}
-            >
-              <Plus size={18} aria-hidden="true" />
-              Position hinzufügen
-            </button>
+            <div className="demand-panel__header-actions">
+              {!locked && templateItemCount > 0 ? (
+                <form action={applyTemplateAction}>
+                  <input name="buyingRoundId" type="hidden" value={planning.round.id} />
+                  <input
+                    name="defaultDeliveryDate"
+                    type="hidden"
+                    value={planning.round.deliveryDate}
+                  />
+                  <TextSubmitButton
+                    className="button button--secondary"
+                    pendingLabel="Stammbedarf wird übernommen …"
+                  >
+                    <Layers size={17} aria-hidden="true" />
+                    Stammbedarf übernehmen ({templateItemCount})
+                  </TextSubmitButton>
+                </form>
+              ) : null}
+              <button
+                className="button button--primary"
+                type="button"
+                onClick={() => setComposerOpen(true)}
+              >
+                <Plus size={18} aria-hidden="true" />
+                Position hinzufügen
+              </button>
+            </div>
           ) : (
             <span className="demand-lock-badge">
               <ShieldCheck size={16} aria-hidden="true" />
@@ -257,7 +352,7 @@ export function DemandPlanner({
           )}
         </div>
 
-        {planning.items.length > 0 ? (
+        {optimisticItems.length > 0 ? (
           <div className="demand-table-wrap">
             <table className="demand-table">
               <thead>
@@ -268,8 +363,8 @@ export function DemandPlanner({
                   <th><span className="sr-only">Aktionen</span></th>
                 </tr>
               </thead>
-              <tbody>
-                {planning.items.map((item) => (
+              <tbody aria-busy={isMutating}>
+                {optimisticItems.map((item) => (
                   <tr key={item.id}>
                     <td data-label="Produkt">
                       <div className="product-cell">
@@ -295,20 +390,15 @@ export function DemandPlanner({
                     <td data-label="Menge">
                       {planning.editable ? (
                         <div className="quantity-control quantity-control--server">
-                          <form action={updateAction}>
-                            <input name="demandItemId" type="hidden" value={item.id} />
-                            <input
-                              name="quantity"
-                              type="hidden"
-                              value={Math.max(1, item.amount - 1)}
-                            />
-                            <PendingButton pendingLabel="Menge wird verringert">
-                              <Minus size={15} aria-hidden="true" />
-                              <span className="sr-only">
-                                Menge für {item.product} verringern
-                              </span>
-                            </PendingButton>
-                          </form>
+                          <button
+                            aria-label={`Menge für ${item.product} verringern`}
+                            className="quantity-control__step"
+                            disabled={isMutating}
+                            onClick={() => mutateQuantity(item, item.amount - 1)}
+                            type="button"
+                          >
+                            <Minus size={15} aria-hidden="true" />
+                          </button>
                           <form
                             action={updateAction}
                             className="quantity-control__input-form"
@@ -319,6 +409,7 @@ export function DemandPlanner({
                               <input
                                 aria-label={`Menge für ${item.product}`}
                                 defaultValue={item.amount}
+                                key={`${item.id}-${item.amount}`}
                                 max="500"
                                 min="0.001"
                                 name="quantity"
@@ -337,20 +428,15 @@ export function DemandPlanner({
                               </span>
                             </PendingButton>
                           </form>
-                          <form action={updateAction}>
-                            <input name="demandItemId" type="hidden" value={item.id} />
-                            <input
-                              name="quantity"
-                              type="hidden"
-                              value={Math.min(500, item.amount + 1)}
-                            />
-                            <PendingButton pendingLabel="Menge wird erhöht">
-                              <Plus size={15} aria-hidden="true" />
-                              <span className="sr-only">
-                                Menge für {item.product} erhöhen
-                              </span>
-                            </PendingButton>
-                          </form>
+                          <button
+                            aria-label={`Menge für ${item.product} erhöhen`}
+                            className="quantity-control__step"
+                            disabled={isMutating}
+                            onClick={() => mutateQuantity(item, item.amount + 1)}
+                            type="button"
+                          >
+                            <Plus size={15} aria-hidden="true" />
+                          </button>
                         </div>
                       ) : (
                         <strong className="quantity-readonly">
@@ -360,16 +446,15 @@ export function DemandPlanner({
                     </td>
                     <td>
                       {planning.editable ? (
-                        <form action={removeAction}>
-                          <input name="demandItemId" type="hidden" value={item.id} />
-                          <PendingButton
-                            className="icon-button icon-button--danger"
-                            pendingLabel="Position wird entfernt"
-                          >
-                            <Trash2 size={17} aria-hidden="true" />
-                            <span className="sr-only">{item.product} entfernen</span>
-                          </PendingButton>
-                        </form>
+                        <button
+                          aria-label={`${item.product} entfernen`}
+                          className="icon-button icon-button--danger"
+                          disabled={isMutating}
+                          onClick={() => removeItem(item)}
+                          type="button"
+                        >
+                          <Trash2 size={17} aria-hidden="true" />
+                        </button>
                       ) : null}
                     </td>
                   </tr>
@@ -384,7 +469,9 @@ export function DemandPlanner({
             <p>
               {locked
                 ? "Für diese Runde wurde kein Bedarf bestätigt."
-                : "Füge deine erste Position hinzu, damit sie in die Sammelrunde einfließt."}
+                : templateItemCount > 0
+                  ? "Übernimm deinen gespeicherten Stammbedarf oder füge eine erste Position hinzu."
+                  : "Füge deine erste Position hinzu, damit sie in die Sammelrunde einfließt."}
             </p>
             {planning.editable ? (
               <button
@@ -404,18 +491,39 @@ export function DemandPlanner({
             role="status"
             aria-live="polite"
           >
-            {message?.tone === "success" ? (
+            {message?.tone === "success" || liveNotice ? (
               <Check size={15} aria-hidden="true" />
             ) : (
               <Save size={15} aria-hidden="true" />
             )}
-            {message?.text ?? "Alle Angaben werden sicher im Ladenkonto gespeichert"}
+            {message?.text ?? liveNotice ?? "Alle Angaben werden sicher im Ladenkonto gespeichert"}
           </span>
           <span>
-            {planning.items.length} Positionen · {snapshot.storeKg} kg gesamt
+            {optimisticItems.length} Positionen · {snapshot.storeKg} kg gesamt
           </span>
         </footer>
       </section>
+
+      {planning.editable ? (
+        <section className="template-save-bar">
+          <div>
+            <span className="eyebrow">Wiederverwenden</span>
+            <p>
+              Speichere die aktuellen Positionen als Stammbedarf und übernimme
+              sie künftig mit einem Klick in neue Sammelrunden.
+            </p>
+          </div>
+          <form action={saveTemplateAction}>
+            <TextSubmitButton
+              className="button button--secondary"
+              pendingLabel="Stammbedarf wird gespeichert …"
+            >
+              <Save size={17} aria-hidden="true" />
+              Als Stammbedarf speichern
+            </TextSubmitButton>
+          </form>
+        </section>
+      ) : null}
 
       {planning.canConfirm ? (
         <section className="demand-confirm-bar">
@@ -486,7 +594,7 @@ export function DemandPlanner({
             </dl>
 
             <ul className="demand-confirm-modal__items" aria-label="Positionen">
-              {planning.items.map((item) => (
+              {optimisticItems.map((item) => (
                 <li key={item.id}>
                   <span><strong>{item.product}</strong><small>{item.specification}</small></span>
                   <span><strong>{item.amount} {item.unit}</strong><small>{dateFormatter.format(new Date(`${item.deliveryDate}T12:00:00Z`))}</small></span>

@@ -81,6 +81,7 @@ export const buyingRounds = pgTable(
       .$type<PricingTier[]>()
       .default(sql`'[]'::jsonb`)
       .notNull(),
+    reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
     createdByUserId: text("created_by_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
@@ -186,5 +187,56 @@ export const demandItems = pgTable(
       table.organizationId,
       table.submissionId,
     ),
+  ],
+).enableRLS();
+
+export const demandTemplates = pgTable(
+  "demand_templates",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 180 }).default("Stammbedarf").notNull(),
+    ...mutableTimestamps(),
+  },
+  (table) => [
+    unique("demand_templates_id_organization_unique").on(
+      table.id,
+      table.organizationId,
+    ),
+    uniqueIndex("demand_templates_organization_unique").on(
+      table.organizationId,
+    ),
+  ],
+).enableRLS();
+
+export const demandTemplateItems = pgTable(
+  "demand_template_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    templateId: uuid("template_id")
+      .notNull()
+      .references(() => demandTemplates.id, { onDelete: "cascade" }),
+    productName: varchar("product_name", { length: 180 }).notNull(),
+    specification: text("specification"),
+    quantity: numeric("quantity", { precision: 12, scale: 3 }).notNull(),
+    unit: demandUnit("unit").notNull(),
+    ...mutableTimestamps(),
+  },
+  (table) => [
+    foreignKey({
+      name: "demand_template_items_template_organization_fk",
+      columns: [table.templateId, table.organizationId],
+      foreignColumns: [demandTemplates.id, demandTemplates.organizationId],
+    }).onDelete("cascade"),
+    check(
+      "demand_template_items_quantity_positive",
+      sql`${table.quantity} > 0`,
+    ),
+    index("demand_template_items_template_idx").on(table.templateId),
   ],
 ).enableRLS();

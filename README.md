@@ -6,7 +6,10 @@ umfasst:
 
 - Registrierung mit E-Mail-Bestätigung und persönlich geprüftem Ladenantrag
 - getrennte Rollen für Plattform-Admin, Support, Inhaber:in und Mitarbeiter:in
-- Fleischbedarf je Laden und regionale Sammelrunden
+- Fleischbedarf je Laden und regionale Sammelrunden inkl. Admin-Rundenverwaltung
+  (`/admin/runden`), automatischem Bestellschluss, Erinnerungs-E-Mails und
+  Bündel-Export (CSV)
+- Stammbedarf-Vorlagen je Laden zum Wiederverwenden in neuen Runden
 - Einladungen für Mitarbeitende
 - Website-Editor und veröffentlichbare Ladenwebsite
 - PostgreSQL-Mandantentrennung mit Row Level Security und Auditereignissen
@@ -35,7 +38,9 @@ pnpm dev
 
 Vor dem ersten Start müssen alle `change-me`-Werte ersetzt werden. Passwörter
 und die zugehörigen PostgreSQL-URLs in beiden Env-Dateien müssen zueinander
-passen. Anschließend sind erreichbar:
+passen. Für Commits empfiehlt sich zusätzlich der versionierte
+Geheimnis-Scan-Hook (`pnpm hooks:install`, einmalig je Klonauscheck).
+Anschließend sind erreichbar:
 
 - Anwendung: [http://localhost:3000](http://localhost:3000)
 - Mailpit: [http://localhost:8025](http://localhost:8025)
@@ -174,6 +179,13 @@ docker compose --env-file /opt/kebapp/shared/.env.production \
 Der generierte lokale Dateiname wird von Next.js nicht automatisch geladen. Auf
 dem Server wird dieselbe Datei mit Modus `0600` als
 `/opt/kebapp/shared/.env.production` abgelegt.
+
+Die Produktionsumgebung erzwingt eine bewusste Entscheidung zum Demo-Modus:
+`compose.production.yaml` verlangt `DEMO_MODE` explizit, und die Anwendung
+startet mit `DEMO_MODE=true` nur, wenn zusätzlich `ALLOW_PUBLIC_DEMO=true`
+gesetzt ist. Für echten Betrieb mit echten Daten gelten beide Werte als
+`false`; der Ein-Klick-Demo-Login (`src/app/demo-actions.ts`) ist damit
+vollständig deaktiviert.
 
 Provisionierung, Deployment, tägliche Dumps, Restore-Probe und Rollback sind im
 [Hetzner-Demo-Runbook](docs/runbooks/hetzner-demo.md) beschrieben.

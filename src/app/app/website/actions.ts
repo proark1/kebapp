@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
+import type { WebsiteSaveState } from "@/lib/website-save-state";
 import {
   requestStorefrontDomain,
   StorefrontDomainRequestError,
@@ -15,6 +16,44 @@ import {
   storefrontUpdateSchema,
 } from "@/server/storefront/validation";
 
+const fieldLabelsByPath: Record<string, string> = {
+  accent: "Akzentfarbe",
+  city: "Ort",
+  description: "Kurzbeschreibung",
+  eyebrow: "Kurze Zeile über dem Titel",
+  features: "Merkmale",
+  heroImageUrl: "Headerbild",
+  isPublished: "Veröffentlichung",
+  logoUrl: "Logo",
+  name: "Ladenname",
+  phone: "Telefon",
+  postalCode: "PLZ",
+  shortName: "Kürzel",
+  street: "Straße und Hausnummer",
+  tagline: "Hauptüberschrift",
+  whatsappPhone: "WhatsApp-Nummer",
+};
+
+function labelForIssuePath(path: PropertyKey[]): string {
+  const segments = path.map((segment) => String(segment));
+  if (segments.includes("menu")) {
+    if (segments.at(-1) === "price") {
+      return "Preis in der Speisekarte";
+    }
+    return "Speisekarte";
+  }
+  if (segments.includes("openingHours")) {
+    return "Öffnungszeiten";
+  }
+  for (const segment of segments) {
+    const label = fieldLabelsByPath[segment];
+    if (label) {
+      return label;
+    }
+  }
+  return "Weitere Angaben";
+}
+
 function formString(formData: FormData, name: string): string {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
@@ -24,7 +63,10 @@ function redirectWithMessage(message: string): never {
   redirect(`/app/website?meldung=${message}`);
 }
 
-export async function saveStorefrontAction(formData: FormData): Promise<void> {
+export async function saveStorefrontAction(
+  _state: WebsiteSaveState,
+  formData: FormData,
+): Promise<WebsiteSaveState> {
   const { actor, organization } = await requireActiveOrganizationPage(
     "/app/website",
   );
@@ -33,14 +75,28 @@ export async function saveStorefrontAction(formData: FormData): Promise<void> {
   try {
     profile = JSON.parse(formString(formData, "profile"));
   } catch {
-    return redirectWithMessage("ungueltig");
+    return {
+      message: "Die Angaben konnten nicht gelesen werden. Bitte erneut versuchen.",
+      status: "error",
+    };
   }
   const parsed = storefrontUpdateSchema.safeParse({
     isPublished: formData.get("isPublished") === "on",
     profile,
   });
   if (!parsed.success) {
-    return redirectWithMessage("ungueltig");
+    const labels: string[] = [];
+    for (const issue of parsed.error.issues) {
+      const label = labelForIssuePath(issue.path);
+      if (!labels.includes(label)) {
+        labels.push(label);
+      }
+    }
+    return {
+      fieldLabels: labels,
+      message: "Bitte prüfe die markierten Angaben.",
+      status: "error",
+    };
   }
 
   let saved: { isPublished: boolean; publicSlug: string };

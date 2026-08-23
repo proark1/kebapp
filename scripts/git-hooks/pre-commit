@@ -1,0 +1,4 @@
+#!/bin/sh
+# Versionierter Pre-Commit-Hook. Aktivieren mit: pnpm hooks:install
+set -e
+node scripts/check-secrets.mjs

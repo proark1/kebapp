@@ -62,6 +62,38 @@ function emailShell(input: {
 </html>`;
 }
 
+type RoundReminderEmailInput = {
+  closesAt: Date;
+  roundName: string;
+  storeName: string;
+  to: string;
+  url: string;
+};
+
+export function roundReminderEmail(
+  input: RoundReminderEmailInput,
+): AuthEmail {
+  const deadline = new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Europe/Berlin",
+  }).format(input.closesAt);
+  const action = "Bedarf bestätigen";
+  const explanation = `Die Sammelrunde "${input.roundName}" schließt am ${deadline} Uhr. Trage deinen Fleischbedarf ein oder bestätige ihn verbindlich, damit er in die regionale Gruppenmenge einfließt.`;
+
+  return {
+    html: emailShell({
+      action,
+      explanation,
+      name: "Kebapp-Nutzer:in",
+      url: input.url,
+    }),
+    subject: `Kebapp: Bestellschluss ${input.roundName}`,
+    text: `Hallo,\n\n${explanation}\n\n${input.url}\n\nKebapp`,
+    to: input.to,
+  };
+}
+
 export function verificationEmail(input: AuthEmailInput): AuthEmail {
   const explanation =
     "Bitte bestätige deine E-Mail-Adresse. Der Link ist 60 Minuten gültig. Wenn du dich nicht bei Kebapp registriert hast, kannst du diese Nachricht ignorieren.";

@@ -260,8 +260,8 @@ export function Storefront({
             </span>
           </div>
           <dl>
-            {profile.openingHours.map((entry) => (
-              <div key={entry.days}>
+            {profile.openingHours.map((entry, hourEntryIndex) => (
+              <div key={`${hourEntryIndex}-${entry.days}`}>
                 <dt>{entry.days}</dt>
                 <dd>{entry.hours} Uhr</dd>
               </div>

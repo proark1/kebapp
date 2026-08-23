@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AccountMenu } from "@/components/account-menu";
 import { BrandMark } from "@/components/brand-mark";
 import { DemoEnvironmentBar } from "@/components/demo-environment-bar";
@@ -39,9 +39,35 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const visiblePrimaryNavigation = primaryNavigation.filter(
     (item) => !item.ownerOnly || organization.role === "OWNER",
   );
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const sidebar = sidebarRef.current;
+    const firstLink = sidebar?.querySelector<HTMLElement>("a, button");
+    firstLink?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        menuToggleRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen]);
 
   if (pathname === "/app/organisation-waehlen") {
     return <>{children}</>;
@@ -60,6 +86,7 @@ export function AppShell({
         <button
           className="icon-button"
           type="button"
+          ref={menuToggleRef}
           aria-expanded={menuOpen}
           aria-controls="app-sidebar"
           aria-label={menuOpen ? "Navigation schließen" : "Navigation öffnen"}
@@ -71,6 +98,7 @@ export function AppShell({
 
       <aside
         id="app-sidebar"
+        ref={sidebarRef}
         className={`app-sidebar ${menuOpen ? "app-sidebar--open" : ""}`}
       >
         <div className="app-sidebar__brand">

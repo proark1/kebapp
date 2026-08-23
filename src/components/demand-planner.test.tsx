@@ -1,7 +1,12 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+﻿import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DemandPlanner } from "@/components/demand-planner";
 import type { DemandPlanningData } from "@/lib/types";
+
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh }),
+}));
 
 const planning: DemandPlanningData = {
   canConfirm: true,
@@ -46,18 +51,27 @@ const planning: DemandPlanningData = {
 function createActions() {
   const action = () =>
     vi.fn<(formData: FormData) => Promise<void>>(async () => undefined);
+  const quietAction = () =>
+    vi.fn<(formData: FormData) => Promise<{ ok: boolean }>>(async () => ({
+      ok: true,
+    }));
 
   return {
     addAction: action(),
+    applyTemplateAction: action(),
     confirmAction: action(),
-    removeAction: action(),
+    removeQuietAction: quietAction(),
+    saveTemplateAction: action(),
+    templateItemCount: 0,
     updateAction: action(),
+    updateQuietAction: quietAction(),
   };
 }
 
 describe("DemandPlanner", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    refresh.mockClear();
   });
 
   it("renders injected database data without reading or writing local storage", () => {
@@ -96,6 +110,33 @@ describe("DemandPlanner", () => {
     expect(submitted.get("quantity")).toBe("25");
     expect(submitted.get("productName")).toBe("Kalb-Drehspieß");
     expect(window.localStorage).toHaveLength(0);
+  });
+
+  it("updates quantities optimistically before the quiet action resolves", async () => {
+    const actions = createActions();
+    let resolveUpdate: (() => void) | undefined;
+    actions.updateQuietAction.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpdate = () => resolve({ ok: true });
+        }),
+    );
+    render(<DemandPlanner {...actions} planning={planning} role="OWNER" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Menge für Kalb-Drehspieß erhöhen" }),
+    );
+
+    expect(
+      await screen.findByText("2 Positionen · 87 kg gesamt"),
+    ).toBeInTheDocument();
+    expect(actions.updateQuietAction).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      resolveUpdate?.();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
   it("offers confirmation only to an owner with an editable draft", async () => {
