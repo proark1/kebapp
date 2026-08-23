@@ -1,0 +1,2 @@
+ALTER TABLE "store_profiles" DROP CONSTRAINT "store_profiles_domain_request_status_values";--> statement-breakpoint
+ALTER TABLE "store_profiles" ADD CONSTRAINT "store_profiles_domain_request_status_values" CHECK ("store_profiles"."domain_request_status" in ('CONNECTED', 'NONE', 'REVIEW_REQUESTED'));

@@ -33,7 +33,10 @@ export type StoreFeature =
   | "HOMEMADE_SAUCES"
   | "PREPARED_ON_SITE";
 
-export type StoreDomainRequestStatus = "NONE" | "REVIEW_REQUESTED";
+export type StoreDomainRequestStatus =
+  | "CONNECTED"
+  | "NONE"
+  | "REVIEW_REQUESTED";
 
 export const storeProfiles = pgTable(
   "store_profiles",
@@ -115,7 +118,7 @@ export const storeProfiles = pgTable(
     ),
     check(
       "store_profiles_domain_request_status_values",
-      sql`${table.domainRequestStatus} in ('NONE', 'REVIEW_REQUESTED')`,
+      sql`${table.domainRequestStatus} in ('CONNECTED', 'NONE', 'REVIEW_REQUESTED')`,
     ),
     check(
       "store_profiles_schema_version_positive",

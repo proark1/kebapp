@@ -8163,3 +8163,8 @@ a {
   margin-left: 6px;
   font-weight: 500;
 }
+
+.request-file__columns--domains,
+.request-file--domains li {
+  grid-template-columns: 1.2fr 1.6fr auto auto;
+}

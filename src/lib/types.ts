@@ -59,7 +59,7 @@ export const STORE_FEATURES = [
 
 export type StoreFeature = (typeof STORE_FEATURES)[number];
 
-export type StoreDomainRequestStatus = "NONE" | "REVIEW_REQUESTED";
+export type StoreDomainRequestStatus = "CONNECTED" | "NONE" | "REVIEW_REQUESTED";
 
 export type StoreProfile = {
   schemaVersion: 3;

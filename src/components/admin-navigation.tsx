@@ -10,6 +10,7 @@ const links = [
   { href: "/admin", label: "Übersicht" },
   { href: "/admin/antraege", label: "Ladenanträge" },
   { href: "/admin/laeden", label: "Läden" },
+  { href: "/admin/domains", label: "Domains" },
   { href: "/admin/runden", label: "Sammelrunden" },
   { href: "/admin/support", label: "Supporteinsätze" },
   { href: "/admin/audit", label: "Auditprotokoll" },
