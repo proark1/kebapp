@@ -30,7 +30,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=postgresql://kebapp_app:build-only@127.0.0.1:5432/kebapp
 ENV BETTER_AUTH_SECRET=build-only-secret-with-at-least-32-characters
 ENV BETTER_AUTH_URL=https://127-0-0-1.sslip.io
+# Build-only-Werte: Der Builder sammelt Seitendaten mit Demo-Voreinstellungen.
+# Zur Laufzeit setzen compose und die Env-Datei beide Werte real; der
+# ALLOW_PUBLIC_DEMO-Riegel aus src/lib/env.ts gilt dort unverändert.
 ENV DEMO_MODE=true
+ENV ALLOW_PUBLIC_DEMO=true
 
 RUN mkdir -p public && pnpm build
 
