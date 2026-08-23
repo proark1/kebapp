@@ -19,6 +19,7 @@ const expectedTables = [
   "platform_roles",
   "rate_limit",
   "registration_requests",
+  "sales_daily",
   "session",
   "store_profiles",
   "support_assignments",

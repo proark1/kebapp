@@ -4,6 +4,7 @@ import {
   date,
   foreignKey,
   index,
+  integer,
   jsonb,
   numeric,
   pgEnum,
@@ -311,5 +312,42 @@ export const goodsReceiptItems = pgTable(
       sql`${table.orderedQuantity} > 0`,
     ),
     index("goods_receipt_items_receipt_idx").on(table.receiptId),
+  ],
+).enableRLS();
+
+export const salesSource = pgEnum("sales_source", ["CSV", "MANUAL"]);
+
+export const salesDaily = pgTable(
+  "sales_daily",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    businessDate: date("business_date", { mode: "string" }).notNull(),
+    netSalesCents: integer("net_sales_cents").notNull(),
+    guestCount: integer("guest_count"),
+    source: salesSource("source").default("MANUAL").notNull(),
+    importedByUserId: text("imported_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("sales_daily_org_date_unique").on(
+      table.organizationId,
+      table.businessDate,
+    ),
+    check(
+      "sales_daily_net_non_negative",
+      sql`${table.netSalesCents} >= 0`,
+    ),
+    index("sales_daily_org_date_idx").on(table.organizationId, table.businessDate),
   ],
 ).enableRLS();
