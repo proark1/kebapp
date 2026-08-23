@@ -14,7 +14,7 @@ x-app-environment: &app-environment
   DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:?DEMO_ADMIN_PASSWORD fehlt}
   DEMO_EMPLOYEE_EMAIL: ${DEMO_EMPLOYEE_EMAIL:?DEMO_EMPLOYEE_EMAIL fehlt}
   DEMO_EMPLOYEE_PASSWORD: ${DEMO_EMPLOYEE_PASSWORD:?DEMO_EMPLOYEE_PASSWORD fehlt}
-  DEMO_MODE: ${DEMO_MODE:?DEMO_MODE muss explizit gesetzt sein: true nur für die öffentliche Demo (zusammen mit ALLOW_PUBLIC_DEMO=true), sonst false}
+  DEMO_MODE: "${DEMO_MODE:?DEMO_MODE fehlt - true nur zusammen mit ALLOW_PUBLIC_DEMO=true fuer die oeffentliche Demo, sonst false}"
   ALLOW_PUBLIC_DEMO: ${ALLOW_PUBLIC_DEMO:-false}
   DEMO_OWNER_EMAIL: ${DEMO_OWNER_EMAIL:?DEMO_OWNER_EMAIL fehlt}
   DEMO_OWNER_PASSWORD: ${DEMO_OWNER_PASSWORD:?DEMO_OWNER_PASSWORD fehlt}
