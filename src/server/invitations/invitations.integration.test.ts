@@ -336,6 +336,9 @@ describe.sequential("employee invitations", () => {
     const team = await listOrganizationTeam({
       actor: users.owner,
       database: harness.runtimeDatabase,
+      // Fixierte Testzeit: Der Listen-Aufruf laesst sonst die in Test 1
+      // erzeugte 72h-Einladung am 24.08.2026 real ablaufen.
+      now: new Date("2026-08-22T10:00:00.000Z"),
       organizationId,
     });
 
