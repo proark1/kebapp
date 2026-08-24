@@ -368,6 +368,8 @@ export const incomingInvoices = pgTable(
     netCents7: integer("net_cents_7").default(0).notNull(),
     netCents19: integer("net_cents_19").default(0).notNull(),
     status: invoiceStatus("status").default("OFFEN").notNull(),
+    eInvoiceXml: text("e_invoice_xml"),
+    sourceFileName: varchar("source_file_name", { length: 255 }),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdByUserId: text("created_by_user_id").references(() => user.id, {
       onDelete: "set null",
@@ -396,3 +398,5 @@ export const incomingInvoices = pgTable(
     ),
   ],
 ).enableRLS();
+
+// E-Rechnung Stufe B (MVP): Original-XRechnung (UBL-XML) zum Beleg.

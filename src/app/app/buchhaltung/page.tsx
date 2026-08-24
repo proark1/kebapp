@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Download } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import {
   listInvoices,
@@ -79,7 +79,50 @@ async function payInvoiceAction(formData: FormData): Promise<void> {
   redirect("/app/buchhaltung?meldung=bezahlt");
 }
 
+async function importEInvoiceAction(formData: FormData): Promise<void> {
+  "use server";
+  const { redirect } = await import("next/navigation");
+  const { revalidatePath } = await import("next/cache");
+  const guard = await (
+    await import("@/server/auth/page-guards")
+  ).requireActiveOrganizationPage("/app/buchhaltung");
+  const fail = (code: string): never =>
+    redirect(`/app/buchhaltung?meldung=${encodeURIComponent(code)}`);
+
+  const file = formData.get("xmlFile");
+  if (!(file instanceof File) || file.size === 0) {
+    return fail("keine-datei");
+  }
+  if (!/\.xml$/i.test(file.name)) {
+    return fail("Nur .xml-Dateien werden unterstützt.");
+  }
+  if (file.size > 1_000_000) {
+    return fail("Die XML-Datei ist größer als 1 MB.");
+  }
+  const xmlText = await file.text();
+  const { EInvoiceParseError, importEInvoice } = await import(
+    "@/server/accounting/einvoice"
+  );
+  try {
+    await importEInvoice({
+      actor: guard.actor,
+      fileName: file.name,
+      organizationId: guard.organization.organizationId,
+      xmlText,
+    });
+  } catch (error) {
+    if (error instanceof EInvoiceParseError) {
+      return fail(error.message);
+    }
+    throw error;
+  }
+  revalidatePath("/app/buchhaltung");
+  return fail("importiert");
+}
+
 const meldungMessages: Record<string, string> = {
+  importiert: "XRechnung importiert",
+  "keine-datei": "Bitte eine XML-Datei auswählen.",
   bezahlt: "Als bezahlt markiert",
   fehler: "Speichern fehlgeschlagen — bitte Angaben prüfen.",
   gespeichert: "Eingangsrechnung gespeichert",
@@ -176,6 +219,34 @@ export default async function BuchhaltungPage({
           </label>
           <button className="button button--primary" type="submit">
             Rechnung speichern
+          </button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <div className="panel__header">
+          <div>
+            <span className="eyebrow">E-Rechnung</span>
+            <h2>XRechnung (.xml) hochladen</h2>
+            <p>
+              Nummer, Datum, Lieferant und USt-Beträge werden automatisch
+              eingelesen. ZUGFeRD-PDFs werden nicht unterstützt.
+            </p>
+          </div>
+        </div>
+        <form action={importEInvoiceAction} className="form-grid form-grid--three sales-manual">
+          <label className="button button--secondary sales-upload">
+            <Upload size={17} aria-hidden="true" /> XML auswählen
+            <input
+              accept=".xml,text/xml,application/xml"
+              className="sr-only"
+              name="xmlFile"
+              required
+              type="file"
+            />
+          </label>
+          <button className="button button--primary" type="submit">
+            E-Rechnung importieren
           </button>
         </form>
       </section>
