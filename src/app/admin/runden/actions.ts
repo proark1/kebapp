@@ -11,6 +11,7 @@ import {
   transitionBuyingRound,
 } from "@/server/procurement/rounds";
 import { getOptionalSession } from "@/server/auth/session";
+import { awardRound, AwardRoundNotFoundError } from "@/server/procurement/awards";
 
 export type AdminRoundFormState = {
   fieldErrors?: Record<string, string>;
@@ -155,6 +156,42 @@ function fieldErrorState(
   };
 }
 
+export async function awardRoundAction(
+  formData: FormData,
+): Promise<void> {
+  const actor = await requireActorOrRedirect();
+  const roundId = value(formData, "roundId");
+
+  function failAward(code: string): never {
+    redirect(`/admin/runden/${roundId}?meldung=${encodeURIComponent(code)}`);
+  }
+
+  const supplierName = value(formData, "supplierName");
+  const priceRaw = value(formData, "unitPrice").replace(",", ".");
+  if (supplierName.length < 2 || !Number.isFinite(Number(priceRaw))) {
+    return failAward("ungueltig");
+  }
+
+  try {
+    await awardRound({
+      actor,
+      input: {
+        note: value(formData, "note") || undefined,
+        roundId,
+        supplierName,
+        unitPriceCents: Math.round(Number(priceRaw) * 100),
+      },
+    });
+  } catch (error) {
+    if (error instanceof AwardRoundNotFoundError) {
+      return failAward("nicht-gefunden");
+    }
+    throw error;
+  }
+  revalidatePath(`/admin/runden/${roundId}`);
+  revalidatePath("/app/einkauf");
+  failAward("vergeben");
+}
 export async function transitionBuyingRoundAction(
   formData: FormData,
 ): Promise<void> {

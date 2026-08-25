@@ -455,3 +455,43 @@ export const menuCalculations = pgTable(
     ),
   ],
 ).enableRLS();
+
+// Lieferantenportal Stufe 1: Auftragsbestaetigung des Einkaufsteams je
+// Sammelrunde (regional, auf alle Laden-Klone der Region gespiegelt).
+export const roundAwards = pgTable(
+  "round_awards",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    buyingRoundId: uuid("buying_round_id")
+      .notNull()
+      .references(() => buyingRounds.id, { onDelete: "cascade" }),
+    regionalKey: varchar("regional_key", { length: 120 }).notNull(),
+    supplierName: varchar("supplier_name", { length: 180 }).notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    note: varchar("note", { length: 500 }),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("round_awards_org_round_unique").on(
+      table.organizationId,
+      table.buyingRoundId,
+    ),
+    check(
+      "round_awards_price_positive",
+      sql`${table.unitPriceCents} > 0`,
+    ),
+    index("round_awards_regional_idx").on(table.regionalKey),
+  ],
+).enableRLS();

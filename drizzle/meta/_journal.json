@@ -141,6 +141,13 @@
       "when": 1787636586080,
       "tag": "0019_categories_calculations",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787686100354,
+      "tag": "0020_round_awards",
+      "breakpoints": true
     }
   ]
 }

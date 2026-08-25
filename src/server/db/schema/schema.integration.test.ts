@@ -21,6 +21,7 @@ const expectedTables = [
   "platform_roles",
   "rate_limit",
   "registration_requests",
+  "round_awards",
   "sales_daily",
   "session",
   "store_profiles",
@@ -32,12 +33,6 @@ const expectedTables = [
 ] as const;
 
 const expectedForeignKeys = [
-  "invitations.accepted_by_user_id->user.id",
-  "memberships.user_id->user.id",
-  "menu_calculations.created_by_user_id->user.id",
-  "menu_calculations.organization_id->organizations.id",
-  "memberships.organization_id->organizations.id",
-  "memberships.invited_by_user_id->user.id",
   "organizations.reviewed_by_user_id->user.id",
   "platform_roles.user_id->user.id",
   "platform_roles.granted_by_user_id->user.id",
@@ -53,6 +48,13 @@ const expectedForeignKeys = [
   "audit_events.organization_id->organizations.id",
   "invitations.organization_id->organizations.id",
   "invitations.invited_by_user_id->user.id",
+  "invitations.accepted_by_user_id->user.id",
+  "memberships.user_id->user.id",
+  "round_awards.buying_round_id->buying_rounds.id",
+  "round_awards.created_by_user_id->user.id",
+  "round_awards.organization_id->organizations.id",
+  "memberships.organization_id->organizations.id",
+  "memberships.invited_by_user_id->user.id",
   "user_profiles.user_id->user.id",
   "buying_rounds.organization_id->organizations.id",
   "buying_rounds.created_by_user_id->user.id",
@@ -87,6 +89,8 @@ const expectedForeignKeys = [
   "sales_daily.imported_by_user_id->user.id",
   "incoming_invoices.organization_id->organizations.id",
   "incoming_invoices.created_by_user_id->user.id",
+  "menu_calculations.organization_id->organizations.id",
+  "menu_calculations.created_by_user_id->user.id",
 ] as const;
 
 const expectedUniqueIndexes = [
@@ -98,6 +102,7 @@ const expectedUniqueIndexes = [
   "invitations_active_unique",
   "memberships_user_organization_unique",
   "organizations_slug_unique",
+  "round_awards_org_round_unique",
 ] as const;
 
 const expectedEnums = {

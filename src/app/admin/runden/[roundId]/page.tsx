@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
-import { transitionBuyingRoundAction } from "@/app/admin/runden/actions";
+import { awardRoundAction, transitionBuyingRoundAction } from "@/app/admin/runden/actions";
 import {
   getBuyingRoundDetail,
   RoundNotFoundError,
 } from "@/server/procurement/rounds";
 import { getRegionalSavings } from "@/server/organizations/directory";
+import { getRoundAward } from "@/server/procurement/awards";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
 
 export const metadata: Metadata = { title: "Sammelrunde" };
@@ -55,6 +56,12 @@ export default async function AdminRoundDetailPage({
     round.status === "CLOSED" || round.status === "SUBMITTED"
       ? await getRegionalSavings({ actor, roundId: round.id })
       : [];
+  const award = await getRoundAward({
+    actor,
+    organizationId: round.organizationId,
+    roundId: round.id,
+  }).catch(() => null);
+
   const totalSavings = savings.reduce(
     (sum, entry) => sum + (entry.savingsEur ?? 0),
     0,
@@ -218,6 +225,36 @@ export default async function AdminRoundDetailPage({
           </ol>
         </section>
       ) : null}
+
+      {award ? (
+        <p className="save-message save-message--success" role="status">
+          Auftrag vergeben an <strong>{award.supplierName}</strong> für{" "}
+          {(award.unitPriceCents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} / kg
+          {award.note ? ` — ${award.note}` : ""}
+        </p>
+      ) : (
+        <section className="panel" aria-labelledby="award-title">
+          <h2 id="award-title">Auftrag an Lieferanten vergeben</h2>
+          <form action={awardRoundAction} className="form-grid form-grid--three sales-manual">
+            <input name="roundId" type="hidden" value={round.id} />
+            <label className="field">
+              <span>Lieferant</span>
+              <input maxLength={180} name="supplierName" placeholder="Fleischwerk Rheinland" required />
+            </label>
+            <label className="field">
+              <span>Bestätigter Preis €/kg</span>
+              <input min="0.01" name="unitPrice" placeholder="8.90" required step="0.01" type="number" />
+            </label>
+            <label className="field">
+              <span>Notiz (optional)</span>
+              <input maxLength={500} name="note" />
+            </label>
+            <button className="button button--primary" type="submit">
+              Auftrag vergeben
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="request-file request-file--bundle" aria-labelledby="bundle-title">
         <header className="request-file__columns request-file__columns--bundle" aria-hidden="true">
