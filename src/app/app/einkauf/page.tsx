@@ -12,6 +12,7 @@ import {
 import { DemandPlanner } from "@/components/demand-planner";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { getDemandPlanning } from "@/server/procurement/queries";
+import { getRoundAward } from "@/server/procurement/awards";
 import { getDemandTemplateSummary } from "@/server/procurement/templates";
 import { isPublicDemo } from "@/server/demo/demo-mode";
 
@@ -61,10 +62,19 @@ export default async function BuyingPage({
     );
   }
 
+  const award = planning
+    ? await getRoundAward({
+        actor,
+        organizationId: organization.organizationId,
+        roundId: planning.round.id,
+      }).catch(() => null)
+    : null;
+
   return (
     <DemandPlanner
       addAction={addDemandItemAction}
       applyTemplateAction={applyDemandTemplateAction}
+      award={award}
       confirmAction={confirmDemandSubmissionAction}
       demoMode={isPublicDemo()}
       messageCode={query.meldung}

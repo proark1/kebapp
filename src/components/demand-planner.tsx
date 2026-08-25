@@ -125,6 +125,7 @@ function clampQuantity(amount: number): number {
 export function DemandPlanner({
   addAction,
   applyTemplateAction,
+  award,
   confirmAction,
   messageCode,
   planning,
@@ -138,6 +139,7 @@ export function DemandPlanner({
 }: {
   addAction: DemandAction;
   applyTemplateAction: DemandAction;
+  award?: { supplierName: string; unitPriceCents: number; note: string | null } | null;
   confirmAction: DemandAction;
   messageCode?: string;
   planning: DemandPlanningData;
@@ -276,6 +278,17 @@ export function DemandPlanner({
             <strong>Demo-Modus:</strong> Bestätigungen verändern nur
             Beispieldaten. Es wird kein realer Lieferantenauftrag ausgelöst.
           </span>
+        </div>
+      ) : null}
+
+      {award ? (
+        <div className="save-message save-message--success" role="status">
+          <ShieldCheck size={15} aria-hidden="true" />
+          {"Auftrag bestätigt: "}
+          <strong>{award.supplierName}</strong>
+          {" · "}
+          {(award.unitPriceCents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} / kg
+          {award.note ? ` — ${award.note}` : ""}
         </div>
       ) : null}
 
