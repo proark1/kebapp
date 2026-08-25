@@ -23,6 +23,7 @@ export const invoiceInputSchema = z
     invoiceNumber: z.string().trim().min(1).max(80),
     netCents7: centsSchema,
     netCents19: centsSchema,
+    category: z.enum(["FLEISCH","GEMUESE","TROCKEN","GETRAENKE","VERPACKUNG","SONSTIGES"]).default("SONSTIGES"),
     supplierName: z.string().trim().min(2).max(180),
   })
   .refine((value) => value.netCents7 > 0 || value.netCents19 > 0, {
@@ -56,6 +57,7 @@ export async function upsertInvoice(input: {
       const [saved] = await transaction
         .insert(incomingInvoices)
         .values({
+          category: parsed.category,
           createdByUserId: input.actor.userId,
           documentDate: parsed.documentDate,
           dueDate: parsed.dueDate ?? null,
@@ -68,6 +70,7 @@ export async function upsertInvoice(input: {
         .onConflictDoUpdate({
           set: {
             documentDate: parsed.documentDate,
+            category: parsed.category,
             dueDate: parsed.dueDate ?? null,
             netCents7: parsed.netCents7,
             netCents19: parsed.netCents19,

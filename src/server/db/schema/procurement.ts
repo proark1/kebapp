@@ -34,6 +34,15 @@ export const demandSubmissionStatus = pgEnum("demand_submission_status", [
 
 export const demandUnit = pgEnum("demand_unit", ["KG", "PIECE"]);
 
+export const invoiceCategory = pgEnum("invoice_category", [
+  "FLEISCH",
+  "GEMUESE",
+  "TROCKEN",
+  "GETRAENKE",
+  "VERPACKUNG",
+  "SONSTIGES",
+]);
+
 export const goodsReceiptReason = pgEnum("goods_receipt_reason", [
   "SHORTAGE",
   "QUALITY",
@@ -370,6 +379,7 @@ export const incomingInvoices = pgTable(
     status: invoiceStatus("status").default("OFFEN").notNull(),
     eInvoiceXml: text("e_invoice_xml"),
     sourceFileName: varchar("source_file_name", { length: 255 }),
+    category: invoiceCategory("category").default("SONSTIGES").notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdByUserId: text("created_by_user_id").references(() => user.id, {
       onDelete: "set null",
@@ -400,3 +410,48 @@ export const incomingInvoices = pgTable(
 ).enableRLS();
 
 // E-Rechnung Stufe B (MVP): Original-XRechnung (UBL-XML) zum Beleg.
+
+
+export type CalculationIngredient = {
+  name: string;
+  quantity: number;
+  unitPriceCents: number;
+};
+
+export const menuCalculations = pgTable(
+  "menu_calculations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    menuItemKey: varchar("menu_item_key", { length: 80 }).notNull(),
+    menuName: varchar("menu_name", { length: 180 }).notNull(),
+    ingredients: jsonb("ingredients")
+      .$type<CalculationIngredient[]>()
+      .default(sql`'[]'::jsonb`)
+      .notNull(),
+    totalCostCents: integer("total_cost_cents").notNull(),
+    salePriceCents: integer("sale_price_cents"),
+    createdByUserId: text("created_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("menu_calculations_org_item_unique").on(
+      table.organizationId,
+      table.menuItemKey,
+    ),
+    check(
+      "menu_calculations_total_non_negative",
+      sql`${table.totalCostCents} >= 0`,
+    ),
+  ],
+).enableRLS();

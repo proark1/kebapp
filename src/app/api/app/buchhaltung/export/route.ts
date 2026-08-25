@@ -40,7 +40,7 @@ export async function GET(): Promise<Response> {
     });
 
     const lines = [
-      ["Datum", "Buchungstext", "Empfaenger", "Betrag_EUR_brutto", "USt_Schluessel"].join(";"),
+      ["Datum", "Buchungstext", "Empfaenger", "Betrag_EUR_brutto", "Kategorie", "USt_Schluessel"].join(";"),
       ...invoices.map((invoice) => {
         const gross =
           invoice.netCents7 * 1.07 + invoice.netCents19 * 1.19;
@@ -51,6 +51,7 @@ export async function GET(): Promise<Response> {
           csvEscape(`RE ${invoice.invoiceNumber}`),
           csvEscape(invoice.supplierName),
           (gross / 100).toFixed(2).replace(".", ","),
+          csvEscape(invoice.category ?? ""),
           vatKey,
         ].join(";");
       }),

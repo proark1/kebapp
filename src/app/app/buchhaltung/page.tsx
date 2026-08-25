@@ -48,6 +48,9 @@ async function createInvoiceAction(formData: FormData): Promise<void> {
           : undefined,
         invoiceNumber: value("invoiceNumber"),
         netCents7: Math.round((net7 || 0) * 100),
+        category: (invoiceCategories as readonly string[]).includes(value("category"))
+          ? (value("category") as InvoiceCategory)
+          : "SONSTIGES",
         netCents19: Math.round((net19 || 0) * 100),
         supplierName: value("supplierName"),
       },
@@ -119,6 +122,9 @@ async function importEInvoiceAction(formData: FormData): Promise<void> {
   revalidatePath("/app/buchhaltung");
   return fail("importiert");
 }
+
+const invoiceCategories = ["FLEISCH","GEMUESE","TROCKEN","GETRAENKE","VERPACKUNG","SONSTIGES"] as const;
+type InvoiceCategory = (typeof invoiceCategories)[number];
 
 const meldungMessages: Record<string, string> = {
   importiert: "XRechnung importiert",
@@ -202,6 +208,14 @@ export default async function BuchhaltungPage({
             <input maxLength={80} name="invoiceNumber" placeholder="2026-08-114" required />
           </label>
           <label className="field">
+            <span>Kategorie</span>
+            <select defaultValue="FLEISCH" name="category">
+              {invoiceCategories.map((key) => (
+                <option key={key}>{key}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
             <span>Datum</span>
             <input defaultValue={todayIso()} name="documentDate" required type="date" />
           </label>
@@ -258,6 +272,20 @@ export default async function BuchhaltungPage({
             <h2>Belege & Umsatzsteuer</h2>
             <small>
               Vorsteuer: 7 % = {(vatByRate.rate7 / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} · 19 % = {(vatByRate.rate19 / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+              {" · Netto je Kategorie: "}
+              {Object.entries(
+                invoices.reduce<Record<string, number>>((acc, invoice) => {
+                  acc[invoice.category] =
+                    (acc[invoice.category] ?? 0) +
+                    invoice.netCents7 +
+                    invoice.netCents19;
+                  return acc;
+                }, {}),
+              )
+                .map(([catKey, cents]) =>
+                  `${catKey} ${(cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`,
+                )
+                .join(", ")}
             </small>
           </div>
           <a
@@ -279,6 +307,7 @@ export default async function BuchhaltungPage({
                   <th>Lieferant</th>
                   <th>Nr.</th>
                   <th>Datum</th>
+                  <th>Kategorie</th>
                   <th>Brutto</th>
                   <th>Status</th>
                 </tr>
@@ -289,6 +318,7 @@ export default async function BuchhaltungPage({
                     <td data-label="Lieferant">{invoice.supplierName}</td>
                     <td data-label="Nr.">{invoice.invoiceNumber}</td>
                     <td data-label="Datum">{dayFormatter.format(new Date(`${invoice.documentDate}T12:00:00Z`))}</td>
+                    <td data-label="Kategorie">{invoice.category}</td>
                     <td data-label="Brutto">
                       {((invoice.netCents7 * 1.07 + invoice.netCents19 * 1.19) / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
                     </td>

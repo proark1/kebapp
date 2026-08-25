@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Calculator,
   ChevronsUpDown,
   Clock3,
   Globe2,
@@ -26,6 +27,7 @@ const primaryNavigation = [
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
   { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
   { href: "/app/hygiene", label: "Hygiene", icon: ShieldCheck, tabbar: false },
+  { href: "/app/kalkulation", label: "Kalkulation", icon: Calculator, tabbar: false },
   { href: "/app/umsatz", label: "Umsätze", icon: TrendingUp, tabbar: false },
   { href: "/app/buchhaltung", label: "Buchhaltung", icon: BookOpenCheck, tabbar: false },
   { href: "/app/zeit", label: "Zeit", icon: Clock3 },
