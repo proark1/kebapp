@@ -61,6 +61,7 @@ export async function runRoundMaintenance(
         from: env.SMTP_FROM!,
         host: env.SMTP_HOST!,
         port: env.SMTP_PORT!,
+        requireTls: env.SMTP_REQUIRE_TLS,
       });
 
       try {

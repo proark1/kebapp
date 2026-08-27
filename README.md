@@ -116,6 +116,10 @@ ersten Anmeldung muss die E-Mail-Adresse bestätigt sein. Mailpit fängt lokal
 Verifizierungs-, Passwort-Reset- und Einladungsnachrichten ab und versendet
 nichts ins Internet.
 
+Ohne Angabe erzwingt der Versand in der Produktionsumgebung STARTTLS. Mailpit
+beherrscht das nicht, deshalb setzt `.env.example` und die E2E-Abnahme
+`SMTP_REQUIRE_TLS=false`. Für einen echten Relay bleibt die Variable weg.
+
 Verifizierungslinks gelten 60 Minuten, Passwort-Reset-Links 30 Minuten und
 Teameinladungen 72 Stunden. Ein erfolgreicher Passwort-Reset widerruft alle
 bestehenden Sitzungen des Kontos. Auth- und Rollenentscheidungen werden immer

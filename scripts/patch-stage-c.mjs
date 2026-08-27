@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
 // Stage C/Kalkulation Patches. Ausfuehren: node scripts/patch-stage-c.mjs

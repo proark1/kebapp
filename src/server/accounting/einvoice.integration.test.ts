@@ -1,9 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-  EInvoiceParseError,
-  importEInvoice,
-  parseXRechnung,
-} from "@/server/accounting/einvoice";
+import { importEInvoice, parseXRechnung } from "@/server/accounting/einvoice";
 import {
   createTestDatabaseHarness,
   type TestDatabaseHarness,

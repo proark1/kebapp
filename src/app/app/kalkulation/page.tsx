@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Calculator } from "lucide-react";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
-import {
-  listCalculations,
-  upsertCalculation,
-} from "@/server/calculation/service";
+import { listCalculations } from "@/server/calculation/service";
 
 export const metadata: Metadata = { title: "Kalkulation" };
 

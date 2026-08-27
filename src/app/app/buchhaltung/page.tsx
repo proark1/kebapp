@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Download, Upload } from "lucide-react";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
-import {
-  listInvoices,
-  markInvoicePaid,
-  upsertInvoice,
-} from "@/server/accounting/invoices";
+import { listInvoices } from "@/server/accounting/invoices";
 
 export const metadata: Metadata = { title: "Buchhaltung" };
 

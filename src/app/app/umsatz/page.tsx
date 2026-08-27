@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Upload } from "lucide-react";
-import {
-  listRecentSales,
-  SalesCsvError,
-  upsertDailySales,
-} from "@/server/sales/service";
+import { listRecentSales, SalesCsvError } from "@/server/sales/service";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 
 export const metadata: Metadata = { title: "Umsätze" };

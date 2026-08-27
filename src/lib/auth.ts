@@ -12,6 +12,7 @@ const runtimeMailer = runtimeEnv.DEMO_MODE
       from: runtimeEnv.SMTP_FROM!,
       host: runtimeEnv.SMTP_HOST!,
       port: runtimeEnv.SMTP_PORT!,
+      requireTls: runtimeEnv.SMTP_REQUIRE_TLS,
     });
 
 export const auth = createKebappAuth({

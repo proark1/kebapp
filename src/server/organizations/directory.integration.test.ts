@@ -133,6 +133,15 @@ describe.sequential("admin store directory and regional savings", () => {
       websiteSlug: "laden-a",
       latestRoundStatus: "SUBMITTED",
     });
+    // Die Adminliste gibt diesen Wert direkt an Intl.DateTimeFormat weiter.
+    // Kommt dort etwas anderes als ein Date an, stuerzt die Seite mit
+    // "Invalid time value" ab.
+    expect(storeA.latestRoundClosesAt).toBeInstanceOf(Date);
+    expect(
+      Number.isNaN(new Date(storeA.latestRoundClosesAt!).getTime()),
+    ).toBe(false);
+    expect(storeA.createdAt).toBeInstanceOf(Date);
+
     const storeB = directory.find(
       (entry) => entry.organizationId === ids.organizationB,
     )!;

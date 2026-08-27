@@ -41,7 +41,6 @@ export function GoodsReceiptForm({
   initialNote,
   messageCode,
   roundId,
-  roundName,
   saveAction,
 }: {
   initialLines: ReceiptLine[];

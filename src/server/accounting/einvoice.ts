@@ -4,7 +4,7 @@ import "server-only";
 // Eingangsrechnung speichern. ZUGFeRD (in PDF eingebettet) wird bewusst
 // abgelehnt — nur echte XML-Dateien nach EN 16931/UBL.
 
-import { eq } from "drizzle-orm";
+
 import { z } from "zod";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";

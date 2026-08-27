@@ -126,6 +126,7 @@ async function sendInvitationEmail(message: AuthEmail): Promise<void> {
     from: env.SMTP_FROM,
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
+    requireTls: env.SMTP_REQUIRE_TLS,
   });
 
   try {

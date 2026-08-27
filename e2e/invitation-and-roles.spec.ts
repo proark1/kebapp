@@ -40,7 +40,11 @@ test("lädt Mitarbeitende ein und begrenzt sie auf operative Aufgaben", async ({
   await expect(employeePage).toHaveURL(/\/app$/);
 
   await employeePage.goto("/app/einkauf");
-  const quantity = employeePage.getByLabel("Menge für Kalb-Drehspieß E2E A");
+  // Ohne exact triftt die Suche auch die Schaltflaechen "... erhoehen" und
+  // "... verringern", weil getByLabel als Teilzeichenkette sucht.
+  const quantity = employeePage.getByLabel("Menge für Kalb-Drehspieß E2E A", {
+    exact: true,
+  });
   await quantity.fill("61");
   await quantity.locator("xpath=ancestor::form").getByRole("button").click();
   await expect(employeePage.getByRole("status")).toContainText("Menge gespeichert");

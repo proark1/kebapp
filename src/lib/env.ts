@@ -34,6 +34,13 @@ const runtimeEnvSchema = z
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65_535).optional(),
     SMTP_FROM: z.string().min(3).optional(),
+    // Ohne Angabe gilt: in der Produktionsumgebung STARTTLS erzwingen, sonst
+    // nicht. Nur setzen, wenn der Relay bewusst ohne TLS spricht - lokal und
+    // in der Abnahme ist das Mailpit, das kein STARTTLS kann.
+    SMTP_REQUIRE_TLS: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((value) => (value === undefined ? undefined : value === "true")),
   })
   .superRefine((value, context) => {
     if (

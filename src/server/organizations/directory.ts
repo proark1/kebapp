@@ -6,6 +6,28 @@ import type { KebappDatabase } from "@/server/db/client";
 import { setAdminContext } from "@/server/organizations/admin";
 import type { TenantTransaction } from "@/server/db/tenant-context";
 
+// Die Definer-Funktionen liefern ihre Spalten als Text zurueck, nicht als
+// typisierte Werte - deshalb steht weiter unten auch Number(member_count).
+// Zeitstempel brauchen dieselbe Behandlung, sonst reicht die Ebene einen
+// String an Intl.DateTimeFormat weiter und die Adminliste stuerzt mit
+// "Invalid time value" ab.
+function toDate(value: Date | string | null): Date | null {
+  if (value === null) return null;
+  if (value instanceof Date) return value;
+
+  // Postgres liefert "2026-09-01 20:58:19.748+00". Fuer Date muss daraus
+  // "2026-09-01T20:58:19.748+00:00" werden: Leerzeichen zu T und der
+  // abgekuerzte Zonenversatz auf die volle ISO-Form.
+  const isoish = value
+    .trim()
+    .replace(" ", "T")
+    .replace(/([+-]\d{2})(\d{2})$/, "$1:$2")
+    .replace(/([+-]\d{2})$/, "$1:00");
+
+  const parsed = new Date(isoish);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export type StoreDirectoryRow = {
   organizationId: string;
   storeName: string;
@@ -51,18 +73,18 @@ export async function getStoreDirectoryRows(
     website_published: boolean | null;
     website_slug: string | null;
     latest_round_status: StoreDirectoryRow["latestRoundStatus"];
-    latest_round_closes_at: Date | null;
-    reviewed_at: Date | null;
-    created_at: Date;
+    latest_round_closes_at: Date | string | null;
+    reviewed_at: Date | string | null;
+    created_at: Date | string;
   }>(sql`select * from kebapp_private.admin_store_directory()`);
 
   return result.rows.map((row) => ({
-    createdAt: row.created_at,
-    latestRoundClosesAt: row.latest_round_closes_at,
+    createdAt: toDate(row.created_at) ?? new Date(0),
+    latestRoundClosesAt: toDate(row.latest_round_closes_at),
     latestRoundStatus: row.latest_round_status,
     memberCount: Number(row.member_count),
     organizationId: row.organization_id,
-    reviewedAt: row.reviewed_at,
+    reviewedAt: toDate(row.reviewed_at),
     slug: row.slug,
     status: row.status,
     storeName: row.store_name,
