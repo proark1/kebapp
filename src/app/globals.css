@@ -21,6 +21,7 @@
   --shadow-strong: 0 24px 70px rgb(19 32 25 / 18%);
 }
 
+
 * {
   box-sizing: border-box;
 }
@@ -67,7 +68,7 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--yellow);
+  outline: 3px solid var(--accent-strong);
   outline-offset: 3px;
 }
 
@@ -147,7 +148,7 @@ a {
 
 .brand-mark__symbol i:nth-child(2) {
   width: 30px;
-  background: var(--yellow);
+  background: var(--accent-surface);
   transform: skewX(7deg);
 }
 
@@ -253,7 +254,7 @@ a {
 }
 
 .store-switcher small {
-  color: rgb(234 240 235 / 61%);
+  color: rgb(234 240 235 / 74%);
   font-size: 11px;
 }
 
@@ -263,7 +264,7 @@ a {
   height: 34px;
   place-items: center;
   color: var(--ink);
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: 9px;
   font-family: var(--display);
   font-weight: 800;
@@ -278,7 +279,7 @@ a {
 
 .app-nav__label {
   padding: 0 12px 8px;
-  color: rgb(234 240 235 / 45%);
+  color: rgb(234 240 235 / 68%);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -312,12 +313,12 @@ a {
 
 .app-nav__link--active {
   color: var(--ink);
-  background: var(--yellow);
+  background: var(--accent-surface);
 }
 
 .app-nav__link--active:hover {
   color: var(--ink);
-  background: #ffca58;
+  background: #cddcd6;
 }
 
 .app-nav__link--disabled {
@@ -394,7 +395,7 @@ a {
 }
 
 .account-menu summary small {
-  color: rgb(255 255 255 / 45%);
+  color: rgb(255 255 255 / 66%);
   font-size: 9px;
 }
 
@@ -469,8 +470,8 @@ a {
 
 .account-menu__owner-tools button small {
   padding: 2px 5px;
-  color: #7a6a3b;
-  background: #f7edd0;
+  color: #6f5214;
+  background: #eeeade;
   border-radius: 999px;
   font-size: 7px;
   text-transform: uppercase;
@@ -486,7 +487,7 @@ a {
 }
 
 .account-menu__popover form button:hover:not(:disabled) {
-  background: #f9e7e3;
+  background: #f2e8e7;
 }
 
 .pilot-chip {
@@ -626,7 +627,7 @@ a {
 }
 
 .icon-button--danger:hover {
-  background: #f9e7e3;
+  background: #f2e8e7;
 }
 
 .button {
@@ -771,7 +772,7 @@ a {
 
 .dashboard-round-empty > svg {
   margin-bottom: 22px;
-  color: var(--yellow);
+  color: var(--accent-strong);
 }
 
 .dashboard-round-empty h2 {
@@ -839,7 +840,7 @@ a {
   width: 14px;
   height: 14px;
   content: "";
-  background: var(--yellow);
+  background: var(--accent-surface);
   border: 3px solid #fff;
   border-radius: 50%;
 }
@@ -860,8 +861,8 @@ a {
   display: block;
   width: 112px;
   height: 24px;
-  background: #d9583e;
-  border: 2px solid #f3a078;
+  background: #a8615a;
+  border: 2px solid #c9938c;
   border-radius: 55% 45% 52% 48%;
   transform: skewX(-7deg);
 }
@@ -887,7 +888,7 @@ a {
   bottom: 0;
   width: 6px;
   max-height: 100%;
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: 6px;
 }
 
@@ -936,7 +937,7 @@ a {
 .spit-meter__progress span {
   display: block;
   height: 100%;
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: inherit;
 }
 
@@ -958,8 +959,8 @@ a {
   width: 38px;
   height: 38px;
   place-items: center;
-  color: #8d5610;
-  background: #fff1ca;
+  color: #6f5214;
+  background: #eeeade;
   border-radius: 10px;
 }
 
@@ -986,7 +987,7 @@ a {
 
 .confidence-note {
   grid-column: 2;
-  color: #839087;
+  color: #5c6874;
   font-size: 10px;
 }
 
@@ -1024,13 +1025,13 @@ a {
 }
 
 .metric-card__icon--yellow {
-  color: #8d5610;
-  background: #fff1ca;
+  color: #6f5214;
+  background: #eeeade;
 }
 
 .metric-card__icon--red {
   color: var(--red-dark);
-  background: #f9e7e3;
+  background: #f2e8e7;
 }
 
 .metric-card__label {
@@ -1077,7 +1078,7 @@ a {
 
 .count-badge {
   color: var(--red-dark);
-  background: #f9e7e3;
+  background: #f2e8e7;
 }
 
 .status-dot--online {
@@ -1113,7 +1114,7 @@ a {
 
 .task-list__status--urgent {
   color: var(--red-dark);
-  background: #f9e7e3;
+  background: #f2e8e7;
 }
 
 .task-list strong,
@@ -1176,7 +1177,7 @@ a {
   padding: 2px 10px;
   margin-left: 4px;
   overflow: hidden;
-  color: #8c978f;
+  color: #7b8790;
   text-overflow: ellipsis;
   white-space: nowrap;
   background: #fff;
@@ -1201,7 +1202,7 @@ a {
   height: 70px;
   place-items: center;
   color: var(--ink);
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: 50% 50% 42% 42%;
   font-family: var(--display);
   font-size: 22px;
@@ -1214,7 +1215,7 @@ a {
 }
 
 .mini-browser__page small {
-  color: #f3b83f;
+  color: #8a949c;
   font-size: 6px;
   letter-spacing: 0.1em;
 }
@@ -1230,7 +1231,7 @@ a {
   width: 38px;
   height: 4px;
   margin-top: 8px;
-  background: var(--yellow);
+  background: var(--accent-surface);
 }
 
 .website-status-card__meta {
@@ -1417,7 +1418,7 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f9e7e3;
+  background: #f2e8e7;
   border-radius: 9px;
 }
 
@@ -1659,7 +1660,7 @@ a {
 }
 
 .demand-confirm-bar .eyebrow {
-  color: var(--yellow);
+  color: var(--accent-strong);
 }
 
 .demand-confirm-bar h2 {
@@ -1802,7 +1803,7 @@ a {
 .field select:focus,
 .field textarea:focus {
   border-color: var(--green);
-  outline: 3px solid var(--yellow);
+  outline: 3px solid var(--accent-strong);
   outline-offset: 1px;
 }
 
@@ -1894,9 +1895,9 @@ a {
   gap: 11px;
   align-items: flex-start;
   padding: 14px;
-  color: #5a4210;
-  background: #fff4d7;
-  border: 1px solid #e1be67;
+  color: #6f5214;
+  background: #eeeade;
+  border: 1px solid #cfc7b0;
   border-radius: 9px;
 }
 
@@ -1971,7 +1972,7 @@ a {
 
 .editor-panel > .publication-section {
   background: #fffaf0;
-  border-left: 4px solid var(--yellow);
+  border-left: 4px solid var(--accent-strong);
 }
 
 .publication-control {
@@ -3382,7 +3383,7 @@ a {
 
   .mobile-tabbar__link--active {
     color: var(--ink);
-    background: var(--yellow);
+    background: var(--accent-surface);
   }
 
   .page-header {
@@ -4738,14 +4739,14 @@ a {
   padding: 11px 14px;
   margin: -25px 0;
   color: var(--red-dark);
-  background: #fae9e5;
+  background: #f2e8e7;
   border-left: 3px solid var(--red);
   font-size: 11px;
 }
 
 .organization-keyboard {
   overflow: hidden;
-  background: #f9f7ed;
+  background: #f1f3f5;
   border: 1px solid #bbc5bc;
   box-shadow: 17px 21px 0 rgb(19 32 25 / 9%);
 }
@@ -4769,7 +4770,7 @@ a {
 }
 
 .organization-keyboard > header strong {
-  color: var(--yellow);
+  color: var(--accent-strong);
   font-size: 10px;
 }
 
@@ -4798,7 +4799,7 @@ a {
 
 .organization-keyboard button:hover {
   background: #fff;
-  box-shadow: inset 4px 0 var(--yellow);
+  box-shadow: inset 4px 0 var(--accent-strong);
 }
 
 .organization-keyboard__number {
@@ -5490,13 +5491,13 @@ a {
 .admin-rail nav a:hover {
   color: #fff;
   background: rgb(255 255 255 / 5%);
-  border-left-color: var(--yellow);
+  border-left-color: var(--accent-strong);
 }
 
 .admin-rail nav a[aria-current="page"] {
   color: var(--ink);
-  background: var(--yellow);
-  border-left-color: var(--yellow);
+  background: var(--accent-surface);
+  border-left-color: var(--accent-strong);
 }
 
 .admin-rail footer {
@@ -5626,7 +5627,7 @@ a {
 
 .admin-ledger {
   margin-top: 35px;
-  background: #faf9f3;
+  background: #f6f8f9;
   border: 1px solid #cbd1ca;
   box-shadow: 11px 13px 0 rgb(19 32 25 / 6%);
 }
@@ -5730,7 +5731,7 @@ a {
 
 .request-file {
   margin-top: 32px;
-  background: #faf9f3;
+  background: #f6f8f9;
   border: 1px solid #c7cec6;
 }
 
@@ -5772,7 +5773,7 @@ a {
 
 .request-file li > a:hover {
   background: #fff;
-  box-shadow: inset 4px 0 var(--yellow);
+  box-shadow: inset 4px 0 var(--accent-strong);
 }
 
 .request-file__index {
@@ -5857,8 +5858,8 @@ a {
 
 .dossier-stamp {
   padding: 8px 13px 6px;
-  color: #80631d;
-  border: 3px double #9c7b29;
+  color: #59656e;
+  border: 3px double #7c8891;
   font-family: var(--display);
   font-size: 18px;
   font-weight: 900;
@@ -5893,7 +5894,7 @@ a {
 }
 
 .dossier-sheet {
-  background: #fbfaf4;
+  background: #f6f8f9;
   border: 1px solid #c9d0c8;
 }
 
@@ -5958,7 +5959,7 @@ a {
 .dossier-note {
   padding: 18px 20px;
   margin-top: 20px;
-  background: #f6e8e4;
+  background: #f2e8e7;
   border-left: 4px solid var(--red);
 }
 
@@ -5995,7 +5996,7 @@ a {
   display: grid;
   align-content: start;
   padding: 20px;
-  background: #f8f8f3;
+  background: #f6f8f9;
   border: 1px solid #c9d0c8;
 }
 
@@ -6044,7 +6045,7 @@ a {
   padding: 20px;
   margin: 0;
   color: #68746c;
-  background: #f4f5f0;
+  background: #eef1f3;
   border-left: 3px solid #aab4ab;
   font-size: 12px;
 }
@@ -6104,7 +6105,7 @@ a {
   align-items: center;
   padding: 28px;
   margin-top: 29px;
-  background: #f8f6ef;
+  background: #f6f8f9;
   border: 1px solid #c5cdc5;
   box-shadow: 7px 7px 0 #dce2dc;
 }
@@ -6205,7 +6206,7 @@ a {
 
 .team-invite-form__message--error {
   color: var(--red-dark) !important;
-  background: #f8e7e3;
+  background: #f2e8e7;
   border-left-color: var(--red-dark);
 }
 
@@ -6218,7 +6219,7 @@ a {
 
 .team-roster__section {
   overflow: hidden;
-  background: #fbfaf5;
+  background: #f6f8f9;
   border: 1px solid #c5cdc5;
 }
 
@@ -6245,7 +6246,7 @@ a {
   height: 24px;
   place-items: center;
   color: var(--ink);
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: 50%;
   font-size: 10px;
 }
@@ -6281,8 +6282,8 @@ a {
 }
 
 .team-roster__avatar--pending {
-  color: #80631d;
-  background: #f7edd0;
+  color: #6f5214;
+  background: #eeeade;
 }
 
 .team-roster__identity {
@@ -6328,13 +6329,13 @@ a {
   padding: 7px 8px;
   color: var(--red-dark);
   background: transparent;
-  border: 1px solid #d8aea5;
+  border: 1px solid #cfbdba;
   font-size: 8px;
   font-weight: 850;
 }
 
 .team-roster form button:hover {
-  background: #f8e7e3;
+  background: #f2e8e7;
 }
 
 .team-roster__empty {
@@ -6645,7 +6646,7 @@ a {
   }
 
   .admin-mobile-menu a[aria-current="page"] {
-    background: var(--yellow);
+    background: var(--accent-surface);
   }
 
   .request-file__columns,
@@ -6827,7 +6828,7 @@ a {
 }
 
 .support-admin-card--rules .eyebrow {
-  color: var(--yellow);
+  color: var(--accent-strong);
 }
 
 .support-admin-card--rules ol {
@@ -6855,7 +6856,7 @@ a {
   color: var(--ink);
   content: counter(support-rule);
   counter-increment: support-rule;
-  background: var(--yellow);
+  background: var(--accent-surface);
   border-radius: 50%;
   font-family: var(--display);
   font-weight: 800;
@@ -7053,9 +7054,11 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 8px 24px;
-  color: #17251d;
-  background: var(--yellow);
-  border-bottom: 1px solid #d69b25;
+  /* Der Balken soll auffallen - man arbeitet im Laden fremder Leute. Als
+     Warnfarbe statt als Deko. */
+  color: var(--warn-ink);
+  background: var(--warn-soft);
+  border-bottom: 1px solid #d6cfbc;
   font-size: 13px;
 }
 
@@ -7105,7 +7108,7 @@ a {
 }
 
 .support-rail__identity span {
-  color: var(--yellow);
+  color: var(--accent-strong);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -7142,7 +7145,7 @@ a {
 
 .support-rail nav a[aria-current="page"] {
   color: var(--ink);
-  background: var(--yellow);
+  background: var(--accent-surface);
 }
 
 .support-shell--demo {
@@ -8061,7 +8064,7 @@ a {
   grid-template-columns: repeat(3, minmax(140px, 1fr));
   margin: 0;
   padding: 16px 20px;
-  background: #fffaf0;
+  background: #f6f8f9;
   border-radius: var(--radius-sm);
 }
 
@@ -8208,4 +8211,88 @@ a {
 .request-file__columns--domains,
 .request-file--domains li {
   grid-template-columns: 1.2fr 1.6fr auto auto;
+}
+
+/* === Betriebsbereich ===
+   Alles hinter der Anmeldung ist Arbeitswerkzeug, keine Marketingflaeche.
+   Deshalb hier eine eigene, sachliche Ebene: neutrale Graustufen statt
+   gruenstichigem Papier, Rot und Gelb nur noch als Statusfarbe, engere Radien,
+   flache Raender statt weicher Schatten und IBM Plex Sans statt der rundlichen
+   Figtree. Landingpage, Anmeldung und Ladenseite bleiben unberuehrt, weil sie
+   andere Leute ansprechen. */
+.app-frame,
+.admin-shell,
+.support-shell {
+  --ink: #111820;
+  --ink-soft: #37434e;
+  /* Dunkel genug fuer WCAG AA auf Weiss und auf der Arbeitsflaeche. */
+  --muted: #5c6874;
+  --paper: #f1f3f5;
+  --panel: #ffffff;
+  --line: #dbe0e5;
+  --line-strong: #c3cbd2;
+  --green: #1d5545;
+  --green-soft: #e6edea;
+  --red: #a8443a;
+  --red-dark: #86342c;
+
+  /* Frueher war das leuchtende Amber #f3b83f die Akzentfarbe - aktiver
+     Navigationseintrag, Fokusrahmen, Fortschrittsbalken. Es traegt zwei
+     unvereinbare Rollen: hell genug fuer dunklen Text darauf und zugleich
+     dunkel genug als Textfarbe. Deshalb jetzt getrennt. */
+  --accent-strong: #1d5545;
+  --accent-surface: #dde7e3;
+  --warn-soft: #eeeade;
+  --warn-ink: #6f5214;
+  --danger-soft: #f2e8e7;
+  --sidebar: #182028;
+  --sidebar-text: #dde4ea;
+  --radius-sm: 3px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow-soft: 0 1px 2px rgb(17 24 32 / 6%);
+  --shadow-strong: 0 8px 24px rgb(17 24 32 / 14%);
+  --display: "IBM Plex Sans Condensed", "Roboto Condensed Variable", sans-serif;
+  --body: "IBM Plex Sans Variable", "Segoe UI", sans-serif;
+
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--body);
+}
+
+/* Die Schriftgewichte lagen flaechendeckend zwischen 750 und 900 - alles
+   gleich laut, damit ohne Rangfolge. IBM Plex reicht bis 700; die Staffelung
+   unten stellt die Hierarchie wieder her: 700 nur fuer Titel und Kennzahlen,
+   600 fuer Beschriftungen, 500 fuer Fliesstext-Hervorhebungen. */
+.app-frame :is(h1, h2, h3),
+.admin-shell :is(h1, h2, h3),
+.support-shell :is(h1, h2, h3) {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.app-frame .page-header h1,
+.admin-shell .admin-page__header h1,
+.admin-shell .dossier-heading h1,
+.support-shell .support-page__header h1 {
+  font-weight: 700;
+}
+
+.app-frame :is(.eyebrow, .app-nav__label, .field > span:first-child, .demand-table th, .metric-card__label, .chip, .count-badge, .status-dot),
+.admin-shell :is(.eyebrow, .demand-table th, .chip, .count-badge),
+.support-shell :is(.eyebrow, .chip, .count-badge) {
+  font-weight: 600;
+}
+
+.app-frame :is(.button, .text-link),
+.admin-shell :is(.button, .text-link),
+.support-shell :is(.button, .text-link) {
+  font-weight: 600;
+}
+
+/* Zahlenkolonnen laufen sonst optisch auseinander. */
+.app-frame :is(.demand-table td, .metric-card strong, .admin-date-block strong),
+.admin-shell .demand-table td,
+.support-shell .demand-table td {
+  font-variant-numeric: tabular-nums;
 }

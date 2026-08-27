@@ -20,7 +20,7 @@
   overflow: clip;
   color: var(--store-charcoal);
   background: #fff;
-  font-family: var(--body);
+  font-family: var(--store-body, "Figtree Variable", "Segoe UI", sans-serif);
 }
 
 .storefront .demo-ribbon {
@@ -839,7 +839,7 @@
 }
 
 .storefront-order-modes input:focus-visible + span {
-  outline: 3px solid var(--yellow);
+  outline: 3px solid #f3b83f;
   outline-offset: 3px;
 }
 
@@ -1402,7 +1402,7 @@
   align-items: center;
   padding: 18px;
   background: #f7f5ef;
-  border: 1px solid var(--line);
+  border: 1px solid #dce2da;
   border-radius: 10px;
 }
 
@@ -1478,7 +1478,7 @@
 
 .order-options-editor legend {
   margin-bottom: 7px;
-  color: var(--muted);
+  color: #66736b;
   font-size: 12px;
   font-weight: 800;
 }
@@ -1491,7 +1491,7 @@
   align-items: flex-start;
   padding: 14px;
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid #dce2da;
   border-radius: 9px;
 }
 
@@ -1500,7 +1500,7 @@
   height: 18px;
   flex: 0 0 auto;
   margin-top: 2px;
-  accent-color: var(--green);
+  accent-color: #1f6b4f;
 }
 
 .order-options-editor strong,
@@ -1514,7 +1514,7 @@
 
 .order-options-editor small {
   margin-top: 3px;
-  color: var(--muted);
+  color: #66736b;
   font-size: 10px;
   line-height: 1.4;
 }
