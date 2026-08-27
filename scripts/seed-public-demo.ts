@@ -18,6 +18,7 @@ import {
   user,
   userProfiles,
 } from "../src/server/db/schema";
+import { seedDemoOperations } from "./seed-demo-operations";
 import {
   parseProductionEnv,
   type ProductionEnv,
@@ -558,6 +559,41 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             updatedAt: now,
           },
         });
+
+      // Betriebsdaten fuer alle uebrigen Ansichten: Umsatz, Hygiene, Zeit,
+      // Buchhaltung, Kalkulation, Wareneingang, Vorlagen, Zuschlaege, Gaeste.
+      await seedDemoOperations(transaction, {
+        adminUserId: publicDemoIds.admin,
+        now,
+        targets: [
+          {
+            employeeUserId: publicDemoIds.employee,
+            menu: [
+              { id: "doener", name: "Döner im Fladenbrot", priceCents: 750 },
+              { id: "teller", name: "Ocakbasi Teller", priceCents: 1_390 },
+              { id: "falafel", name: "Falafel-Tasche", priceCents: 700 },
+            ],
+            openRoundId: publicDemoIds.roundA,
+            openRoundRegionalKey: `nrw-west-${dates.deliveryDate}`,
+            organizationId: publicDemoIds.organizationA,
+            ownerUserId: publicDemoIds.ownerA,
+            slot: 1,
+            storeName: "Ocakbasi Rheydt",
+          },
+          {
+            employeeUserId: null,
+            menu: [
+              { id: "mangal-doener", name: "Mangal Döner", priceCents: 790 },
+            ],
+            openRoundId: publicDemoIds.roundB,
+            openRoundRegionalKey: `nrw-west-${dates.deliveryDate}`,
+            organizationId: publicDemoIds.organizationB,
+            ownerUserId: publicDemoIds.ownerB,
+            slot: 2,
+            storeName: "Mangal am Markt",
+          },
+        ],
+      });
     });
   } finally {
     await pool.end();

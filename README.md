@@ -12,10 +12,14 @@ umfasst:
 - Stammbedarf-Vorlagen je Laden zum Wiederverwenden in neuen Runden
 - Einladungen für Mitarbeitende
 - Website-Editor und veröffentlichbare Ladenwebsite
+- Gäste mit Stempelkarte, Bestellhistorie und Plattformimport (`/app/gaeste`)
 - PostgreSQL-Mandantentrennung mit Row Level Security und Auditereignissen
 
-Die Ladenwebsite ist eine reine Informationsseite. Warenkorb, Onlinebestellung,
-Zahlung sowie Domain-/SSL-Automation sind bewusst noch nicht enthalten.
+Die Ladenwebsite bleibt eine Informationsseite mit WhatsApp-Übergabe. Warenkorb,
+Bezahlung und Domain-/SSL-Automation sind bewusst nicht enthalten. Neu ist, dass
+die vorbereitete Bestellung auf ausdrücklichen Wunsch des Gastes zusätzlich als
+Datensatz im Laden gespeichert wird; ohne gesetzten Haken entsteht wie bisher
+kein Datensatz. Die Nachricht sendet der Gast weiterhin selbst in WhatsApp.
 
 Die öffentliche Demo-Variante läuft ohne Registrierung, Passwort-E-Mails und
 Teameinladungsversand. Sie verwendet ausschließlich vorbereitete, synthetische
@@ -51,6 +55,13 @@ angelegt. Der Admin prüft den vorbereiteten Pilotantrag unter `/admin/antraege`
 Nach der Freigabe kann sich das Betreiberkonto unter `/app` anmelden; der
 Supportzugang sieht nur ausdrücklich zugewiesene Läden.
 
+Beide Seeds füllen zusätzlich jede Betriebsansicht mit Beispieldaten
+(`scripts/seed-demo-operations.ts`): Tagesumsätze, Hygieneprotokolle,
+Arbeitszeiten, Eingangsrechnungen, Kalkulationen, eine abgeschlossene Runde mit
+Wareneingang und Lieferantenzuschlag, Stammbedarf-Vorlage sowie Gäste mit
+Bestellhistorie und Stempelkarte. Alle Kennungen sind fest, sodass ein erneuter
+Lauf die Daten auffrischt, statt sie zu verdoppeln.
+
 Alternativ bleibt die Compose-Datei mit Podman nutzbar:
 
 ```powershell
@@ -68,6 +79,14 @@ Der feste Laufzeit-Rollenname `kebapp_app` ist Bestandteil der versionierten
 RLS-Richtlinien. Eine App-Abfrage setzt Benutzer und ausgewählte Organisation
 transaktionslokal; PostgreSQL filtert Daten anderer Läden zusätzlich zur
 serverseitigen Rollenprüfung.
+
+Die öffentliche Ladenseite hat keinen Mandantenkontext. Sie schreibt deshalb
+ausschließlich über die eng geschnittene Definer-Funktion
+`kebapp_private.record_storefront_order`. Diese löst den Laden über den
+veröffentlichten Slug auf, prüft Bestellart, Gericht und Menge und entnimmt den
+Preis dem gespeicherten Menü – nie der Anfrage. Ein Gast löschen darf nur die
+Inhaberrolle; die Löschung entfernt Bestellungen, Positionen und Stempel per
+`ON DELETE CASCADE` und wird als Auditereignis protokolliert.
 
 Neue Migrationen werden so erstellt und eingespielt:
 
@@ -158,6 +177,14 @@ Datenschutzberatung. Die veröffentlichte Demo enthält deshalb keine echten
 Kunden- oder Zahlungsdaten. Eine formale DSGVO-Prüfung ist für diesen
 Demo-Schritt bewusst nicht Bestandteil der technischen Freigabe; vor echten
 Kundendaten oder Auftragsverarbeitung bleibt sie separat nachzuholen.
+
+Das gilt besonders für das Gästemodul: Es speichert Telefonnummer, Namen und
+Bestellhistorie und ist technisch auf Einwilligung, Auskunft und Löschung
+vorbereitet (Einwilligungszeitpunkt und -quelle je Gast, Löschung durch die
+Inhaberrolle, Auditereignis `GUEST_DELETED`). Verzeichnis von
+Verarbeitungstätigkeiten, Auftragsverarbeitungsvertrag, Aufbewahrungsfristen
+und Datenschutzerklärung des Ladens sind damit **nicht** erledigt und müssen
+vor dem ersten echten Gastdatensatz vorliegen.
 
 ## Öffentliche Demo betreiben
 

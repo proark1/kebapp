@@ -41,6 +41,49 @@ test("bereitet auf der aktiven Ladenwebsite eine direkte WhatsApp-Bestellung vor
   await expect(page.getByText(/Bezahlen|Warenkorb/i)).toHaveCount(0);
 });
 
+// Die Testdatenbank wird nur einmal je Lauf aufgesetzt, alle Browser-Projekte
+// teilen sie sich. Jede Variante braucht deshalb eine eigene Nummer, sonst
+// waechst der Stempelstand von Projekt zu Projekt.
+const consentPhoneByProject: Record<string, string> = {
+  "android-narrow": "0176 4004002",
+  "desktop-chromium": "0176 4004001",
+  "mobile-webkit": "0176 4004003",
+};
+
+test("speichert die Bestellung nur mit ausdrücklicher Einwilligung", async ({
+  page,
+}, testInfo) => {
+  const guestPhone =
+    consentPhoneByProject[testInfo.project.name] ?? "0176 4004009";
+  await page.addInitScript(() => {
+    window.open = () => null;
+  });
+  await page.goto(`/laden/${e2eStorefronts.active}`);
+  await page.getByRole("button", { name: "Per WhatsApp bestellen" }).first().click();
+
+  const dialog = page.getByRole("dialog", { name: "Bestellung vorbereiten" });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByText("Ohne Haken speichert Kebapp nichts.", { exact: false }),
+  ).toBeVisible();
+  await expect(dialog.getByLabel("Telefonnummer")).toHaveCount(0);
+
+  const consent = dialog.getByRole("checkbox");
+  await consent.check();
+  await expect(dialog.getByLabel("Telefonnummer")).toBeVisible();
+
+  // Ohne brauchbare Nummer bleibt die Bestellung stehen.
+  await dialog.getByLabel("Telefonnummer").fill("0176");
+  await dialog.getByRole("button", { name: "In WhatsApp öffnen" }).click();
+  await expect(
+    dialog.getByText("Für die Stempelkarte brauchen wir eine gültige Telefonnummer."),
+  ).toBeVisible();
+
+  await dialog.getByLabel("Telefonnummer").fill(guestPhone);
+  await dialog.getByRole("button", { name: "In WhatsApp öffnen" }).click();
+  await expect(dialog.getByText(/du hast jetzt 1 Stempel/)).toBeVisible();
+});
+
 for (const storefront of [e2eStorefronts.pending, e2eStorefronts.suspended]) {
   test(`verbirgt nicht aktive Ladenwebsite ${storefront}`, async ({ page }) => {
     const response = await page.goto(`/laden/${storefront}`);

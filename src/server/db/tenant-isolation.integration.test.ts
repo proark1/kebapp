@@ -603,6 +603,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
       "mark_due_round_reminders",
       "mark_round_reminder_sent",
       "public_storefront",
+      "record_storefront_order",
       "regional_confirmed_demand_kg",
       "regional_savings_report",
       "round_bundle",

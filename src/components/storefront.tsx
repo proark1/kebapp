@@ -315,6 +315,7 @@ export function Storefront({
       menu={profile.menu}
       pickupEnabled={profile.pickupEnabled}
       preview={preview}
+      publicSlug={publicSlug}
       storeName={profile.name}
       whatsappPhone={profile.whatsappPhone}
     >

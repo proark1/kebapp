@@ -5,7 +5,9 @@ import { execFileSync } from "node:child_process";
 // ausgelesen werden. Einmalig nach neuen Migrationen ausfuehren:
 //   node scripts/sync-schema-expectations.mjs
 
-const container = "kebapp-local-postgres-1";
+// Ueberschreibbar, damit der Abgleich auch aus einem Worktree gegen eine
+// eigene Pruefdatenbank laufen kann.
+const container = process.env.KEBAPP_PG_CONTAINER ?? "kebapp-local-postgres-1";
 const database = "kebapp_test";
 
 function psql(sql) {

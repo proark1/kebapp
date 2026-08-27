@@ -17,6 +17,7 @@ type StorefrontOrderSheetProps = {
   menu: MenuItem[];
   pickupEnabled: boolean;
   preview?: boolean;
+  publicSlug?: string;
   storeName: string;
   whatsappPhone: string;
 };
@@ -37,12 +38,14 @@ function initialDraft(
 ): StorefrontOrderDraft {
   return {
     address: "",
+    consent: false,
     itemId: menu.some((item) => item.id === itemId)
       ? itemId!
       : (menu[0]?.id ?? ""),
     mode: pickupEnabled ? "PICKUP" : "DELIVERY",
     name: "",
     note: "",
+    phone: "",
     quantity: 1,
   };
 }
@@ -53,6 +56,7 @@ export function StorefrontOrderSheet({
   menu,
   pickupEnabled,
   preview = false,
+  publicSlug,
   storeName,
   whatsappPhone,
 }: StorefrontOrderSheetProps) {
@@ -62,10 +66,14 @@ export function StorefrontOrderSheet({
   const [errors, setErrors] = useState<StorefrontOrderErrors>({});
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
   const addressRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLSelectElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
 
   const selectedItem = menu.find((item) => item.id === draft.itemId);
   const totalPrice = selectedItem ? selectedItem.price * draft.quantity : 0;
@@ -85,6 +93,8 @@ export function StorefrontOrderSheet({
     setOpen(false);
     setFallbackUrl(null);
     setErrors({});
+    setSaveNotice(null);
+    setSaveFailed(false);
   }
 
   function handleDelegatedClick(event: MouseEvent<HTMLDivElement>) {
@@ -104,6 +114,8 @@ export function StorefrontOrderSheet({
     );
     setErrors({});
     setFallbackUrl(null);
+    setSaveNotice(null);
+    setSaveFailed(false);
     setOpen(true);
   }
 
@@ -138,7 +150,7 @@ export function StorefrontOrderSheet({
     setFallbackUrl(null);
   }
 
-  function submitOrder(event: FormEvent<HTMLFormElement>) {
+  async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = prepareStorefrontOrder({
       deliveryEnabled,
@@ -150,10 +162,50 @@ export function StorefrontOrderSheet({
     });
     if (!result.ok) {
       setErrors(result.errors);
-      if (result.errors.address) addressRef.current?.focus();
+      if (result.errors.phone) phoneRef.current?.focus();
+      else if (result.errors.address) addressRef.current?.focus();
       return;
     }
     setErrors({});
+    setSaveNotice(null);
+    setSaveFailed(false);
+
+    // Ohne Haken bleibt es bei der reinen WhatsApp-Nachricht. Nur mit
+    // Einwilligung wird die Bestellung ueberhaupt an den Server geschickt.
+    if (draft.consent && publicSlug && !preview) {
+      setPending(true);
+      try {
+        const { submitStorefrontOrderAction } = await import(
+          "@/app/laden/order-actions"
+        );
+        const saved = await submitStorefrontOrderAction({
+          deliveryAddress: draft.address,
+          itemId: draft.itemId,
+          mode: draft.mode,
+          name: draft.name,
+          note: draft.note,
+          phone: draft.phone,
+          quantity: draft.quantity,
+          slug: publicSlug,
+        });
+        if (saved.ok) {
+          setSaveNotice(
+            `Gespeichert – du hast jetzt ${saved.stampCount} Stempel bei ${storeName}.`,
+          );
+        } else {
+          setSaveFailed(true);
+          setSaveNotice(saved.message);
+        }
+      } catch {
+        setSaveFailed(true);
+        setSaveNotice(
+          "Die Stempelkarte konnte nicht aktualisiert werden. Die Bestellung kannst du trotzdem senden.",
+        );
+      } finally {
+        setPending(false);
+      }
+    }
+
     setFallbackUrl(result.url);
     if (!preview) {
       window.open(result.url, "_blank", "noopener,noreferrer");
@@ -310,20 +362,83 @@ export function StorefrontOrderSheet({
                 {errors.note ? <small role="alert">{errors.note}</small> : null}
               </label>
 
+              <div className="storefront-order-consent">
+                <label className="storefront-order-consent__check">
+                  <input
+                    checked={draft.consent}
+                    onChange={(event) =>
+                      updateDraft("consent", event.target.checked)
+                    }
+                    type="checkbox"
+                  />
+                  <span>
+                    Stempelkarte sammeln: Nummer und Bestellung bei{" "}
+                    {storeName} speichern
+                  </span>
+                </label>
+                {draft.consent ? (
+                  <label className="storefront-order-field">
+                    <span>Telefonnummer</span>
+                    <input
+                      aria-describedby={
+                        errors.phone ? "order-phone-error" : undefined
+                      }
+                      aria-invalid={Boolean(errors.phone)}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      maxLength={40}
+                      onChange={(event) =>
+                        updateDraft("phone", event.target.value)
+                      }
+                      placeholder="0176 1234567"
+                      ref={phoneRef}
+                      type="tel"
+                      value={draft.phone}
+                    />
+                    {errors.phone ? (
+                      <small id="order-phone-error" role="alert">
+                        {errors.phone}
+                      </small>
+                    ) : null}
+                  </label>
+                ) : null}
+              </div>
+
               <div className="storefront-order-summary">
                 <span>Zusammenfassung</span>
                 <strong>{draft.quantity} × {selectedItem?.name ?? "Gericht"}</strong>
                 <b>{formatStorefrontPrice(totalPrice)}</b>
               </div>
 
-              <button className="storefront-order-submit" type="submit">
+              <button
+                className="storefront-order-submit"
+                disabled={pending}
+                type="submit"
+              >
                 <Send aria-hidden="true" size={18} />
-                {preview ? "WhatsApp-Nachricht prüfen" : "In WhatsApp öffnen"}
+                {pending
+                  ? "Wird gespeichert …"
+                  : preview
+                    ? "WhatsApp-Nachricht prüfen"
+                    : "In WhatsApp öffnen"}
               </button>
               <p className="storefront-order-privacy">
-                Kebapp speichert oder sendet diese Bestellung nicht. Du prüfst
-                und sendest die Nachricht selbst in WhatsApp.
+                {draft.consent
+                  ? `${storeName} speichert Nummer, Name und diese Bestellung für die Stempelkarte. Du kannst die Löschung jederzeit im Laden verlangen. Die Nachricht sendest du weiterhin selbst in WhatsApp.`
+                  : "Ohne Haken speichert Kebapp nichts. Du prüfst und sendest die Nachricht selbst in WhatsApp."}
               </p>
+              {saveNotice ? (
+                <p
+                  className={
+                    saveFailed
+                      ? "storefront-order-notice storefront-order-notice--error"
+                      : "storefront-order-notice"
+                  }
+                  role="status"
+                >
+                  {saveNotice}
+                </p>
+              ) : null}
               {fallbackUrl ? (
                 preview ? (
                   <p className="storefront-order-preview-status" role="status">

@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   BookOpenCheck,
   TrendingUp,
+  UserRound,
+  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -22,16 +24,26 @@ import { BrandMark } from "@/components/brand-mark";
 import { DemoEnvironmentBar } from "@/components/demo-environment-bar";
 import type { ActiveOrganizationDTO } from "@/server/organizations/organization-dto";
 
+// `tabbar: false` heisst: erscheint nicht in der schmalen Tableiste auf dem
+// Telefon. In der Seitenleiste steht immer der vollstaendige Bereich.
 const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
   { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
+  { href: "/app/gaeste", label: "Gäste", icon: Users },
   { href: "/app/hygiene", label: "Hygiene", icon: ShieldCheck, tabbar: false },
   { href: "/app/kalkulation", label: "Kalkulation", icon: Calculator, tabbar: false },
   { href: "/app/umsatz", label: "Umsätze", icon: TrendingUp, tabbar: false },
   { href: "/app/buchhaltung", label: "Buchhaltung", icon: BookOpenCheck, tabbar: false },
   { href: "/app/zeit", label: "Zeit", icon: Clock3 },
   { href: "/app/website", label: "Website", icon: Globe2, ownerOnly: true, tabbar: false },
+  {
+    href: "/app/einstellungen/team",
+    icon: UserRound,
+    label: "Team",
+    ownerOnly: true,
+    tabbar: false,
+  },
 ];
 
 type AppShellProps = {
@@ -55,6 +67,9 @@ export function AppShell({
   const sidebarRef = useRef<HTMLElement>(null);
   const visiblePrimaryNavigation = primaryNavigation.filter(
     (item) => !item.ownerOnly || organization.role === "OWNER",
+  );
+  const tabbarNavigation = visiblePrimaryNavigation.filter(
+    (item) => item.tabbar !== false,
   );
 
   useEffect(() => {
@@ -138,7 +153,7 @@ export function AppShell({
 
         <nav className="app-nav" aria-label="Hauptnavigation">
           <span className="app-nav__label">Heute</span>
-          {visiblePrimaryNavigation.filter((item) => item.tabbar !== false).map((item) => {
+          {visiblePrimaryNavigation.map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/app"
@@ -191,10 +206,10 @@ export function AppShell({
         className="mobile-tabbar"
         aria-label="Mobile Navigation"
         style={{
-          gridTemplateColumns: `repeat(${visiblePrimaryNavigation.length}, 1fr)`,
+          gridTemplateColumns: `repeat(${tabbarNavigation.length}, 1fr)`,
         }}
       >
-        {visiblePrimaryNavigation.map((item) => {
+        {tabbarNavigation.map((item) => {
           const Icon = item.icon;
           const active =
             item.href === "/app"

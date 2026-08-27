@@ -98,7 +98,9 @@ describe("seedPublicDemo", () => {
     expect(userCount?.value).toBe(5);
     expect(accountCount?.value).toBe(5);
     expect(organizationCount?.value).toBe(2);
-    expect(demandItemCount?.value).toBe(3);
+    // 3 Positionen der laufenden Runden plus je 2 der abgeschlossenen
+    // Demo-Runde beider Betriebe.
+    expect(demandItemCount?.value).toBe(7);
     expect(publishedStoreCount?.value).toBe(1);
     expect(ownerAAccount?.password).toBe("password-changed-after-initial-seed");
 
@@ -178,9 +180,9 @@ describe("seedPublicDemo", () => {
           .from(demandItems),
     );
 
-    expect(ownerAItems).toHaveLength(2);
+    expect(ownerAItems).toHaveLength(4);
     expect(ownerAItems.every((item) => item.organizationId === publicDemoIds.organizationA)).toBe(true);
-    expect(ownerBItems).toHaveLength(1);
+    expect(ownerBItems).toHaveLength(3);
     expect(ownerBItems[0]?.organizationId).toBe(publicDemoIds.organizationB);
 
     await expect(

@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { loadDbEnv } from "./db-env";
+import { seedDemoOperations } from "./seed-demo-operations";
 import {
   account,
   buyingRounds,
@@ -357,6 +358,29 @@ async function seed() {
           target: demandItems.id,
           set: { requestedDeliveryDate: deliveryDate, updatedAt: new Date() },
         });
+
+      // Betriebsdaten fuer alle uebrigen Ansichten, damit lokal keine leeren
+      // Seiten stehen.
+      await seedDemoOperations(transaction, {
+        adminUserId: ids.admin,
+        targets: [
+          {
+            employeeUserId: null,
+            menu: [
+              { id: "menu-doener", name: "Döner im Fladenbrot", priceCents: 750 },
+              { id: "menu-dueruem", name: "Dürüm", priceCents: 850 },
+              { id: "menu-teller", name: "Ocakbaşı Teller", priceCents: 1_390 },
+              { id: "menu-falafel", name: "Falafel-Tasche", priceCents: 700 },
+            ],
+            openRoundId: ids.round,
+            openRoundRegionalKey: `mg-fleisch-${deliveryDate}`,
+            organizationId: ids.organization,
+            ownerUserId: ids.operator,
+            slot: 1,
+            storeName: "Ocakbaşı Rheydt",
+          },
+        ],
+      });
     });
 
     console.info("Lokale Kebapp-Testkonten und Pilotantrag sind bereit.");

@@ -1,18 +1,23 @@
+import { normalizeGuestPhone } from "@/lib/guest-identity";
 import type { MenuItem } from "@/lib/types";
 
 export type StorefrontOrderMode = "PICKUP" | "DELIVERY";
 
 export type StorefrontOrderDraft = {
   address: string;
+  // Nur mit gesetztem Haken entsteht ein Gastdatensatz. Ohne Haken bleibt die
+  // Bestellung eine reine WhatsApp-Nachricht wie zuvor.
+  consent: boolean;
   itemId: string;
   mode: StorefrontOrderMode;
   name: string;
   note: string;
+  phone: string;
   quantity: number;
 };
 
 export type StorefrontOrderErrors = Partial<
-  Record<keyof StorefrontOrderDraft | "phone", string>
+  Record<keyof StorefrontOrderDraft | "storePhone", string>
 >;
 
 type PrepareStorefrontOrderInput = {
@@ -57,7 +62,11 @@ export function validateStorefrontOrder(
 ): StorefrontOrderErrors {
   const errors: StorefrontOrderErrors = {};
   if (!normalizeWhatsappPhone(input.whatsappPhone)) {
-    errors.phone = "Die WhatsApp-Nummer des Ladens ist nicht verfügbar.";
+    errors.storePhone = "Die WhatsApp-Nummer des Ladens ist nicht verfügbar.";
+  }
+  if (input.draft.consent && !normalizeGuestPhone(input.draft.phone)) {
+    errors.phone =
+      "Für die Stempelkarte brauchen wir eine gültige Telefonnummer.";
   }
   if (!input.menu.some((item) => item.id === input.draft.itemId)) {
     errors.itemId = "Bitte wähle ein Gericht aus.";
@@ -109,6 +118,10 @@ export function prepareStorefrontOrder(
   const address = input.draft.address.trim();
   const note = input.draft.note.trim();
   if (name) lines.push(`Name: ${name}`);
+  const guestPhone = input.draft.consent
+    ? normalizeGuestPhone(input.draft.phone)
+    : null;
+  if (guestPhone) lines.push(`Telefon: +${guestPhone}`);
   if (input.draft.mode === "DELIVERY") lines.push(`Lieferadresse: ${address}`);
   if (note) lines.push(`Anmerkung: ${note}`);
   lines.push("", `Angezeigter Gesamtpreis: ${formatStorefrontPrice(totalPrice)}`);
