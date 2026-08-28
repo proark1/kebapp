@@ -16,6 +16,7 @@ import {
   supportUpdateDemandAction,
   supportUpdatePhoneAction,
 } from "./actions";
+import { auditActionLabel } from "@/lib/audit-labels";
 
 export const metadata: Metadata = { title: "Laden betreuen" };
 
@@ -28,14 +29,6 @@ const messages: Record<string, { text: string; tone: "error" | "success" }> = {
   ungueltig: { text: "Bitte die Eingaben vollständig prüfen.", tone: "error" },
   "website-gespeichert": { text: "Telefonnummer wurde geändert und protokolliert.", tone: "success" },
   "website-unvollstaendig": { text: "Die veröffentlichte Website ist noch nicht vollständig.", tone: "error" },
-};
-
-const actionLabels: Record<string, string> = {
-  ORGANIZATION_REGISTRATION_APPROVED: "Pilotzugang freigegeben",
-  SUPPORT_DEMAND_ITEM_ADDED: "Bedarfsposition ergänzt",
-  SUPPORT_DEMAND_ITEM_REMOVED: "Bedarfsposition entfernt",
-  SUPPORT_DEMAND_QUANTITY_UPDATED: "Bedarfsmenge geändert",
-  SUPPORT_STOREFRONT_UPDATED: "Ladenwebsite geändert",
 };
 
 export default async function SupportStorePage({
@@ -150,7 +143,7 @@ export default async function SupportStorePage({
             <ol className="support-audit-list">
               {audit.map((event) => (
                 <li key={event.id}>
-                  <span>{actionLabels[event.action] ?? event.action}</span>
+                  <span>{auditActionLabel(event.action)}</span>
                   <p>{event.reason ?? "Ohne gesonderte Begründung"}</p>
                   <small>{event.actorLabel} · {new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short" }).format(new Date(event.createdAt))}</small>
                 </li>

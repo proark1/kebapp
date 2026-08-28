@@ -3,30 +3,9 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import type { KebappDatabase } from "@/server/db/client";
+import { toDate } from "@/server/db/definer-values";
 import { setAdminContext } from "@/server/organizations/admin";
 import type { TenantTransaction } from "@/server/db/tenant-context";
-
-// Die Definer-Funktionen liefern ihre Spalten als Text zurueck, nicht als
-// typisierte Werte - deshalb steht weiter unten auch Number(member_count).
-// Zeitstempel brauchen dieselbe Behandlung, sonst reicht die Ebene einen
-// String an Intl.DateTimeFormat weiter und die Adminliste stuerzt mit
-// "Invalid time value" ab.
-function toDate(value: Date | string | null): Date | null {
-  if (value === null) return null;
-  if (value instanceof Date) return value;
-
-  // Postgres liefert "2026-09-01 20:58:19.748+00". Fuer Date muss daraus
-  // "2026-09-01T20:58:19.748+00:00" werden: Leerzeichen zu T und der
-  // abgekuerzte Zonenversatz auf die volle ISO-Form.
-  const isoish = value
-    .trim()
-    .replace(" ", "T")
-    .replace(/([+-]\d{2})(\d{2})$/, "$1:$2")
-    .replace(/([+-]\d{2})$/, "$1:00");
-
-  const parsed = new Date(isoish);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
 
 export type StoreDirectoryRow = {
   organizationId: string;

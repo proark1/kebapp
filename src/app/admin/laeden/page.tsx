@@ -44,7 +44,7 @@ export default async function AdminStoreDirectoryPage() {
         <div className="admin-file-count">{activeCount} AKTIV</div>
       </header>
 
-      <section className="request-file" aria-label="Liste der Läden">
+      <section className="request-file request-file--directory" aria-label="Liste der Läden">
         <header className="request-file__columns request-file__columns--directory" aria-hidden="true">
           <span>Laden</span>
           <span>Status</span>

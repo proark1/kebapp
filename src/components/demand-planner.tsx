@@ -367,7 +367,7 @@ export function DemandPlanner({
 
         {optimisticItems.length > 0 ? (
           <div className="demand-table-wrap">
-            <table className="demand-table">
+            <table className="demand-table demand-table--planner">
               <thead>
                 <tr>
                   <th>Produkt</th>

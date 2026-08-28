@@ -1,10 +1,14 @@
 import "server-only";
 
-import { asc, eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";
-import { storeProfiles } from "@/server/db/schema";
+import { toDate } from "@/server/db/definer-values";
+import {
+  type StoreDomainRequestStatus,
+  storeProfiles,
+} from "@/server/db/schema";
 import type { TenantTransaction } from "@/server/db/tenant-context";
 import {
   setAdminContext,
@@ -55,30 +59,48 @@ async function loadRequestedProfile(
   return profile;
 }
 
+export type DomainRequestRow = {
+  connectedDomain: string | null;
+  name: string;
+  organizationId: string;
+  publicSlug: string;
+  requestedAt: Date | null;
+  requestedDomain: string | null;
+  status: StoreDomainRequestStatus;
+};
+
+// Der Adminkontext setzt bewusst keine Organisation. Die Auswahlrichtlinie
+// von store_profiles verlangt aber genau die - eine direkte Abfrage liefert
+// dem Prueftisch deshalb immer null Zeilen. Wie beim Ladenverzeichnis
+// uebernimmt eine eng geschnittene Definer-Funktion die Leseseite.
 export async function listDomainRequests(input: {
   actor: AdminActor;
   database?: KebappDatabase;
-}) {
+}): Promise<DomainRequestRow[]> {
   const database =
     input.database ?? (await import("@/server/db/client")).database;
 
   return database.transaction(async (transaction) => {
     await setAdminContext(transaction, input.actor);
-    const rows = await transaction
-      .select({
-        organizationId: storeProfiles.organizationId,
-        publicSlug: storeProfiles.publicSlug,
-        name: storeProfiles.name,
-        connectedDomain: storeProfiles.customDomain,
-        requestedDomain: storeProfiles.requestedDomain,
-        requestedAt: storeProfiles.domainRequestedAt,
-        status: storeProfiles.domainRequestStatus,
-      })
-      .from(storeProfiles)
-      .orderBy(asc(storeProfiles.name));
-    return rows.filter(
-      (row) => row.status === "REVIEW_REQUESTED" || row.connectedDomain,
-    );
+    const result = await transaction.execute<{
+      connected_domain: string | null;
+      domain_request_status: StoreDomainRequestStatus;
+      domain_requested_at: Date | string | null;
+      organization_id: string;
+      public_slug: string;
+      requested_domain: string | null;
+      store_name: string;
+    }>(sql`select * from kebapp_private.admin_domain_requests()`);
+
+    return result.rows.map((row) => ({
+      connectedDomain: row.connected_domain,
+      name: row.store_name,
+      organizationId: row.organization_id,
+      publicSlug: row.public_slug,
+      requestedAt: toDate(row.domain_requested_at),
+      requestedDomain: row.requested_domain,
+      status: row.domain_request_status,
+    }));
   });
 }
 

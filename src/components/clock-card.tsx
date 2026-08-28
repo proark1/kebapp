@@ -35,7 +35,17 @@ export function ClockCard({
   clockOutAction: (formData: FormData) => Promise<void>;
   openStartedAt: string | null;
 }) {
-  const [elapsed, setElapsed] = useState(0);
+  // Ohne Startwert stand die laufende Schicht bis zum ersten Client-Tick auf
+  // 00:00:00. Server- und Clientuhr weichen dabei um Millisekunden ab -
+  // deshalb unterdrueckt die Anzeige unten die Hydrationswarnung.
+  const [elapsed, setElapsed] = useState(() =>
+    openStartedAt
+      ? Math.max(
+          0,
+          Math.floor((Date.now() - new Date(openStartedAt).getTime()) / 1000),
+        )
+      : 0,
+  );
 
   useEffect(() => {
     if (!openStartedAt) return;
@@ -51,7 +61,7 @@ export function ClockCard({
       <section className="panel clock-card" aria-label="Laufende Schicht">
         <div className="clock-card__timer">
           <Clock3 size={22} aria-hidden="true" />
-          <strong>{formatElapsed(elapsed)}</strong>
+          <strong suppressHydrationWarning>{formatElapsed(elapsed)}</strong>
           <span>seit {new Date(openStartedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</span>
         </div>
         <form action={clockOutAction} className="clock-card__out">

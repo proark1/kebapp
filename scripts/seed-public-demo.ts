@@ -19,6 +19,7 @@ import {
   userProfiles,
 } from "../src/server/db/schema";
 import { seedDemoOperations } from "./seed-demo-operations";
+import { seedDemoPlatform } from "./seed-demo-platform";
 import {
   parseProductionEnv,
   type ProductionEnv,
@@ -324,6 +325,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             description:
               "Drehspieß, frisches Gemüse und Saucen aus eigener Küche – mitten in Rheydt.",
             deliveryEnabled: true,
+            email: "hallo@ocakbasi-rheydt.de",
             eyebrow: "Seit 1998 in Rheydt",
             features: [
               "HALAL",
@@ -342,6 +344,13 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
                 price: "7.50",
               },
               {
+                category: "Döner",
+                description: "Im dünnen Fladen gerollt, mit Salat und Sauce",
+                id: "duerum",
+                name: "Dürüm Döner",
+                price: "8.50",
+              },
+              {
                 category: "Teller",
                 description: "Drehspieß, Beilage, Salat und Sauce",
                 id: "teller",
@@ -349,11 +358,25 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
                 price: "13.90",
               },
               {
+                category: "Teller",
+                description: "Zwei Spieße vom Grill, Bulgur und Salat",
+                id: "adana",
+                name: "Adana Kebap Teller",
+                price: "15.50",
+              },
+              {
                 category: "Vegetarisch",
                 description: "Falafel, Salat und Sesamsauce",
                 id: "falafel",
                 name: "Falafel-Tasche",
                 price: "7.00",
+              },
+              {
+                category: "Getränke",
+                description: "Hausgemacht, 0,25 l",
+                id: "ayran",
+                name: "Ayran",
+                price: "1.80",
               },
             ],
             name: "Ocakbasi Rheydt",
@@ -378,11 +401,14 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             accentColor: "#d9653b",
             city: "Viersen",
             description:
-              "Ein zweiter Demo-Betrieb für die Prüfung der Mandantentrennung.",
-            deliveryEnabled: false,
-            eyebrow: "Demo-Betrieb in Viersen",
-            features: [],
+              "Holzkohlegrill, hausgemachter Ayran und Lahmacun aus dem Steinofen – direkt am Alten Markt.",
+            deliveryEnabled: true,
+            email: "kontakt@mangal-am-markt.de",
+            eyebrow: "Am Alten Markt in Viersen",
+            features: ["HALAL", "PREPARED_ON_SITE", "HOMEMADE_SAUCES"],
             id: publicDemoIds.storeB,
+            // Bewusst unveroeffentlicht: der Entwurfszustand der Ladenwebsite
+            // und die 404-Antwort der oeffentlichen Seite bleiben so testbar.
             isPublished: false,
             menu: [
               {
@@ -392,10 +418,43 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
                 name: "Mangal Döner",
                 price: "7.90",
               },
+              {
+                category: "Döner",
+                description: "Gerollt im dünnen Fladen, mit Rotkohl und Sauce",
+                id: "mangal-duerum",
+                name: "Dürüm vom Grill",
+                price: "8.90",
+              },
+              {
+                category: "Teller",
+                description: "Grillfleisch, Bulgur, Salat und Fladenbrot",
+                id: "mangal-teller",
+                name: "Mangal Teller",
+                price: "14.50",
+              },
+              {
+                // Die Kategorien sind serverseitig auf vier Werte begrenzt
+                // (siehe storefrontProfileSchema); alles andere macht das
+                // gespeicherte Profil ungueltig.
+                category: "Teller",
+                description: "Aus dem Steinofen, mit Salat und Zitrone",
+                id: "mangal-lahmacun",
+                name: "Lahmacun mit Salat",
+                price: "6.50",
+              },
+              {
+                category: "Getränke",
+                description: "Täglich frisch gerührt, 0,3 l",
+                id: "mangal-ayran",
+                name: "Hausgemachter Ayran",
+                price: "2.20",
+              },
             ],
             name: "Mangal am Markt",
             openingHours: [
-              { days: "Montag–Samstag", hours: "11:00–23:00" },
+              { days: "Dienstag–Donnerstag", hours: "11:30–22:00" },
+              { days: "Freitag–Samstag", hours: "11:30–23:30" },
+              { days: "Sonntag", hours: "12:00–21:00" },
             ],
             organizationId: publicDemoIds.organizationB,
             phone: "+49 2162 654321",
@@ -407,7 +466,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             shortName: "MM",
             street: "Marktstraße 10",
             tagline: "Vom Grill direkt auf den Teller.",
-            whatsappPhone: null,
+            whatsappPhone: "+49 2162 654321",
           },
         ])
         .onConflictDoUpdate({
@@ -417,6 +476,7 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             city: sql`excluded.city`,
             deliveryEnabled: sql`excluded.delivery_enabled`,
             description: sql`excluded.description`,
+            email: sql`excluded.email`,
             eyebrow: sql`excluded.eyebrow`,
             features: sql`excluded.features`,
             isPublished: sql`excluded.is_published`,
@@ -570,8 +630,11 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             employeeUserId: publicDemoIds.employee,
             menu: [
               { id: "doener", name: "Döner im Fladenbrot", priceCents: 750 },
+              { id: "duerum", name: "Dürüm Döner", priceCents: 850 },
               { id: "teller", name: "Ocakbasi Teller", priceCents: 1_390 },
+              { id: "adana", name: "Adana Kebap Teller", priceCents: 1_550 },
               { id: "falafel", name: "Falafel-Tasche", priceCents: 700 },
+              { id: "ayran", name: "Ayran", priceCents: 180 },
             ],
             openRoundId: publicDemoIds.roundA,
             openRoundRegionalKey: `nrw-west-${dates.deliveryDate}`,
@@ -584,6 +647,10 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             employeeUserId: null,
             menu: [
               { id: "mangal-doener", name: "Mangal Döner", priceCents: 790 },
+              { id: "mangal-duerum", name: "Dürüm vom Grill", priceCents: 890 },
+              { id: "mangal-teller", name: "Mangal Teller", priceCents: 1_450 },
+              { id: "mangal-lahmacun", name: "Lahmacun mit Salat", priceCents: 650 },
+              { id: "mangal-ayran", name: "Hausgemachter Ayran", priceCents: 220 },
             ],
             openRoundId: publicDemoIds.roundB,
             openRoundRegionalKey: `nrw-west-${dates.deliveryDate}`,
@@ -593,6 +660,24 @@ export async function seedPublicDemo(env: ProductionEnv): Promise<void> {
             storeName: "Mangal am Markt",
           },
         ],
+      });
+
+      // Plattformdaten: Antragseingang, Ladenverzeichnis, Domains,
+      // Einladungen, Supportjournal, Auditspur und die mitbestellenden
+      // Nachbarlaeden derselben Sammelrunde.
+      await seedDemoPlatform(transaction, {
+        adminUserId: publicDemoIds.admin,
+        now,
+        organizationAEmployeeUserId: publicDemoIds.employee,
+        organizationAId: publicDemoIds.organizationA,
+        organizationAOwnerUserId: publicDemoIds.ownerA,
+        organizationBId: publicDemoIds.organizationB,
+        organizationBOwnerUserId: publicDemoIds.ownerB,
+        regionalKey: `nrw-west-${dates.deliveryDate}`,
+        roundClosesAt: dates.closesAt,
+        roundDeliveryEndsAt: dates.deliveryEndsAt,
+        roundDeliveryStartsAt: dates.deliveryStartsAt,
+        supportUserId: publicDemoIds.support,
       });
     });
   } finally {

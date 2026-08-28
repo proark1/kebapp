@@ -8296,3 +8296,244 @@ a {
 .support-shell .demand-table td {
   font-variant-numeric: tabular-nums;
 }
+
+/* === Listenzeilen ohne Verweis ===
+   .request-file legt sein Raster nur auf `li > a`. Verzeichnis, Sammelrunden,
+   Domains, Buendel und Ersparnisliste stellen ihre Zellen dagegen direkt in
+   das <li>. Ohne display:grid stand dort alles in einer Zeile ineinander -
+   "Ocakbasi Rheydt/ocakbasi-rheydtAKTIV2 aktiv". */
+.request-file--rounds li,
+.request-file--bundle li,
+.request-file--directory li,
+.request-file--domains li,
+.request-file--savings li {
+  display: grid;
+  gap: 10px 20px;
+  align-items: center;
+  min-height: 68px;
+  padding: 14px 19px;
+  border-bottom: 1px solid #d4dad3;
+}
+
+.request-file--rounds li:last-child,
+.request-file--bundle li:last-child,
+.request-file--directory li:last-child,
+.request-file--domains li:last-child,
+.request-file--savings li:last-child {
+  border-bottom: 0;
+}
+
+/* Zweitzeilen (Slug, Zeitpunkt, Zusatz) gehoeren unter den Wert, nicht
+   dahinter. */
+.request-file__store small,
+.request-file li > span > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.request-file--directory li > span,
+.request-file--rounds li > span,
+.request-file--domains li > span,
+.request-file--savings li > span {
+  min-width: 0;
+}
+
+/* Rasterspalten duerfen nicht breiter werden als ihr Inhalt erlaubt: sonst
+   schiebt ein langes Eingabefeld die ganze Seite ueber den Rand. */
+.form-grid > *,
+.form-grid--two > *,
+.form-grid--three > *,
+.tier-editor__row > * {
+  min-width: 0;
+}
+
+/* Zweitzeilen in Tabellen: Verkaufspreis, Zutaten, Marge standen bisher
+   direkt hinter dem Wert. */
+.demand-table td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .request-file__columns--rounds,
+  .request-file__columns--bundle,
+  .request-file__columns--directory,
+  .request-file__columns--domains,
+  .request-file__columns--savings {
+    display: none;
+  }
+
+  .request-file--rounds li,
+  .request-file--bundle li,
+  .request-file--directory li,
+  .request-file--domains li,
+  .request-file--savings li {
+    gap: 9px;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px 18px;
+  }
+
+  /* Die Antragsliste setzt ihre Statusmarke auf schmalen Geraeten fest in
+     Spalte 2. In den gestapelten Listen hier erzeugt das eine zweite,
+     implizite Spalte - die Zeile bricht dann wieder auseinander. */
+  .request-file--rounds li > *,
+  .request-file--bundle li > *,
+  .request-file--directory li > *,
+  .request-file--domains li > *,
+  .request-file--savings li > * {
+    grid-column: auto;
+  }
+
+  .rounds-actions,
+  .rounds-actions form {
+    flex-wrap: wrap;
+  }
+
+  .form-grid--three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .form-grid--two,
+  .form-grid--three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Auf schmalen Geraeten bricht .demand-table in gestapelte Bloecke um. Ohne
+   Spaltenkopf fehlte jede Zuordnung; die data-label-Attribute liegen im
+   Markup bereits vor. Die Bedarfsplanung hat eine eigene Mobilform und
+   bleibt ausgenommen. */
+@media (max-width: 760px) {
+  .demand-table:not(.demand-table--planner) td[data-label] {
+    display: grid;
+    gap: 4px 12px;
+    grid-template-columns: minmax(84px, 36%) minmax(0, 1fr);
+    align-items: baseline;
+  }
+
+  .demand-table:not(.demand-table--planner) td[data-label]::before {
+    color: var(--muted);
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    line-height: 1.7;
+    text-transform: uppercase;
+  }
+
+  /* Zweitzeilen und Formulare in der Zelle stehen unter dem Wert, nicht
+     unter der Beschriftung. */
+  .demand-table:not(.demand-table--planner) td[data-label] > * {
+    grid-column: 2;
+  }
+
+  /* Die letzte Zelle klebte absolut positioniert oben rechts - gedacht fuer
+     den Loeschknopf der Bedarfsplanung. In den uebrigen Tabellen traegt sie
+     einen echten Wert (Marge, Status, Quelle) und lief dort ueber den
+     Gerichtnamen. */
+  .demand-table:not(.demand-table--planner) td:last-child {
+    position: static;
+    width: auto;
+    text-align: left;
+  }
+
+  .demand-table:not(.demand-table--planner) td:last-child:not([data-label]) {
+    display: block;
+  }
+}
+
+/* Nettoaufwand je Kategorie: lief vorher als eine lange Kommaliste im
+   Fliesstext mit. */
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category-chips li {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  padding: 5px 10px;
+  background: var(--green-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.category-chips span {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.category-chips strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Gesperrte und geschlossene Zustaende trugen bisher die gruene Grundfarbe
+   der Statusmarke und lasen sich damit wie "alles in Ordnung". */
+.request-status--suspended,
+.request-status--closed,
+.request-status--cancelled {
+  color: #4c5560;
+  background: #e8ebee;
+  border-color: #c8ced4;
+}
+
+/* Feste Mindestspalten sprengen schmale Bildschirme. Die Zusammenfassung des
+   Wareneingangs war mit 3x140px plus Abstaenden breiter als ein Handy. */
+.receipt-summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+
+/* Eingabefelder in Tabellenzellen duerfen die Zelle nicht sprengen. */
+.demand-table td :is(input, select, textarea) {
+  max-width: 100%;
+}
+
+/* Im Auditprotokoll wurde die Spalte "wer" unterhalb von 1100 px komplett
+   ausgeblendet - ausgerechnet die Angabe, um die es in einem Protokoll geht.
+   Sie rueckt jetzt unter die Aktion, statt zu verschwinden. */
+@media (max-width: 1100px) {
+  .audit-ledger li {
+    grid-template-columns: 110px minmax(0, 1fr) auto;
+    gap: 8px 18px;
+    align-items: start;
+  }
+
+  .audit-ledger__actor {
+    display: block;
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .audit-ledger li {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px;
+  }
+
+  .audit-ledger__actor,
+  .audit-result {
+    grid-column: auto;
+  }
+
+  .audit-result {
+    width: max-content;
+  }
+}

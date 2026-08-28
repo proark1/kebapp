@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Download, Upload } from "lucide-react";
+import { Download, FileCode2, Upload } from "lucide-react";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { listInvoices } from "@/server/accounting/invoices";
 
@@ -9,6 +9,21 @@ const dayFormatter = new Intl.DateTimeFormat("de-DE");
 
 function todayIso(): string {
   return new Intl.DateTimeFormat("sv-SE").format(new Date());
+}
+
+function euro(cents: number): string {
+  return (cents / 100).toLocaleString("de-DE", {
+    currency: "EUR",
+    style: "currency",
+  });
+}
+
+function grossCents(invoice: { netCents19: number; netCents7: number }): number {
+  return Math.round(invoice.netCents7 * 1.07 + invoice.netCents19 * 1.19);
+}
+
+function formatDay(isoDate: string): string {
+  return dayFormatter.format(new Date(`${isoDate}T12:00:00Z`));
 }
 
 async function createInvoiceAction(formData: FormData): Promise<void> {
@@ -122,6 +137,19 @@ async function importEInvoiceAction(formData: FormData): Promise<void> {
 const invoiceCategories = ["FLEISCH","GEMUESE","TROCKEN","GETRAENKE","VERPACKUNG","SONSTIGES"] as const;
 type InvoiceCategory = (typeof invoiceCategories)[number];
 
+const categoryLabels: Record<InvoiceCategory, string> = {
+  FLEISCH: "Fleisch",
+  GEMUESE: "Gemüse",
+  GETRAENKE: "Getränke",
+  SONSTIGES: "Sonstiges",
+  TROCKEN: "Trockenware",
+  VERPACKUNG: "Verpackung",
+};
+
+function categoryLabel(key: string): string {
+  return categoryLabels[key as InvoiceCategory] ?? key;
+}
+
 const meldungMessages: Record<string, string> = {
   importiert: "XRechnung importiert",
   "keine-datei": "Bitte eine XML-Datei auswählen.",
@@ -150,13 +178,25 @@ export default async function BuchhaltungPage({
     ? (meldungMessages[query.meldung] ?? query.meldung)
     : undefined;
 
-  const openSum = invoices
-    .filter((invoice) => invoice.status === "OFFEN")
-    .reduce(
-      (sum, invoice) =>
-        sum + invoice.netCents7 * 1.07 + invoice.netCents19 * 1.19,
-      0,
-    );
+  const today = todayIso();
+  const openInvoices = invoices.filter(
+    (invoice) => invoice.status === "OFFEN",
+  );
+  const openSum = openInvoices.reduce(
+    (sum, invoice) => sum + grossCents(invoice),
+    0,
+  );
+  const overdueCount = openInvoices.filter(
+    (invoice) => invoice.dueDate !== null && invoice.dueDate < today,
+  ).length;
+  const netByCategory = invoices.reduce<Record<string, number>>(
+    (acc, invoice) => {
+      acc[invoice.category] =
+        (acc[invoice.category] ?? 0) + invoice.netCents7 + invoice.netCents19;
+      return acc;
+    },
+    {},
+  );
   const vatByRate = invoices.reduce(
     (acc, invoice) => ({
       rate7: acc.rate7 + invoice.netCents7 * 0.07,
@@ -174,10 +214,11 @@ export default async function BuchhaltungPage({
           <p>Lieferantenrechnungen erfassen, offene Posten im Blick, Export für den Steuerberater.</p>
         </div>
         <div className="admin-date-block">
-          <strong>
-            {(openSum / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
-          </strong>
-          <span>offen (brutto)</span>
+          <strong>{euro(openSum)}</strong>
+          <span>
+            offen (brutto)
+            {overdueCount > 0 ? ` · ${overdueCount} überfällig` : ""}
+          </span>
         </div>
       </header>
 
@@ -207,7 +248,9 @@ export default async function BuchhaltungPage({
             <span>Kategorie</span>
             <select defaultValue="FLEISCH" name="category">
               {invoiceCategories.map((key) => (
-                <option key={key}>{key}</option>
+                <option key={key} value={key}>
+                  {categoryLabels[key]}
+                </option>
               ))}
             </select>
           </label>
@@ -266,23 +309,20 @@ export default async function BuchhaltungPage({
           <div>
             <span className="eyebrow">Letzte 3 Monate</span>
             <h2>Belege & Umsatzsteuer</h2>
-            <small>
-              Vorsteuer: 7 % = {(vatByRate.rate7 / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })} · 19 % = {(vatByRate.rate19 / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
-              {" · Netto je Kategorie: "}
-              {Object.entries(
-                invoices.reduce<Record<string, number>>((acc, invoice) => {
-                  acc[invoice.category] =
-                    (acc[invoice.category] ?? 0) +
-                    invoice.netCents7 +
-                    invoice.netCents19;
-                  return acc;
-                }, {}),
-              )
-                .map(([catKey, cents]) =>
-                  `${catKey} ${(cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}`,
-                )
-                .join(", ")}
-            </small>
+            <p>
+              Vorsteuer 7 % = {euro(Math.round(vatByRate.rate7))} · 19 % ={" "}
+              {euro(Math.round(vatByRate.rate19))}
+            </p>
+            <ul className="category-chips" aria-label="Nettoaufwand je Kategorie">
+              {invoiceCategories
+                .filter((key) => (netByCategory[key] ?? 0) > 0)
+                .map((key) => (
+                  <li key={key}>
+                    <span>{categoryLabels[key]}</span>
+                    <strong>{euro(netByCategory[key] ?? 0)}</strong>
+                  </li>
+                ))}
+            </ul>
           </div>
           <a
             className="button button--secondary"
@@ -303,6 +343,7 @@ export default async function BuchhaltungPage({
                   <th>Lieferant</th>
                   <th>Nr.</th>
                   <th>Datum</th>
+                  <th>Fällig</th>
                   <th>Kategorie</th>
                   <th>Brutto</th>
                   <th>Status</th>
@@ -311,13 +352,33 @@ export default async function BuchhaltungPage({
               <tbody>
                 {invoices.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td data-label="Lieferant">{invoice.supplierName}</td>
-                    <td data-label="Nr.">{invoice.invoiceNumber}</td>
-                    <td data-label="Datum">{dayFormatter.format(new Date(`${invoice.documentDate}T12:00:00Z`))}</td>
-                    <td data-label="Kategorie">{invoice.category}</td>
-                    <td data-label="Brutto">
-                      {((invoice.netCents7 * 1.07 + invoice.netCents19 * 1.19) / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+                    <td data-label="Lieferant">
+                      {invoice.supplierName}
+                      {invoice.sourceFileName ? (
+                        <small>
+                          <FileCode2 size={12} aria-hidden="true" /> aus XRechnung
+                          · {invoice.sourceFileName}
+                        </small>
+                      ) : null}
                     </td>
+                    <td data-label="Nr.">{invoice.invoiceNumber}</td>
+                    <td data-label="Datum">{formatDay(invoice.documentDate)}</td>
+                    <td data-label="Fällig">
+                      {invoice.dueDate === null ? (
+                        "—"
+                      ) : invoice.status === "OFFEN" && invoice.dueDate < today ? (
+                        <strong className="receipt-missing">
+                          {formatDay(invoice.dueDate)}
+                          <small>überfällig</small>
+                        </strong>
+                      ) : (
+                        formatDay(invoice.dueDate)
+                      )}
+                    </td>
+                    <td data-label="Kategorie">
+                      {categoryLabel(invoice.category)}
+                    </td>
+                    <td data-label="Brutto">{euro(grossCents(invoice))}</td>
                     <td data-label="Status">
                       {invoice.status === "BEZAHLT" ? (
                         "Bezahlt"

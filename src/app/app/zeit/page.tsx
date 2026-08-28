@@ -141,6 +141,7 @@ export default async function ZeitPage({
                   <th>Start</th>
                   <th>Ende</th>
                   <th>Dauer</th>
+                  <th>Vermerk</th>
                   <th>
                     <span className="sr-only">Korrektur</span>
                   </th>
@@ -166,6 +167,10 @@ export default async function ZeitPage({
                       {entry.durationMinutes === null
                         ? "—"
                         : formatDuration(entry.durationMinutes)}
+                    </td>
+                    <td data-label="Vermerk">
+                      {entry.note ?? "—"}
+                      {entry.corrected ? <small>korrigiert</small> : null}
                     </td>
                     <td>
                       {isManager && entry.endedAt ? (
@@ -216,8 +221,6 @@ export default async function ZeitPage({
                             </button>
                           </form>
                         </details>
-                      ) : entry.corrected ? (
-                        <small>korrigiert</small>
                       ) : null}
                     </td>
                   </tr>

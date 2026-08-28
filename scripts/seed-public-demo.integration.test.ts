@@ -95,12 +95,16 @@ describe("seedPublicDemo", () => {
       .from(account)
       .where(eq(account.id, publicDemoIds.ownerAAccount));
 
-    expect(userCount?.value).toBe(5);
+    // Fuenf Demo-Rollen, sechs mitbestellende Nachbarlaeden und fuenf
+    // Antragstellende im Eingang des Prueftischs. Zugangsdaten hat nur, wer
+    // auf der Startseite als Rolle angeboten wird.
+    expect(userCount?.value).toBe(16);
     expect(accountCount?.value).toBe(5);
-    expect(organizationCount?.value).toBe(2);
-    // 3 Positionen der laufenden Runden plus je 2 der abgeschlossenen
-    // Demo-Runde beider Betriebe.
-    expect(demandItemCount?.value).toBe(7);
+    expect(organizationCount?.value).toBe(13);
+    // 3 Positionen der laufenden Demo-Runden, je 4 aus den beiden
+    // abgeschlossenen Runden der Demo-Betriebe und je 4 der sechs
+    // Nachbarlaeden.
+    expect(demandItemCount?.value).toBe(35);
     expect(publishedStoreCount?.value).toBe(1);
     expect(ownerAAccount?.password).toBe("password-changed-after-initial-seed");
 
@@ -148,12 +152,26 @@ describe("seedPublicDemo", () => {
     const assignments = await harness.ownerDatabase
       .select()
       .from(supportAssignments);
-    expect(assignments).toHaveLength(1);
-    expect(assignments[0]).toMatchObject({
-      organizationId: publicDemoIds.organizationA,
-      status: "ACTIVE",
-      supportUserId: publicDemoIds.support,
-    });
+    // Zwei laufende Einsaetze und ein bereits beendeter im Journal.
+    expect(assignments).toHaveLength(3);
+    expect(assignments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          organizationId: publicDemoIds.organizationA,
+          status: "ACTIVE",
+          supportUserId: publicDemoIds.support,
+        }),
+        expect.objectContaining({
+          organizationId: publicDemoIds.organizationB,
+          status: "ACTIVE",
+          supportUserId: publicDemoIds.support,
+        }),
+        expect.objectContaining({
+          status: "ENDED",
+          supportUserId: publicDemoIds.support,
+        }),
+      ]),
+    );
   });
 
   it("keeps each owner inside their organization and exposes only the published site", async () => {
@@ -180,10 +198,12 @@ describe("seedPublicDemo", () => {
           .from(demandItems),
     );
 
-    expect(ownerAItems).toHaveLength(4);
+    // Mandantengrenze: jeder Betrieb sieht nur die eigenen Positionen, die
+    // der sechs Nachbarlaeden bleiben unsichtbar.
+    expect(ownerAItems).toHaveLength(6);
     expect(ownerAItems.every((item) => item.organizationId === publicDemoIds.organizationA)).toBe(true);
-    expect(ownerBItems).toHaveLength(3);
-    expect(ownerBItems[0]?.organizationId).toBe(publicDemoIds.organizationB);
+    expect(ownerBItems).toHaveLength(5);
+    expect(ownerBItems.every((item) => item.organizationId === publicDemoIds.organizationB)).toBe(true);
 
     await expect(
       getPublicStorefrontBySlug({

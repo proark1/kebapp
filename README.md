@@ -56,11 +56,24 @@ Nach der Freigabe kann sich das Betreiberkonto unter `/app` anmelden; der
 Supportzugang sieht nur ausdrücklich zugewiesene Läden.
 
 Beide Seeds füllen zusätzlich jede Betriebsansicht mit Beispieldaten
-(`scripts/seed-demo-operations.ts`): Tagesumsätze, Hygieneprotokolle,
-Arbeitszeiten, Eingangsrechnungen, Kalkulationen, eine abgeschlossene Runde mit
-Wareneingang und Lieferantenzuschlag, Stammbedarf-Vorlage sowie Gäste mit
-Bestellhistorie und Stempelkarte. Alle Kennungen sind fest, sodass ein erneuter
-Lauf die Daten auffrischt, statt sie zu verdoppeln.
+(`scripts/seed-demo-operations.ts`): Tagesumsätze bis einschließlich heute,
+Hygieneprotokolle mit ausgefülltem Tages-Check, Arbeitszeiten mit Vermerken und
+Korrekturen, Eingangsrechnungen mit Fälligkeiten, überfälligen Posten und einer
+importierten XRechnung, Kalkulationen mit eigener Rezeptur je Gericht, zwei
+abgeschlossene Runden — eine mit erfasstem Wareneingang, eine noch offene —,
+Lieferantenzuschläge, Stammbedarf-Vorlage sowie Gäste mit Bestellhistorie,
+Notizen und Stempelkarte.
+
+Die öffentliche Demo legt darüber hinaus die Plattformdaten an
+(`scripts/seed-demo-platform.ts`): Ladenanträge in allen Zuständen, ein
+Ladenverzeichnis mit aktiven, pausierten und abgelehnten Betrieben, Domain-
+Wünsche, Einladungen, Supporteinsätze und eine Auditspur. Sechs Nachbarläden
+melden ihren Bedarf in dieselbe Sammelrunde — ohne sie bliebe die Gruppenmenge
+bei den zwei Demo-Betrieben stehen und jede ausgewiesene Ersparnis wäre null
+oder negativ.
+
+Alle Kennungen sind fest, sodass ein erneuter Lauf die Daten auffrischt, statt
+sie zu verdoppeln.
 
 Alternativ bleibt die Compose-Datei mit Podman nutzbar:
 

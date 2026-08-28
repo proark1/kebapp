@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
+import { auditActionLabel, auditResultLabel } from "@/lib/audit-labels";
 import { requirePlatformAdminPage } from "@/server/auth/page-guards";
 import { listAuditEvents } from "@/server/audit/queries";
 import { listSupportAdministration } from "@/server/support/service";
 
 export const metadata: Metadata = { title: "Auditprotokoll" };
 
-const actionLabels: Record<string, string> = {
-  SUPPORT_ASSIGNED: "Support zugewiesen",
-  SUPPORT_ASSIGNMENT_ENDED: "Support beendet",
-  SUPPORT_DEMAND_ITEM_ADDED: "Bedarfsposition ergänzt",
-  SUPPORT_DEMAND_ITEM_REMOVED: "Bedarfsposition entfernt",
-  SUPPORT_DEMAND_QUANTITY_UPDATED: "Bedarfsmenge geändert",
-  SUPPORT_STOREFRONT_UPDATED: "Ladenwebsite geändert",
-};
 
 export default async function AuditPage({
   searchParams,
@@ -75,7 +68,7 @@ export default async function AuditPage({
                 </time>
                 <div>
                   <span>{event.storeName ?? "Plattform"}</span>
-                  <h2>{actionLabels[event.action] ?? event.action}</h2>
+                  <h2>{auditActionLabel(event.action)}</h2>
                   <p>{event.reason ?? "Ohne gesonderte Begründung"}</p>
                 </div>
                 <div className="audit-ledger__actor">
@@ -83,7 +76,7 @@ export default async function AuditPage({
                   <small>{event.objectType}{event.objectId ? ` · ${event.objectId}` : ""}</small>
                 </div>
                 <span className={`audit-result audit-result--${event.result.toLowerCase()}`}>
-                  {event.result}
+                  {auditResultLabel(event.result)}
                 </span>
               </li>
             ))}

@@ -577,6 +577,7 @@ describe.sequential("tenant isolation through PostgreSQL RLS", () => {
 
     expect(functions.rows.map((row) => row.function_name)).toEqual([
       "admin_active_organizations",
+      "admin_domain_requests",
       "admin_organization_name",
       "admin_store_directory",
       "can_accept_employee_invitation",
