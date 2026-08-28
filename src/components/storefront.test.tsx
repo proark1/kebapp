@@ -18,6 +18,32 @@ describe("Storefront", () => {
     expect(screen.queryByText("Vor Ort zubereitet")).not.toBeInTheDocument();
   });
 
+  // Der Hinweis "Kontaktdaten und Speisekarte sind Beispieldaten" hing
+  // frueher an `preview` und erschien damit genau verkehrt herum: auf
+  // jeder echten Ladenseite, nie in der Editorvorschau. Der Laden hat
+  // seine eigenen Preise als erfunden gekennzeichnet.
+  const demoNote = /Kontaktdaten und Speisekarte sind Beispieldaten/;
+
+  it("keeps the demo note off a real store page", () => {
+    render(<Storefront profile={demoStoreProfile} publicSlug="ocakbasi-rheydt" />);
+
+    expect(screen.queryByText(demoNote)).not.toBeInTheDocument();
+  });
+
+  it("shows the demo note only in a public demo installation", () => {
+    render(
+      <Storefront demoMode profile={demoStoreProfile} publicSlug="ocakbasi-rheydt" />,
+    );
+
+    expect(screen.getByText(demoNote)).toBeInTheDocument();
+  });
+
+  it("hides the demo note in the editor preview even in a demo installation", () => {
+    render(<Storefront demoMode preview profile={demoStoreProfile} />);
+
+    expect(screen.queryByText(demoNote)).not.toBeInTheDocument();
+  });
+
   it("links to legal routes and offers direct WhatsApp ordering", () => {
     render(<Storefront profile={demoStoreProfile} publicSlug="ocakbasi-rheydt" />);
 
