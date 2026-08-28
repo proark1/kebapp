@@ -378,6 +378,10 @@ export const incomingInvoices = pgTable(
     netCents19: integer("net_cents_19").default(0).notNull(),
     status: invoiceStatus("status").default("OFFEN").notNull(),
     eInvoiceXml: text("e_invoice_xml"),
+    // Der abfotografierte Beleg als data-URL, wie schon Logo und
+    // Headerbild der Ladenseite. Aufbewahrungspflicht: der Beleg gehoert
+    // zur Buchung, nicht nur die daraus gelesenen Zahlen.
+    receiptImage: text("receipt_image"),
     sourceFileName: varchar("source_file_name", { length: 255 }),
     category: invoiceCategory("category").default("SONSTIGES").notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),

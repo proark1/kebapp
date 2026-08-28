@@ -13,6 +13,11 @@ umfasst:
 - Einladungen für Mitarbeitende
 - Website-Editor und veröffentlichbare Ladenwebsite
 - Gäste mit Stempelkarte, Bestellhistorie und Plattformimport (`/app/gaeste`)
+- Belegscan in der Buchhaltung (`/app/buchhaltung`): Lieferantenrechnung
+  abfotografieren, Texterkennung liest Lieferant, Nummer, Datum, Fälligkeit und
+  die Nettobeträge je Steuersatz; das Foto bleibt als Nachweis am Beleg
+- Zeiterfassung mit Ladenstandort (`/app/zeit`): Stempeln am Telefon vermerkt
+  den Abstand zum Laden, auf Wunsch der Inhaberschaft nur noch vor Ort
 - PostgreSQL-Mandantentrennung mit Row Level Security und Auditereignissen
 
 Die Ladenwebsite bleibt eine Informationsseite mit WhatsApp-Übergabe. Warenkorb,
@@ -167,6 +172,31 @@ pnpm infra:logs
 pnpm infra:down
 ```
 
+## Belegscan und Standort
+
+Die Texterkennung der Belege läuft mit `tesseract.js` **im eigenen Server**.
+Es gibt keinen Fremdanbieter und keinen API-Schlüssel; die Fotos der
+Lieferantenrechnungen verlassen die Installation nicht. Das deutsche
+Sprachmodell liegt unter `tessdata/deu.traineddata` im Repository, weil
+`tesseract.js` es sonst beim ersten Scan von einem fremden CDN nachlädt — in
+einem Container ohne ausgehende Verbindung bliebe der erste Belegscan sonst
+hängen. Das Dockerfile kopiert das Verzeichnis ins Laufzeitabbild; ausgeliefert
+wird es nicht, es liegt bewusst nicht unter `public/`.
+
+Die Feldextraktion aus dem erkannten Text steht in `src/lib/invoice-extraction.ts`
+und ist ohne Bild und ohne Datenbank prüfbar (`src/lib/invoice-extraction.test.ts`).
+Erkannte Werte landen im Formular und sind dort als „erkannt“ markiert —
+gespeichert wird erst, wenn jemand sie bestätigt.
+
+Beim Stempeln speichert die Zeiterfassung **nur den Abstand zum Laden und die
+Messgenauigkeit**, nie die Koordinate selbst: die Frage, die ein Zeitnachweis
+beantworten muss, lautet „war die Person im Laden?“ — wo jemand sonst war,
+gehört nicht in den Betrieb (Datenminimierung, Art. 5 DSGVO). Der Ladenstandort
+wird von der Inhaberschaft unter `/app/zeit` gesetzt. Die Erzwingung
+(„Stempeln nur am Laden“) ist standardmäßig **aus**; eine Ablehnung kostet im
+Zweifel Arbeitszeit. `Permissions-Policy` erlaubt `geolocation=(self)`, Kamera
+und Mikrofon bleiben gesperrt.
+
 ## Abhängigkeiten und Freigabehinweise
 
 Geprüft am 22. August 2026:
@@ -177,7 +207,11 @@ pnpm audit --prod
 ```
 
 Der Lizenzbestand besteht überwiegend aus MIT-, Apache-, BSD-, ISC-, MPL- und
-OFL-Lizenzen. Die Windows-Binärdistribution von Sharp wird als
+OFL-Lizenzen. Neu hinzugekommen sind `tesseract.js` (Apache-2.0) samt
+`tesseract.js-core` und das eingecheckte Sprachmodell
+`tessdata/deu.traineddata` (Apache-2.0, aus `tessdata_fast` des
+Tesseract-Projekts); beide sind vor einer kommerziellen Distribution in die
+Drittanbieterhinweise aufzunehmen. Die Windows-Binärdistribution von Sharp wird als
 `Apache-2.0 AND LGPL-3.0-or-later` ausgewiesen und muss vor einer kommerziellen
 Distribution zusammen mit den übrigen Drittanbieterhinweisen fachkundig
 geprüft werden.

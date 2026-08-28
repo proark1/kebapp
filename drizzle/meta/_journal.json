@@ -162,6 +162,20 @@
       "when": 1787876551154,
       "tag": "0022_admin_domain_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1787881648865,
+      "tag": "0023_time_geofence",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787882464675,
+      "tag": "0024_receipt_image",
+      "breakpoints": true
     }
   ]
 }

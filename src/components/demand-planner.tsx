@@ -617,10 +617,21 @@ export function DemandPlanner({
 
             <div className="demand-confirm-modal__warning">
               <ShieldCheck aria-hidden="true" size={19} />
-              <p>
-                <strong>In dieser öffentlichen Demo entsteht keine echte Bestellung.</strong>
-                Die Bestätigung sperrt ausschließlich die Beispieldaten in diesem Ladenkonto.
-              </p>
+              {demoMode ? (
+                <p>
+                  <strong>
+                    In dieser öffentlichen Demo entsteht keine echte Bestellung.
+                  </strong>{" "}
+                  Die Bestätigung sperrt ausschließlich die Beispieldaten in
+                  diesem Ladenkonto.
+                </p>
+              ) : (
+                <p>
+                  <strong>Diese Menge ist verbindlich.</strong> Nach dem
+                  Bestellschluss lässt sie sich nicht mehr ändern und geht so in
+                  die Sammelbestellung deiner Region ein.
+                </p>
+              )}
             </div>
 
             <div className="modal-card__actions">
@@ -637,7 +648,9 @@ export function DemandPlanner({
                   className="button button--primary"
                   pendingLabel="Wird bestätigt …"
                 >
-                  Jetzt für die Demo-Gruppenmenge bestätigen
+                  {demoMode
+                    ? "Jetzt für die Demo-Gruppenmenge bestätigen"
+                    : "Verbindlich bestätigen"}
                 </TextSubmitButton>
               </form>
             </div>

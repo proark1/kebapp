@@ -26,10 +26,12 @@ import type { ActiveOrganizationDTO } from "@/server/organizations/organization-
 
 // `tabbar: false` heisst: erscheint nicht in der schmalen Tableiste auf dem
 // Telefon. In der Seitenleiste steht immer der vollstaendige Bereich.
+// `tabLabel` ist die Kurzform fuer die Tableiste: dort teilen sich fuenf
+// Eintraege 375 px, "Wareneingang" passt in keine dieser Spalten.
 const primaryNavigation = [
   { href: "/app", label: "Übersicht", icon: LayoutDashboard },
   { href: "/app/einkauf", label: "Einkauf", icon: PackageOpen },
-  { href: "/app/eingang", label: "Wareneingang", icon: PackageCheck },
+  { href: "/app/eingang", label: "Wareneingang", tabLabel: "Eingang", icon: PackageCheck },
   { href: "/app/gaeste", label: "Gäste", icon: Users },
   { href: "/app/hygiene", label: "Hygiene", icon: ShieldCheck, tabbar: false },
   { href: "/app/kalkulation", label: "Kalkulation", icon: Calculator, tabbar: false },
@@ -223,7 +225,7 @@ export function AppShell({
               aria-current={active ? "page" : undefined}
             >
               <Icon size={20} aria-hidden="true" />
-              <span>{item.label}</span>
+              <span>{"tabLabel" in item ? item.tabLabel : item.label}</span>
             </Link>
           );
         })}

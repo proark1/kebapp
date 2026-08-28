@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, desc, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
+import { evaluateGeofence, type GeofenceVerdict } from "@/lib/geofence";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";
 import { memberships, timeEntries, user } from "@/server/db/schema";
@@ -9,6 +10,10 @@ import {
   type TenantTransaction,
   withTenantContext,
 } from "@/server/db/tenant-context";
+import {
+  type PositionFixInput,
+  readGeofence,
+} from "@/server/personnel/geofence";
 import { procurementIdSchema } from "@/server/procurement/validation";
 import { authorizeOperationalMutation } from "@/server/support/service";
 
@@ -31,6 +36,49 @@ export class TimeEntryNotFoundError extends Error {
     super("Der Zeiteintrag wurde nicht gefunden.");
     this.name = "TimeEntryNotFoundError";
   }
+}
+
+/**
+ * Nur im scharfgestellten Geofence: der Laden verlangt, dass vor Ort
+ * gestempelt wird, und das Telefon meldet einen Standort ausserhalb des
+ * Radius - oder gar keinen.
+ */
+export class OutsideGeofenceError extends Error {
+  readonly verdict: GeofenceVerdict;
+
+  constructor(verdict: GeofenceVerdict) {
+    super("Das Stempeln ist nur am Laden erlaubt.");
+    this.name = "OutsideGeofenceError";
+    this.verdict = verdict;
+  }
+}
+
+/**
+ * Vergleicht den gemeldeten Standort mit dem Ladenradius und liefert
+ * zurueck, was am Zeiteintrag gespeichert wird: Abstand und
+ * Messgenauigkeit, nie die Koordinate selbst.
+ */
+async function resolvePosition(
+  transaction: TenantTransaction,
+  input: { organizationId: string; position?: PositionFixInput | null },
+): Promise<{ accuracyMeters: number | null; distanceMeters: number | null }> {
+  const fence = await readGeofence(transaction, input.organizationId);
+  const verdict = evaluateGeofence(fence, input.position ?? null);
+
+  if (fence?.enforced && verdict.kind !== "INSIDE") {
+    throw new OutsideGeofenceError(verdict);
+  }
+
+  if (verdict.kind === "INSIDE" || verdict.kind === "OUTSIDE") {
+    return {
+      accuracyMeters: verdict.accuracyMeters,
+      distanceMeters: verdict.distanceMeters,
+    };
+  }
+
+  // Ohne hinterlegten Ladenstandort gibt es keinen Abstand, wohl aber
+  // eine Messgenauigkeit - die alleine sagt nichts und wird verworfen.
+  return { accuracyMeters: null, distanceMeters: null };
 }
 
 type PersonnelActor = { userId: string };
@@ -85,6 +133,7 @@ export async function clockIn(input: {
   database?: KebappDatabase;
   now?: Date;
   organizationId: string;
+  position?: PositionFixInput | null;
 }): Promise<{ entryId: string }> {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const now = input.now ?? new Date();
@@ -112,11 +161,18 @@ export async function clockIn(input: {
         throw new TimeEntryAlreadyOpenError();
       }
 
+      const position = await resolvePosition(transaction, {
+        organizationId,
+        position: input.position,
+      });
+
       const [created] = await transaction
         .insert(timeEntries)
         .values({
           organizationId,
+          startedAccuracyMeters: position.accuracyMeters,
           startedAt: now,
+          startedDistanceMeters: position.distanceMeters,
           userId: input.actor.userId,
         })
         .returning({ id: timeEntries.id });
@@ -131,6 +187,7 @@ export async function clockOut(input: {
   note?: string;
   now?: Date;
   organizationId: string;
+  position?: PositionFixInput | null;
 }): Promise<void> {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const now = input.now ?? new Date();
@@ -143,10 +200,17 @@ export async function clockOut(input: {
         allowedMembershipRoles: ["OWNER", "EMPLOYEE"],
         organizationId,
       });
+      const position = await resolvePosition(transaction, {
+        organizationId,
+        position: input.position,
+      });
+
       const [closed] = await transaction
         .update(timeEntries)
         .set({
+          endedAccuracyMeters: position.accuracyMeters,
           endedAt: now,
+          endedDistanceMeters: position.distanceMeters,
           ...(input.note ? { note: input.note.slice(0, 300) } : {}),
         })
         .where(
@@ -173,10 +237,14 @@ export async function listRecentTimeEntries(input: {
 }): Promise<
   Array<{
     durationMinutes: number | null;
+    endedAccuracyMeters: number | null;
     endedAt: Date | null;
+    endedDistanceMeters: number | null;
     entryId: string;
     note: string | null;
+    startedAccuracyMeters: number | null;
     startedAt: Date;
+    startedDistanceMeters: number | null;
     userName: string;
     userId: string;
     corrected: boolean;
@@ -201,10 +269,14 @@ export async function listRecentTimeEntries(input: {
       const rows = await transaction
         .select({
           durationMinutes: sql<number | null>`case when ${timeEntries.endedAt} is null then null else (extract(epoch from (${timeEntries.endedAt} - ${timeEntries.startedAt})) / 60)::int end`,
+          endedAccuracyMeters: timeEntries.endedAccuracyMeters,
           endedAt: timeEntries.endedAt,
+          endedDistanceMeters: timeEntries.endedDistanceMeters,
           entryId: timeEntries.id,
           note: timeEntries.note,
+          startedAccuracyMeters: timeEntries.startedAccuracyMeters,
           startedAt: timeEntries.startedAt,
+          startedDistanceMeters: timeEntries.startedDistanceMeters,
           userName: user.name,
           userId: timeEntries.userId,
           correctedBy: timeEntries.correctedByUserId,
@@ -224,10 +296,14 @@ export async function listRecentTimeEntries(input: {
       return rows.map((row) => ({
         corrected: row.correctedBy !== null,
         durationMinutes: row.durationMinutes,
+        endedAccuracyMeters: row.endedAccuracyMeters,
         endedAt: row.endedAt,
+        endedDistanceMeters: row.endedDistanceMeters,
         entryId: row.entryId,
         note: row.note,
+        startedAccuracyMeters: row.startedAccuracyMeters,
         startedAt: row.startedAt,
+        startedDistanceMeters: row.startedDistanceMeters,
         userName: row.userName,
         userId: row.userId,
       }));
@@ -338,7 +414,9 @@ export async function exportableEntries(input: {
   Array<{
     durationMinutes: number;
     endedAt: Date;
+    endedDistanceMeters: number | null;
     startedAt: Date;
+    startedDistanceMeters: number | null;
     userName: string;
   }>
 > {
@@ -358,7 +436,9 @@ export async function exportableEntries(input: {
       const rows = await transaction
         .select({
           endedAt: timeEntries.endedAt,
+          endedDistanceMeters: timeEntries.endedDistanceMeters,
           startedAt: timeEntries.startedAt,
+          startedDistanceMeters: timeEntries.startedDistanceMeters,
           userName: user.name,
         })
         .from(timeEntries)
@@ -379,7 +459,9 @@ export async function exportableEntries(input: {
           (row.endedAt!.getTime() - row.startedAt.getTime()) / 60_000,
         ),
         endedAt: row.endedAt!,
+        endedDistanceMeters: row.endedDistanceMeters,
         startedAt: row.startedAt,
+        startedDistanceMeters: row.startedDistanceMeters,
         userName: row.userName,
       }));
     },

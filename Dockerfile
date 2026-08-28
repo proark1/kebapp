@@ -58,6 +58,9 @@ RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 --ingroup nodejs nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# Sprachdaten der Belegtexterkennung. Nicht unter public/, damit sie
+# nicht oeffentlich ausgeliefert werden - siehe tessdata/README.md.
+COPY --from=builder --chown=nextjs:nodejs /app/tessdata ./tessdata
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 

@@ -7,6 +7,7 @@ import "server-only";
 
 import { and, desc, eq, gte } from "drizzle-orm";
 import { z } from "zod";
+import { salesRowSchema, type SalesRowInput } from "@/lib/sales-csv";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";
 import { salesDaily } from "@/server/db/schema";
@@ -16,59 +17,11 @@ import { authorizeOperationalMutation } from "@/server/support/service";
 
 type PersonnelActor = { userId: string };
 
-const euroSchema = z.coerce.number().finite().min(0).max(100_000);
-
-export const salesRowSchema = z.object({
-  businessDate: z.iso.date(),
-  guestCount: z.coerce.number().int().min(0).max(10_000).optional(),
-  netSalesCents: z.coerce.number().int().min(0),
-});
-
-export type SalesRowInput = z.input<typeof salesRowSchema>;
-
-export function parseSalesCsv(csvText: string): SalesRowInput[] {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return [];
-
-  const rows: SalesRowInput[] = [];
-  for (const [index, line] of lines.entries()) {
-    const cells = line.split(/[;,\t]/).map((cell) => cell.trim());
-    if (index === 0 && /datum/i.test(cells[0] ?? "")) continue;
-    const date = z.iso.date().safeParse(cells[0]);
-    if (!date.success) {
-      throw new SalesCsvError(`Zeile ${index + 1}: ungültiges Datum.`);
-    }
-    const euroRaw = (cells[1] ?? "").replace(/[€\s]/g, "").replace(",", ".");
-    const euro = euroSchema.safeParse(Number(euroRaw));
-    if (!euro.success) {
-      throw new SalesCsvError(`Zeile ${index + 1}: ungültiger Umsatz.`);
-    }
-    let guestCount: number | undefined;
-    if (cells[2]) {
-      const guests = z.coerce.number().int().min(0).max(10_000).safeParse(cells[2]);
-      if (!guests.success) {
-        throw new SalesCsvError(`Zeile ${index + 1}: ungültige Gästezahl.`);
-      }
-      guestCount = guests.data;
-    }
-    rows.push({
-      businessDate: date.data,
-      guestCount,
-      netSalesCents: Math.round(euro.data * 100),
-    });
-  }
-  return rows;
-}
-
-export class SalesCsvError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "SalesCsvError";
-  }
-}
+// Der Parser liegt in src/lib, weil er nichts vom Server braucht und dort
+// ohne Datenbank pruefbar ist - dieselbe Trennung wie bei platform-import.
+// Hier nur weitergereicht, damit die bestehenden Aufrufer unveraendert
+// bleiben.
+export { parseSalesCsv, SalesCsvError } from "@/lib/sales-csv";
 
 export async function upsertDailySales(input: {
   actor: PersonnelActor;

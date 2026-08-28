@@ -1,0 +1,1 @@
+ALTER TABLE "incoming_invoices" ADD COLUMN "receipt_image" text;

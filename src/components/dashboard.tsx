@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  CalendarClock,
   Check,
   CircleAlert,
   Clock3,
@@ -8,7 +7,6 @@ import {
   Globe2,
   PackageCheck,
   ReceiptText,
-  Sparkles,
   TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +43,15 @@ const deadlineLabel = new Intl.DateTimeFormat("de-DE", {
   timeZone: "Europe/Berlin",
 });
 
+/** Aus den erfassten Eingangsrechnungen gerechnet, nicht geschaetzt. */
+export type DashboardInvoiceSummary = {
+  openCount: number;
+  openGrossEuros: number;
+  overdueCount: number;
+};
+
 type DashboardProps = {
+  invoices: DashboardInvoiceSummary;
   operatorName: string;
   organization: ActiveOrganizationDTO;
   planning: DemandPlanningData | null;
@@ -53,6 +59,7 @@ type DashboardProps = {
 };
 
 export function Dashboard({
+  invoices,
   operatorName,
   organization,
   planning,
@@ -63,6 +70,9 @@ export function Dashboard({
   const roundSnapshot = planning
     ? getBuyingRoundSnapshot(planning.round, planning.items)
     : null;
+  // Die Aufgabenliste zaehlt sich selbst. Vorher stand dort fest "2 offen",
+  // unabhaengig davon, was tatsaechlich zu tun war.
+  const openTaskCount = 1 + (invoices.overdueCount > 0 ? 1 : 0);
 
   return (
     <div className="page-stack">
@@ -71,9 +81,9 @@ export function Dashboard({
           <span className="eyebrow">{todayLabel}</span>
           <h1>{daytimeGreeting(new Date())}, {firstName}.</h1>
           <p>
-            {canManageWebsite
-              ? "Zwei Dinge kannst du heute direkt erledigen."
-              : "Dein Ladenbereich ist bereit für den nächsten Bedarf."}
+            {openTaskCount === 1
+              ? "Eine Sache wartet heute auf dich."
+              : `${openTaskCount} Dinge kannst du heute direkt erledigen.`}
           </p>
         </div>
         <div className="header-actions">
@@ -95,27 +105,6 @@ export function Dashboard({
             <p>Dein Laden wird automatisch informiert, sobald sie geöffnet ist.</p>
           </article>
         )}
-
-        <article className="decision-card">
-          <div className="decision-card__icon">
-            <Sparkles size={20} aria-hidden="true" />
-          </div>
-          <div>
-            <span className="eyebrow">Pilotvorschau · Kebapp-Vorschlag</span>
-            <h2>14 kg Kalb ergänzen?</h2>
-            <p>
-              Freitage lagen zuletzt 11 % über deinem Plan. Mit 14 kg Reserve
-              sinkt das Risiko einer Nachbestellung.
-            </p>
-          </div>
-          <div className="decision-card__actions">
-            <Link className="button button--primary" href="/app/einkauf">
-              Vorschlag prüfen
-              <ArrowRight size={17} aria-hidden="true" />
-            </Link>
-          </div>
-          <span className="confidence-note">Beispielprognose · noch ohne Kassendaten</span>
-        </article>
       </section>
 
       <section className="metric-grid" aria-label="Kennzahlen">
@@ -123,7 +112,7 @@ export function Dashboard({
           <div className="metric-card__icon metric-card__icon--green">
             <TrendingDown size={20} aria-hidden="true" />
           </div>
-          <span className="metric-card__label">Diese Sammelrunde · Beispieldaten</span>
+          <span className="metric-card__label">Diese Sammelrunde</span>
           <strong>
             {roundSnapshot ? formatCurrency(roundSnapshot.estimatedSavings) : "—"}
           </strong>
@@ -141,9 +130,15 @@ export function Dashboard({
           <div className="metric-card__icon metric-card__icon--red">
             <ReceiptText size={20} aria-hidden="true" />
           </div>
-          <span className="metric-card__label">Offene Belege · Pilotvorschau</span>
-          <strong>4</strong>
-          <small>Davon einer mit Preisabweichung</small>
+          <span className="metric-card__label">Offene Belege</span>
+          <strong>{invoices.openCount}</strong>
+          <small>
+            {invoices.openCount === 0
+              ? "Alle erfassten Rechnungen sind bezahlt"
+              : invoices.overdueCount > 0
+                ? `${formatCurrency(invoices.openGrossEuros)} offen · ${invoices.overdueCount} überfällig`
+                : `${formatCurrency(invoices.openGrossEuros)} offen`}
+          </small>
         </article>
       </section>
 
@@ -154,9 +149,7 @@ export function Dashboard({
               <span className="eyebrow">Heute</span>
               <h2>Deine Aufgaben</h2>
             </div>
-            <span className="count-badge">
-              {canManageWebsite ? "2 offen" : "1 offen"}
-            </span>
+            <span className="count-badge">{openTaskCount} offen</span>
           </div>
           <ul className="task-list">
             <li>
@@ -181,16 +174,20 @@ export function Dashboard({
                 <ArrowRight size={18} aria-hidden="true" />
               </Link>
             </li>
-            {canManageWebsite ? (
+            {invoices.overdueCount > 0 ? (
               <li>
-                <span className="task-list__status">
-                  <CalendarClock size={18} aria-hidden="true" />
+                <span className="task-list__status task-list__status--urgent">
+                  <ReceiptText size={18} aria-hidden="true" />
                 </span>
                 <div>
-                  <strong>Öffnungszeiten prüfen</strong>
-                  <span>Feiertag in 9 Tagen</span>
+                  <strong>
+                    {invoices.overdueCount === 1
+                      ? "Eine Rechnung ist überfällig"
+                      : `${invoices.overdueCount} Rechnungen sind überfällig`}
+                  </strong>
+                  <span>Fälligkeitsdatum überschritten</span>
                 </div>
-                <Link href="/app/website" aria-label="Öffnungszeiten öffnen">
+                <Link href="/app/buchhaltung" aria-label="Buchhaltung öffnen">
                   <ArrowRight size={18} aria-hidden="true" />
                 </Link>
               </li>

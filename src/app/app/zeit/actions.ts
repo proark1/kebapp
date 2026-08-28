@@ -5,9 +5,16 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import {
+  deleteStoreGeofence,
+  geofenceInputSchema,
+  readPositionFix,
+  saveStoreGeofence,
+} from "@/server/personnel/geofence";
+import {
   clockIn,
   clockOut,
   NoOpenTimeEntryError,
+  OutsideGeofenceError,
   TimeEntryAlreadyOpenError,
   TimeEntryNotFoundError,
   correctTimeEntry,
@@ -18,16 +25,20 @@ function value(formData: FormData, name: string): string {
   return typeof candidate === "string" ? candidate : "";
 }
 
-export async function clockInAction(): Promise<void> {
+export async function clockInAction(formData: FormData): Promise<void> {
   const { actor, organization } = await requireActiveOrganizationPage("/app/zeit");
   try {
     await clockIn({
       actor,
       organizationId: organization.organizationId,
+      position: readPositionFix(formData),
     });
   } catch (error) {
     if (error instanceof TimeEntryAlreadyOpenError) {
       redirect("/app/zeit?meldung=laeuft-bereits");
+    }
+    if (error instanceof OutsideGeofenceError) {
+      redirect("/app/zeit?meldung=ausserhalb");
     }
     throw error;
   }
@@ -45,10 +56,14 @@ export async function clockOutAction(
       actor,
       note: value(formData, "note") || undefined,
       organizationId: organization.organizationId,
+      position: readPositionFix(formData),
     });
   } catch (error) {
     if (error instanceof NoOpenTimeEntryError) {
       redirect("/app/zeit?meldung=keine-offene");
+    }
+    if (error instanceof OutsideGeofenceError) {
+      redirect("/app/zeit?meldung=ausserhalb");
     }
     throw error;
   }
@@ -97,4 +112,36 @@ export async function correctTimeEntryAction(
   }
   revalidatePath("/app/zeit");
   redirect("/app/zeit?meldung=korrigiert");
+}
+
+export async function saveGeofenceAction(formData: FormData): Promise<void> {
+  const { actor, organization } = await requireActiveOrganizationPage("/app/zeit");
+
+  if (value(formData, "intent") === "entfernen") {
+    await deleteStoreGeofence({
+      actor,
+      organizationId: organization.organizationId,
+    });
+    revalidatePath("/app/zeit");
+    redirect("/app/zeit?meldung=standort-entfernt");
+  }
+
+  const parsed = geofenceInputSchema.safeParse({
+    enforced: formData.get("enforced") === "on",
+    label: value(formData, "label"),
+    latitude: value(formData, "latitude").replace(",", "."),
+    longitude: value(formData, "longitude").replace(",", "."),
+    radiusMeters: value(formData, "radiusMeters"),
+  });
+  if (!parsed.success) {
+    redirect("/app/zeit?meldung=standort-ungueltig");
+  }
+
+  await saveStoreGeofence({
+    actor,
+    geofence: parsed.data,
+    organizationId: organization.organizationId,
+  });
+  revalidatePath("/app/zeit");
+  redirect("/app/zeit?meldung=standort-gespeichert");
 }

@@ -8537,3 +8537,1256 @@ a {
     width: max-content;
   }
 }
+
+/* ===================================================================
+   === Raster und Abstaende im Betriebsbereich ===
+   Bis hierher trug jede Seite ihre Abstaende selbst: `.panel` hatte
+   weder Innenabstand noch Aussenabstand, die Abschnitte klebten
+   aneinander und der Inhalt lag buendig auf der Panelkante. Ab hier
+   gilt eine gemeinsame Stufenleiter. Alles ist auf die drei Schalen
+   des Betriebsbereichs begrenzt - Landingpage, Anmeldung und
+   Ladenseite sprechen andere Leute an und bleiben unberuehrt.
+   =================================================================== */
+
+.app-frame,
+.admin-shell,
+.support-shell {
+  /* Eine Leiter statt frei gewaehlter Pixelwerte. Alles darunter ist
+     ein Vielfaches von 4. */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Innenabstand eines Panels und Abstand zwischen zwei Abschnitten.
+     Beide wachsen mit der Fensterbreite, damit ein 27-Zoll-Monitor
+     nicht dieselbe Enge zeigt wie ein Telefon. */
+  --panel-inset: clamp(18px, 1.6vw, 26px);
+  --stack-gap: clamp(16px, 1.6vw, 24px);
+}
+
+/* --- Seitenrhythmus -------------------------------------------------
+   Die drei Seitenhuellen werden zu echten Stapeln. Damit hat jeder
+   Abschnitt denselben Abstand zum naechsten, ohne dass eine Seite
+   dafuer eigene Margen setzen muss. */
+:is(.page-stack, .admin-page, .support-page) {
+  display: grid;
+  align-content: start;
+  gap: var(--stack-gap);
+}
+
+/* Rasterspalten sind standardmaessig `auto` und damit mindestens so
+   breit wie ihr Inhalt - eine breite Tabelle schiebt sonst die ganze
+   Seite ueber den Rand. */
+:is(.page-stack, .admin-page, .support-page) > * {
+  min-width: 0;
+}
+
+/* Die Einzelmargen von frueher wuerden sich jetzt zum Rasterabstand
+   addieren. */
+.page-stack > .page-header,
+.page-stack > .team-filter,
+.page-stack > .demand-panel,
+.page-stack > .dashboard-grid,
+.page-stack > .metric-grid,
+.admin-page > .admin-page__header,
+.admin-page > .rounds-create-panel,
+.admin-page > .support-admin-grid,
+.support-page > .support-page__header,
+.support-page > .support-store-header {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Der Kopfbereich traegt eine Trennlinie; die braucht Luft zwischen
+   Linie und erstem Abschnitt, sonst wirkt sie als Rahmen des
+   folgenden Panels. */
+.admin-page > .admin-page__header,
+.support-page > .support-page__header,
+.support-page > .support-store-header {
+  padding-bottom: var(--space-lg);
+}
+
+/* --- Panels ---------------------------------------------------------
+   `.panel` liefert ab jetzt selbst den Innenabstand, und zwar ueber
+   die direkten Kinder. Warum nicht am Panel selbst: Tabellen und
+   Listen sollen randlos bis an die Kante laufen - mit Polsterung am
+   Panel liesse sich das nicht mehr zuruecknehmen. */
+.app-frame .panel,
+.admin-shell .panel,
+.support-shell .panel {
+  --panel-pad: var(--panel-inset);
+}
+
+.app-frame .panel > *,
+.admin-shell .panel > *,
+.support-shell .panel > * {
+  padding-right: var(--panel-pad);
+  padding-left: var(--panel-pad);
+}
+
+.app-frame .panel > :first-child,
+.admin-shell .panel > :first-child,
+.support-shell .panel > :first-child {
+  padding-top: var(--panel-pad);
+}
+
+.app-frame .panel > :last-child,
+.admin-shell .panel > :last-child,
+.support-shell .panel > :last-child {
+  padding-bottom: var(--panel-pad);
+}
+
+/* Zwischen Panelkopf und Inhalt derselbe Abstand wie zum Rand. */
+.app-frame .panel > .panel__header,
+.admin-shell .panel > .panel__header,
+.support-shell .panel > .panel__header {
+  padding-bottom: var(--panel-pad);
+}
+
+/* Randlos: Tabellen und Listen ziehen ihre Trennlinien bis an die
+   Panelkante. Steht am Ende, damit es die Regeln oben ueberschreibt. */
+.app-frame .panel > :is(.demand-table-wrap, .task-list, .request-file, .audit-ledger),
+.admin-shell .panel > :is(.demand-table-wrap, .task-list, .request-file, .audit-ledger),
+.support-shell .panel > :is(.demand-table-wrap, .task-list, .request-file, .audit-ledger) {
+  padding: 0;
+}
+
+/* Panels, die ihren Innenabstand schon selbst mitbringen. */
+.app-frame :is(.task-panel, .website-status-card, .empty-state, .clock-card, .demand-panel),
+.admin-shell :is(.rounds-create-panel, .rounds-facts, .empty-state, .demand-panel),
+.support-shell :is(.empty-state, .demand-panel) {
+  --panel-pad: 0px;
+}
+
+/* Ist die Tabelle selbst das Panel (Wareneingang), doppelt sich ihre
+   obere Trennlinie mit dem Panelrahmen. */
+.app-frame .demand-table-wrap.panel,
+.admin-shell .demand-table-wrap.panel,
+.support-shell .demand-table-wrap.panel {
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+}
+
+/* Erste und letzte Tabellenzeile sollen nicht gegen den Panelrahmen
+   stossen. */
+.app-frame .panel > .demand-table-wrap > .demand-table tr:last-child td,
+.admin-shell .panel > .demand-table-wrap > .demand-table tr:last-child td,
+.support-shell .panel > .demand-table-wrap > .demand-table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* --- Schriftgroessen ------------------------------------------------
+   Die Titel stammen aus der Marketingebene: bis 70 px im Pruefstisch,
+   62 px im Support, 54 px im Ladenbereich. Auf einer Arbeitsflaeche,
+   auf der jemand acht Stunden Zahlen eintraegt, kostet das nur Platz
+   und schreit den Inhalt nieder. Eine Stufe kleiner, dafuer klarer
+   abgesetzt vom Fliesstext. */
+.app-frame .page-header h1 {
+  font-size: clamp(27px, 2.6vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.admin-shell :is(.admin-page__header, .dossier-heading) h1,
+.support-shell :is(.support-page__header, .support-store-header) h1 {
+  font-size: clamp(28px, 2.8vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.app-frame .page-header p {
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.app-frame .panel__header h2,
+.admin-shell .panel__header h2,
+.support-shell .panel__header h2 {
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.app-frame .panel__header p,
+.admin-shell .panel__header p,
+.support-shell .panel__header p {
+  max-width: 72ch;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Der Kopfbereich des Pruefstischs reservierte 160 px Hoehe fuer eine
+   einzige Zeile Text. */
+.admin-shell .admin-page__header {
+  min-height: 0;
+  border-bottom-width: 2px;
+}
+
+.admin-shell .admin-page__header p,
+.support-shell .support-page__header p,
+.admin-shell .dossier-heading p {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+}
+
+.app-frame .eyebrow,
+.admin-shell .eyebrow,
+.support-shell .eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+/* Kennzahlblock rechts im Seitenkopf: bisher scharfkantig, 42 px hoch
+   und damit lauter als die Ueberschrift daneben. */
+.app-frame .admin-date-block,
+.admin-shell .admin-date-block,
+.support-shell .admin-date-block {
+  align-content: center;
+  justify-items: start;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+}
+
+.app-frame .admin-date-block strong,
+.admin-shell .admin-date-block strong,
+.support-shell .admin-date-block strong {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.app-frame .admin-date-block span,
+.admin-shell .admin-date-block span,
+.support-shell .admin-date-block span {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.support-shell .support-count strong {
+  font-size: 34px;
+}
+
+.app-frame .metric-card strong,
+.admin-shell .metric-card strong {
+  font-size: 27px;
+}
+
+.app-frame .metric-card small,
+.admin-shell .metric-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.app-frame .metric-card__label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* --- Tabellen -------------------------------------------------------
+   Spaltenkoepfe standen auf 9 px - kleiner als jede Fussnote und auf
+   einem Telefon nicht mehr lesbar. */
+.app-frame .demand-table th,
+.admin-shell .demand-table th,
+.support-shell .demand-table th {
+  padding-top: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+}
+
+.app-frame .demand-table td,
+.admin-shell .demand-table td,
+.support-shell .demand-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+/* Zeilen sollen beim Ueberfahren zeigen, dass sie zusammengehoeren. */
+.app-frame .demand-table tbody tr:hover,
+.admin-shell .demand-table tbody tr:hover,
+.support-shell .demand-table tbody tr:hover {
+  background: #f7f9fa;
+}
+
+/* Die letzte Spalte war pauschal auf 60 px festgenagelt - gedacht fuer
+   einen Loeschknopf. In Buchhaltung, Zeit und Wareneingang steht dort
+   ein Knopf mit Beschriftung, der damit umbrach. */
+.app-frame .demand-table th:last-child,
+.app-frame .demand-table td:last-child,
+.admin-shell .demand-table th:last-child,
+.admin-shell .demand-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.app-frame .demand-table--planner th:last-child,
+.app-frame .demand-table--planner td:last-child {
+  width: 60px;
+  white-space: normal;
+}
+
+/* --- Bedienelemente -------------------------------------------------
+   Radien und Rahmenfarben stammten noch aus der Marketingebene: 8-9 px
+   Radius neben 6 px Panelradius, gruenstichige Rahmen auf neutralem
+   Grund. */
+.app-frame :is(.button, .icon-button),
+.admin-shell :is(.button, .icon-button),
+.support-shell :is(.button, .icon-button) {
+  border-radius: var(--radius);
+}
+
+.app-frame .field :is(input, select, textarea),
+.admin-shell .field :is(input, select, textarea),
+.support-shell .field :is(input, select, textarea) {
+  padding: 10px 12px;
+  border-color: var(--line-strong);
+  border-radius: var(--radius);
+  font-size: 15px;
+}
+
+.app-frame .field :is(input, select, textarea):hover,
+.admin-shell .field :is(input, select, textarea):hover,
+.support-shell .field :is(input, select, textarea):hover {
+  border-color: #9aa5af;
+}
+
+/* Ein 3 px starker Rahmen ohne Abstand verschluckte den Feldrand. */
+.app-frame .field :is(input, select, textarea):focus,
+.admin-shell .field :is(input, select, textarea):focus,
+.support-shell .field :is(input, select, textarea):focus {
+  border-color: var(--accent-strong);
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.app-frame .field > span:first-child,
+.admin-shell .field > span:first-child,
+.support-shell .field > span:first-child {
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.app-frame .field small,
+.admin-shell .field small,
+.support-shell .field small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.app-frame :focus-visible,
+.admin-shell :focus-visible,
+.support-shell :focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* Marken und Filterknoepfe: bisher ohne Mindesthoehe, damit auf dem
+   Telefon unter der 44-px-Grenze fuer Fingertreffer. */
+.app-frame .chip,
+.admin-shell .chip,
+.support-shell .chip {
+  display: inline-flex;
+  min-height: 38px;
+  gap: var(--space-2xs);
+  align-items: center;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.app-frame .chip--active,
+.admin-shell .chip--active,
+.support-shell .chip--active {
+  color: #fff;
+  background: var(--green);
+  border-color: var(--green);
+  box-shadow: none;
+}
+
+/* --- Meldungen ------------------------------------------------------
+   `.save-message` war reiner Farbtext ohne Flaeche: eine gruene Zeile
+   zwischen zwei weissen Panels, die man ueberliest. Ab jetzt eine
+   Notiz mit Grund und Rahmen. */
+.app-frame .save-message,
+.admin-shell .save-message,
+.support-shell .save-message {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-start;
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.app-frame .save-message::before,
+.admin-shell .save-message::before,
+.support-shell .save-message::before {
+  flex: 0 0 auto;
+  font-weight: 700;
+  content: "•";
+}
+
+.app-frame .save-message--success,
+.admin-shell .save-message--success,
+.support-shell .save-message--success {
+  color: #124434;
+  background: var(--green-soft);
+  border-color: #b9cfc7;
+}
+
+.app-frame .save-message--error,
+.admin-shell .save-message--error,
+.support-shell .save-message--error {
+  color: var(--red-dark);
+  background: var(--danger-soft);
+  border-color: #ddbdb8;
+}
+
+.app-frame .save-message--neutral,
+.admin-shell .save-message--neutral,
+.support-shell .save-message--neutral {
+  color: var(--ink-soft);
+  background: #eef1f4;
+  border-color: var(--line-strong);
+}
+
+/* Im Editor- und Planerfuss steht die Meldung neben den Knoepfen und
+   bleibt dort eine Zeile Text. */
+.editor-panel__footer .save-message,
+.demand-panel__footer .save-message {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.editor-panel__footer .save-message::before,
+.demand-panel__footer .save-message::before {
+  content: none;
+}
+
+/* --- Leerzustaende --------------------------------------------------- */
+.app-frame .request-file__empty,
+.admin-shell .request-file__empty,
+.support-shell .request-file__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ===================================================================
+   === Bausteine ohne Regelsatz ===
+   Buchhaltung, Umsaetze, Kalkulation, Hygiene, Wareneingang und die
+   Sammelrunden trugen Klassen im Markup, zu denen es nie eine Regel
+   gab: .sales-manual, .sales-upload, .sales-import, .hygiene-form,
+   .receipt-form, .time-table. Die Formulare lagen deshalb ohne
+   Innenabstand direkt auf der Panelkante und der Absendeknopf stand
+   als gleich hohe Rasterzelle neben den Eingabefeldern.
+   =================================================================== */
+
+/* Erfassungsformulare im Panel. Der Absendeknopf ist eine Rasterzelle
+   wie jedes Feld - ohne Ausrichtung wuerde er sich ueber Beschriftung
+   und Eingabefeld strecken. */
+.sales-manual {
+  align-items: end;
+  padding-top: 0;
+  row-gap: var(--space-md);
+}
+
+.sales-manual > .button,
+.sales-manual > :is(button, a).button {
+  align-self: end;
+  justify-self: start;
+  width: 100%;
+  max-width: 260px;
+}
+
+.sales-import {
+  max-width: 640px;
+  row-gap: var(--space-md);
+}
+
+/* Beschrifteter Dateiknopf: das eigentliche `input[type=file]` liegt
+   in `.sr-only`, sein Fokusrahmen waere unsichtbar. */
+.sales-upload {
+  position: relative;
+  cursor: pointer;
+}
+
+.sales-upload:focus-within {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* Das Panel bringt seinen Innenabstand ueber die direkten Kinder mit;
+   ein Formular als Panel braucht dieselbe Zeilenluft wie ein Stapel. */
+.hygiene-form {
+  row-gap: var(--space-md);
+}
+
+.hygiene-form > .demand-table-wrap {
+  margin-bottom: 0;
+}
+
+/* Der Wareneingangsbogen ist kein Panel, sah aber wie eines aus -
+   ohne Flaeche, Rahmen und Innenabstand. */
+.app-frame .receipt-form {
+  padding: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  row-gap: 0;
+}
+
+.app-frame .receipt-form > :not(.demand-table-wrap) {
+  padding: 0 var(--panel-inset);
+}
+
+.app-frame .receipt-form > .demand-table-wrap {
+  border-top: 0;
+}
+
+.app-frame .receipt-form > .receipt-summary {
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-md);
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.app-frame .receipt-form > .field {
+  padding-bottom: var(--space-md);
+}
+
+.app-frame .receipt-form > .save-message {
+  margin-bottom: var(--space-md);
+}
+
+.receipt-form__footer,
+.rounds-create__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.app-frame .receipt-form > .receipt-form__footer {
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-top: 1px solid var(--line);
+  background: #f7f9fa;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* Die Zeittabelle traegt in der letzten Spalte ein Korrekturformular.
+   Ohne eigene Breite quetschte die 60-px-Regel drei Datumsfelder
+   uebereinander. */
+.time-table .correction {
+  min-width: 210px;
+}
+
+.time-table .correction form {
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.time-table .correction summary {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.time-table .correction summary:hover {
+  border-color: var(--line-strong);
+  background: #f7f9fa;
+}
+
+/* ===================================================================
+   === Telefon ===
+   Der Betriebsbereich wird im Laden bedient, nicht am Schreibtisch:
+   Wareneingang an der Rampe, Hygiene an der Kuehltheke, Zeiterfassung
+   an der Tuer. Alles hier zielt auf eine Hand am Geraet.
+   =================================================================== */
+
+@media (max-width: 760px) {
+  /* Unter 16 px zoomt iOS Safari beim Antippen eines Feldes in die
+     Seite hinein und kommt nicht von selbst zurueck. */
+  .app-frame .field :is(input, select, textarea),
+  .admin-shell .field :is(input, select, textarea),
+  .support-shell .field :is(input, select, textarea) {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .app-frame,
+  .admin-shell,
+  .support-shell {
+    --panel-inset: 16px;
+    --stack-gap: 14px;
+  }
+
+  /* Die Tableiste liegt auf dem Rand des Bildschirms; auf Geraeten mit
+     Gestensteuerung schneidet der Startbalken sie sonst an. */
+  .mobile-tabbar {
+    right: 10px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    height: 62px;
+    padding: 5px;
+    border-radius: var(--radius-lg);
+  }
+
+  .app-main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Fuenf Eintraege teilen sich 375 px, also rund 71 px je Spalte. Die
+     Tableiste nutzt deshalb die Kurzform aus `tabLabel`; was trotzdem
+     nicht passt, wird abgeschnitten statt umzubrechen. */
+  .mobile-tabbar__link {
+    gap: 3px;
+    padding: 0 2px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .mobile-tabbar__link > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-header {
+    padding-right: 12px;
+    padding-left: 14px;
+  }
+
+  /* Der Seitenkopf stand mit 42 px Titel auf halber Bildschirmhoehe. */
+  .app-frame .page-header {
+    gap: var(--space-sm);
+    margin-bottom: 0;
+  }
+
+  .app-frame .page-header h1 {
+    font-size: 26px;
+  }
+
+  .app-frame .page-header > div:first-child {
+    min-width: 0;
+  }
+
+  /* Die Kennzahl rechts im Kopf sprang unter den Titel und stand dort
+     linksbuendig ohne Bezug. */
+  .app-frame .page-header > .admin-date-block,
+  .admin-shell .admin-page__header > .admin-date-block {
+    display: flex;
+    width: 100%;
+    gap: var(--space-xs);
+    align-items: baseline;
+    justify-content: flex-start;
+  }
+
+  .app-frame .page-header > .admin-date-block strong {
+    font-size: 22px;
+  }
+
+  /* Kopf des Pruefstischs und des Supportdesks. */
+  .admin-shell .admin-page__header,
+  .support-shell :is(.support-page__header, .support-store-header) {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: flex-start;
+  }
+
+  .admin-shell .admin-workspace > main {
+    padding: 22px 16px 70px;
+  }
+
+  .support-shell .support-page {
+    padding: 22px 16px 70px;
+  }
+
+  /* Gestapelte Tabellenzeilen als Karten: bisher lagen die Zellen ohne
+     Trennung untereinander und die letzte klebte absolut oben rechts. */
+  .app-frame .demand-table tr,
+  .admin-shell .demand-table tr,
+  .support-shell .demand-table tr {
+    padding: 14px var(--panel-inset);
+  }
+
+  .app-frame .demand-table:not(.demand-table--planner) td,
+  .admin-shell .demand-table:not(.demand-table--planner) td,
+  .support-shell .demand-table:not(.demand-table--planner) td {
+    padding: 5px 0;
+  }
+
+  .app-frame .demand-table:not(.demand-table--planner) td:last-child,
+  .admin-shell .demand-table:not(.demand-table--planner) td:last-child {
+    width: auto;
+    padding-top: var(--space-sm);
+    white-space: normal;
+  }
+
+  /* Ein Knopf in der letzten Zelle - "Bezahlt?", "Erfassen",
+     "Korrigieren" - soll auf dem Telefon die volle Breite treffen. */
+  .app-frame .demand-table:not(.demand-table--planner) td:last-child .button,
+  .admin-shell .demand-table:not(.demand-table--planner) td:last-child .button {
+    width: 100%;
+  }
+
+  .time-table .correction {
+    min-width: 0;
+  }
+
+  /* Formularraster stapeln; der Absendeknopf laeuft ueber die volle
+     Breite, weil er sonst als schmaler Rest neben dem Feld haengt. */
+  .sales-manual > .button,
+  .sales-manual > :is(button, a).button {
+    max-width: none;
+  }
+
+  .receipt-form__footer,
+  .rounds-create__footer {
+    justify-content: stretch;
+  }
+
+  .receipt-form__footer > .button,
+  .rounds-create__footer > .button {
+    width: 100%;
+  }
+
+  /* Filterleisten scrollen seitwaerts statt in drei Zeilen zu brechen. */
+  .app-frame .team-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .app-frame .team-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-frame .team-filter > * {
+    flex: 0 0 auto;
+  }
+}
+
+/* Sehr schmale Geraete (iPhone SE, 320 px). */
+@media (max-width: 380px) {
+  .mobile-tabbar__link {
+    font-size: 10px;
+  }
+
+  .app-frame .page-header h1 {
+    font-size: 23px;
+  }
+}
+
+/* ===================================================================
+   === Zeiterfassung mit Standort ===
+   Gestempelt wird am Geraet in der Hand, meistens im Stehen und oft mit
+   Handschuhen. Die Stempelkarte ist deshalb das erste und groesste
+   Element der Seite, der Standorthinweis steht direkt darunter.
+   =================================================================== */
+
+.app-frame .clock-card {
+  align-items: stretch;
+  row-gap: var(--space-sm);
+}
+
+.clock-card__timer {
+  flex: 1 1 220px;
+}
+
+.clock-card__timer strong {
+  display: block;
+  line-height: 1;
+}
+
+.clock-card__timer span {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+}
+
+.clock-card__out {
+  flex: 1 1 320px;
+  justify-content: flex-end;
+}
+
+.clock-card__out .field {
+  flex: 1 1 auto;
+}
+
+/* Der Standorthinweis gehoert unter beide Haelften, nicht neben eine
+   davon - deshalb eine eigene Rasterzeile ueber die volle Breite. */
+.clock-card__location {
+  display: flex;
+  flex: 1 0 100%;
+  gap: var(--space-xs);
+  align-items: baseline;
+  margin: 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.clock-card__location svg {
+  position: relative;
+  top: 2px;
+  flex: 0 0 auto;
+}
+
+.clock-card__location--ok {
+  color: var(--green);
+}
+
+.clock-card__location--warn {
+  color: var(--warn-ink);
+}
+
+.clock-card__location .text-link {
+  color: inherit;
+  background: none;
+  border: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+/* Standortvermerk in der Zeitliste. */
+.stamp-place {
+  display: inline-grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stamp-place--onsite {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.stamp-place--offsite {
+  color: var(--warn-ink);
+  font-weight: 600;
+}
+
+.stamp-place small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* --- Einrichtung des Ladenstandorts --- */
+
+.geofence-editor__form {
+  row-gap: var(--space-md);
+}
+
+.geofence-editor__capture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.geofence-editor__capture small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.geofence-editor__switch {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  padding: var(--space-sm) var(--space-md);
+  background: #f7f9fa;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.geofence-editor__switch input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--green);
+}
+
+.geofence-editor__switch strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.geofence-editor__switch small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.geofence-editor__current {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin: 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--line);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .app-frame .clock-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clock-card__timer strong {
+    font-size: 40px;
+  }
+
+  .clock-card__out {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .clock-card__out .button {
+    width: 100%;
+  }
+
+  /* Der wichtigste Knopf der Seite - erreichbar mit dem Daumen. */
+  .app-frame .clock-card > form .button {
+    min-height: 54px;
+    font-size: 15px;
+  }
+
+  .geofence-editor__capture .button {
+    width: 100%;
+  }
+}
+
+/* ===================================================================
+   === Belegscan in der Buchhaltung ===
+   Der Weg ist: fotografieren, gelesene Werte pruefen, speichern. Die
+   beiden Aufnahmeknoepfe stehen deshalb ganz oben und in Daumenbreite,
+   das Ergebnis erscheint als Formular neben dem Foto.
+   =================================================================== */
+
+.receipt-scanner__capture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.receipt-scanner__capture .button {
+  min-height: 50px;
+}
+
+.receipt-scanner__status {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Der Scanbalken zeigt, dass etwas laeuft - die Texterkennung braucht
+   auf einem Beleg rund eine halbe Sekunde, auf schwacher Hardware
+   mehrere. */
+.receipt-scanner__status svg {
+  animation: receipt-scan 1.4s ease-in-out infinite;
+}
+
+@keyframes receipt-scan {
+  0%, 100% { opacity: 0.35; transform: translateY(-2px); }
+  50% { opacity: 1; transform: translateY(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt-scanner__status svg {
+    animation: none;
+  }
+}
+
+.receipt-scanner__review {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  align-items: start;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
+}
+
+/* Rasterelemente sind von sich aus mindestens so breit wie ihr Inhalt.
+   Das Pruefformular schob die Spalte damit ueber den Panelrand hinaus,
+   sobald die Seitenleiste Platz wegnahm. */
+.receipt-scanner__review > * {
+  min-width: 0;
+}
+
+/* Nebeneinander lohnt sich erst, wenn beides lesbar bleibt. Mit
+   Seitenleiste sind das rund 1100 px Fensterbreite. */
+@media (max-width: 1100px) {
+  .receipt-scanner__review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .receipt-scanner__preview img {
+    max-width: 220px;
+  }
+}
+
+.receipt-scanner__preview {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+}
+
+.receipt-scanner__preview img {
+  width: 100%;
+  height: auto;
+  background: #f7f9fa;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.receipt-scanner__preview figcaption {
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: start;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.receipt-scanner__form {
+  row-gap: var(--space-md);
+}
+
+.receipt-scanner__footer {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+/* Marke an den Feldern, die aus dem Foto stammen. Ohne sie waere nicht
+   zu sehen, was gelesen und was Voreinstellung ist - und genau das muss
+   die Person pruefen, bevor sie speichert. */
+.field-recognized {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  margin-left: var(--space-2xs);
+  padding: 1px 6px;
+  color: #124434;
+  background: var(--green-soft);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Beleg in der Liste. */
+.receipt-proof summary {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--green);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.receipt-proof img {
+  width: min(100%, 320px);
+  height: auto;
+  margin-top: var(--space-xs);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 760px) {
+  .receipt-scanner__capture .button {
+    width: 100%;
+  }
+
+  .receipt-scanner__review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .receipt-scanner__preview img {
+    max-width: 220px;
+  }
+
+  .receipt-scanner__footer {
+    justify-content: stretch;
+  }
+
+  .receipt-scanner__footer .button {
+    width: 100%;
+  }
+}
+
+/* ===================================================================
+   === Untergrenzen fuer Lesbarkeit und Fingertreffer ===
+   Der Betriebsbereich hatte Beschriftungen bei 9 px und Auswahlfelder
+   bei 13 px. Beides stammt aus einer Zeit, in der die Oberflaeche nur
+   am Schreibtisch gedacht war. Im Laden liest jemand das im Stehen, mit
+   fettigen Fingern, bei Kuechenbeleuchtung.
+   =================================================================== */
+
+/* Kein Text unter 11 px. Zweitzeilen und Marken liegen bei 11-12 px,
+   Fliesstext bei 13-14 px. */
+.app-frame :is(small, .count-badge, .status-dot, .audit-result, .soon-pill, .field-recognized),
+.admin-shell :is(small, .count-badge, .audit-result),
+.support-shell :is(small, .count-badge, .audit-result) {
+  font-size: 11px;
+}
+
+.admin-shell :is(.admin-ledger, .admin-next, .decision-desk) header p,
+.admin-shell .admin-ledger__line small,
+.admin-shell .admin-next span {
+  font-size: 11px;
+}
+
+.admin-shell .admin-ledger__line small,
+.admin-shell .admin-next span {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Ankreuzfelder und Auswahlknoepfe: die Browservorgabe liegt bei 13 px
+   und damit weit unter jeder Fingerkuppe. */
+.app-frame :is(input[type="checkbox"], input[type="radio"]),
+.admin-shell :is(input[type="checkbox"], input[type="radio"]),
+.support-shell :is(input[type="checkbox"], input[type="radio"]) {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+}
+
+/* Die Auswahl daneben ist mit anzutippen, nicht nur das Kaestchen. */
+.app-frame .hygiene-status label,
+.admin-shell .hygiene-status label {
+  min-height: 40px;
+  gap: var(--space-xs);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.app-frame .hygiene-status label:has(input:checked) {
+  background: var(--green-soft);
+  border-color: var(--green);
+  font-weight: 600;
+}
+
+/* Verweise mitten im Fliesstext bleiben inline, bekommen auf dem
+   Telefon aber genug Hoehe zum Treffen. */
+@media (max-width: 760px) {
+  .app-frame :is(p, li) > .text-link {
+    display: inline-block;
+    min-height: 32px;
+    padding: 5px 0;
+  }
+}
+
+/* Der Verweis im Kopf der Arbeitsmappe stand als 17 px hohe Textzeile in
+   einer 60 px hohen Leiste. */
+.admin-shell :is(.admin-ledger, .admin-next, .decision-desk) header a,
+.admin-shell .admin-next > a {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+}
+
+/* ===================================================================
+   === Nachbesserungen aus der Messung am Geraet ===
+   =================================================================== */
+
+/* `.clock-card` erbt `flex-wrap: wrap` aus der Reihenanordnung. In der
+   Spaltenanordnung auf dem Telefon bricht ein Element damit nicht in die
+   naechste Zeile um, sondern in eine zweite *Spalte* - der
+   Standorthinweis stand dadurch rechts neben der Karte, 180 px
+   ausserhalb des Bildschirms, und zog die ganze Seite in die Breite. */
+@media (max-width: 760px) {
+  .app-frame .clock-card {
+    flex-wrap: nowrap;
+  }
+
+  /* `flex-basis: 100%` meint in der Spaltenanordnung die Hoehe. */
+  .clock-card__location {
+    flex: 0 0 auto;
+  }
+
+  /* Eingabefelder in Tabellenzellen: Hygienecheck und Wareneingang
+     setzten 40 px und lagen damit unter der Grenze fuer einen sicheren
+     Fingertreffer - beides wird an der Theke und an der Rampe getippt. */
+  .app-frame .hygiene-table :is(input[type="number"], input[type="text"]),
+  .app-frame .receipt-quantity input {
+    min-height: 46px;
+  }
+
+  /* Die Pfeile in der Aufgabenliste waren 34 px im Quadrat. */
+  .app-frame .task-list li > :is(a, button) {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* OK/Mangel nebeneinander sprengen eine schmale Tabellenzelle. */
+.app-frame .hygiene-status {
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: var(--space-xs);
+  padding: 0;
+  border: 0;
+}
+
+/* ===================================================================
+   === Uebersicht ohne erfundene Prognose ===
+   Die Startseite trug eine "Kebapp-Vorschlag"-Karte mit ausgedachten
+   Zahlen ("14 kg Kalb ergaenzen?", "Freitage lagen 11 % ueber Plan").
+   Es gibt keine Prognose dahinter - weder Kassendaten noch Bestandsdaten
+   liegen vor. Die Karte ist entfernt; die Sammelrunde steht jetzt allein
+   in ihrer Zeile. `.decision-card` bleibt vorerst als Regelsatz stehen,
+   damit die Karte mit echten Daten wieder eingesetzt werden kann.
+   =================================================================== */
+
+.app-frame .dashboard-lead {
+  grid-template-columns: minmax(0, 1fr);
+}

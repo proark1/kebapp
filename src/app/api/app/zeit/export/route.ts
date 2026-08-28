@@ -5,7 +5,25 @@ import {
   resolveActiveOrganization,
 } from "@/server/organizations/active-organization";
 import { cookies } from "next/headers";
+import { getStoreGeofence } from "@/server/personnel/geofence";
 import { exportableEntries } from "@/server/personnel/timesheets";
+
+// Der Nachweis nach Mindestlohngesetz zaehlt in Ortszeit. Vorher lief
+// der Export ueber `toISOString()` und schrieb damit UTC - eine Schicht
+// von 09:30 bis 18:00 stand im Sommer als 07:30 bis 16:00 in der Datei.
+const berlinDate = new Intl.DateTimeFormat("sv-SE", {
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: "Europe/Berlin",
+  year: "numeric",
+});
+
+const berlinTime = new Intl.DateTimeFormat("de-DE", {
+  hour: "2-digit",
+  hour12: false,
+  minute: "2-digit",
+  timeZone: "Europe/Berlin",
+});
 
 const rangeSchema = z.object({
   bis: z.iso.date().optional(),
@@ -55,23 +73,37 @@ export async function GET(request: Request): Promise<Response> {
     : new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   try {
-    const rows = await exportableEntries({
-      actor,
-      from,
-      organizationId: resolution.organization.organizationId,
-      targetUserId: parsed.data.mitarbeiter,
-      to,
-    });
+    const [rows, geofence] = await Promise.all([
+      exportableEntries({
+        actor,
+        from,
+        organizationId: resolution.organization.organizationId,
+        targetUserId: parsed.data.mitarbeiter,
+        to,
+      }),
+      getStoreGeofence({
+        actor,
+        organizationId: resolution.organization.organizationId,
+      }),
+    ]);
+
+    const place = (distanceMeters: number | null): string => {
+      if (distanceMeters === null) return "ohne Standort";
+      if (geofence && distanceMeters <= geofence.radiusMeters) return "am Laden";
+      return `${distanceMeters} m entfernt`;
+    };
 
     const lines = [
-      ["Datum", "Start", "Ende", "Stunden", "Name"].join(";"),
+      ["Datum", "Start", "Ende", "Stunden", "Name", "Start-Ort", "Ende-Ort"].join(";"),
       ...rows.map((row) =>
         [
-          row.startedAt.toISOString().slice(0, 10),
-          row.startedAt.toISOString().slice(11, 16),
-          row.endedAt.toISOString().slice(11, 16),
+          berlinDate.format(row.startedAt),
+          berlinTime.format(row.startedAt),
+          berlinTime.format(row.endedAt),
           (row.durationMinutes / 60).toFixed(2).replace(".", ","),
           csvEscape(row.userName),
+          csvEscape(place(row.startedDistanceMeters)),
+          csvEscape(place(row.endedDistanceMeters)),
         ].join(";"),
       ),
     ];

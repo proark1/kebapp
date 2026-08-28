@@ -5,9 +5,13 @@ import {
   clockInAction,
   clockOutAction,
   correctTimeEntryAction,
+  saveGeofenceAction,
 } from "@/app/app/zeit/actions";
 import { ClockCard } from "@/components/clock-card";
+import { GeofenceEditor } from "@/components/geofence-editor";
+import { formatDistance } from "@/lib/geofence";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
+import { getStoreGeofence } from "@/server/personnel/geofence";
 import {
   listRecentTimeEntries,
   listTeamMembers,
@@ -34,7 +38,32 @@ const messages: Record<string, { text: string; tone: "error" | "success" }> = {
   "laeuft-bereits": { text: "Es läuft bereits eine Schicht", tone: "error" },
   "nicht-gefunden": { text: "Eintrag nicht gefunden", tone: "error" },
   ungueltig: { text: "Bitte prüfe Start und Ende.", tone: "error" },
+  ausserhalb: {
+    text: "Dieser Laden lässt das Stempeln nur vor Ort zu. Der Standort liegt außerhalb des erlaubten Umkreises oder ließ sich nicht bestimmen.",
+    tone: "error",
+  },
+  "standort-gespeichert": { text: "Ladenstandort gespeichert", tone: "success" },
+  "standort-entfernt": {
+    text: "Ladenstandort entfernt — es wird wieder ohne Abstand gestempelt.",
+    tone: "success",
+  },
+  "standort-ungueltig": {
+    text: "Bitte Breitengrad, Längengrad und Umkreis prüfen.",
+    tone: "error",
+  },
 };
+
+/** Kurzvermerk je Stempelzeitpunkt: "am Laden" oder der Abstand. */
+function stampNote(
+  distanceMeters: number | null,
+  radiusMeters: number | undefined,
+): string | null {
+  if (distanceMeters === null) return null;
+  if (radiusMeters !== undefined && distanceMeters <= radiusMeters) {
+    return "am Laden";
+  }
+  return `${formatDistance(distanceMeters)} entfernt`;
+}
 
 function formatDuration(minutes: number): string {
   return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
@@ -49,7 +78,7 @@ export default async function ZeitPage({
   const query = await searchParams;
   const isManager = organization.role === "OWNER";
 
-  const [entries, teamMembers] = await Promise.all([
+  const [entries, teamMembers, geofence] = await Promise.all([
     listRecentTimeEntries({
       actor,
       organizationId: organization.organizationId,
@@ -61,6 +90,7 @@ export default async function ZeitPage({
           organizationId: organization.organizationId,
         })
       : Promise.resolve([]),
+    getStoreGeofence({ actor, organizationId: organization.organizationId }),
   ]);
 
   const openEntry = entries.find((entry) => entry.endedAt === null) ?? null;
@@ -92,6 +122,7 @@ export default async function ZeitPage({
       <ClockCard
         clockInAction={clockInAction}
         clockOutAction={clockOutAction}
+        geofence={geofence}
         openStartedAt={openEntry ? openEntry.startedAt.toISOString() : null}
       />
 
@@ -141,6 +172,7 @@ export default async function ZeitPage({
                   <th>Start</th>
                   <th>Ende</th>
                   <th>Dauer</th>
+                  <th>Standort</th>
                   <th>Vermerk</th>
                   <th>
                     <span className="sr-only">Korrektur</span>
@@ -167,6 +199,33 @@ export default async function ZeitPage({
                       {entry.durationMinutes === null
                         ? "—"
                         : formatDuration(entry.durationMinutes)}
+                    </td>
+                    <td data-label="Standort">
+                      {(() => {
+                        const start = stampNote(
+                          entry.startedDistanceMeters,
+                          geofence?.radiusMeters,
+                        );
+                        const end = stampNote(
+                          entry.endedDistanceMeters,
+                          geofence?.radiusMeters,
+                        );
+                        if (start === null && end === null) {
+                          return <span className="stamp-place">ohne Standort</span>;
+                        }
+                        return (
+                          <span
+                            className={
+                              start === "am Laden" && (end === null || end === "am Laden")
+                                ? "stamp-place stamp-place--onsite"
+                                : "stamp-place stamp-place--offsite"
+                            }
+                          >
+                            {start ?? "ohne Standort"}
+                            {end && end !== start ? <small>Ende: {end}</small> : null}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td data-label="Vermerk">
                       {entry.note ?? "—"}
@@ -230,6 +289,10 @@ export default async function ZeitPage({
           </div>
         )}
       </section>
+
+      {isManager ? (
+        <GeofenceEditor geofence={geofence} saveAction={saveGeofenceAction} />
+      ) : null}
     </div>
   );
 }

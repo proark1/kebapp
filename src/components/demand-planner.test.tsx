@@ -139,6 +139,31 @@ describe("DemandPlanner", () => {
     await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
+  it("keeps the demo wording only when the installation is a public demo", async () => {
+    render(
+      <DemandPlanner
+        {...createActions()}
+        demoMode
+        planning={planning}
+        role="OWNER"
+      />,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Bestätigung prüfen" }));
+    });
+    const dialog = screen.getByRole("dialog", {
+      name: "Bedarf verbindlich bestätigen?",
+    });
+    expect(
+      within(dialog).getByText(/keine echte Bestellung/),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", {
+        name: "Jetzt für die Demo-Gruppenmenge bestätigen",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("offers confirmation only to an owner with an editable draft", async () => {
     const ownerActions = createActions();
     const { unmount } = render(
@@ -154,11 +179,14 @@ describe("DemandPlanner", () => {
       name: "Bedarf verbindlich bestätigen?",
     });
     expect(within(dialog).getByText("86 kg")).toBeInTheDocument();
+    // Ausserhalb der oeffentlichen Demo sagt der Dialog, was er tut: die
+    // Menge ist verbindlich. Vorher stand dort unbedingt "In dieser
+    // oeffentlichen Demo entsteht keine echte Bestellung" - ausgerechnet
+    // an der Stelle, an der eine verbindliche Menge zugesagt wird.
+    expect(within(dialog).getByText(/Diese Menge ist verbindlich/)).toBeInTheDocument();
     await act(async () => {
       fireEvent.click(
-        within(dialog).getByRole("button", {
-          name: "Jetzt für die Demo-Gruppenmenge bestätigen",
-        }),
+        within(dialog).getByRole("button", { name: "Verbindlich bestätigen" }),
       );
     });
     await waitFor(() =>

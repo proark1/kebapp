@@ -27,7 +27,13 @@ function buildSecurityHeaders(): Array<{ key: string; value: string }> {
     { key: "X-Frame-Options", value: "DENY" },
     {
       key: "Permissions-Policy",
-      value: "camera=(), geolocation=(), microphone=()",
+      // Die Zeiterfassung fragt den Standort ab, um den Abstand zum
+      // Laden zu bestimmen (siehe src/lib/geofence.ts). Ohne `self`
+      // lehnt der Browser `navigator.geolocation` ohne Rueckfrage ab.
+      // Kamera und Mikrofon bleiben gesperrt: der Belegscan laeuft
+      // ueber `input[type=file] capture`, das keine Kamerafreigabe
+      // nach dieser Richtlinie braucht.
+      value: "camera=(), geolocation=(self), microphone=()",
     },
   ];
 
@@ -45,7 +51,17 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
-  serverExternalPackages: ["nodemailer"],
+  // tesseract.js startet einen worker_thread und laedt seine wasm-Kerne
+  // per `require` aus node_modules - gebuendelt findet es beides nicht.
+  serverExternalPackages: ["nodemailer", "tesseract.js"],
+  // Der Trace erkennt die wasm-Dateien hinter dem dynamischen `require`
+  // in tesseract.js nicht; ohne sie fehlt der Kern im standalone-Build.
+  outputFileTracingIncludes: {
+    "/app/buchhaltung": [
+      "./node_modules/.pnpm/tesseract.js-core@*/node_modules/tesseract.js-core/**",
+      "./node_modules/.pnpm/tesseract.js@*/node_modules/tesseract.js/**",
+    ],
+  },
   experimental: {
     optimizePackageImports: ["lucide-react"],
     serverActions: {

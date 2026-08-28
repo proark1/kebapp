@@ -15,6 +15,14 @@ import {
 import type { StoreFeature, StoreProfile } from "@/lib/types";
 
 type StorefrontProps = {
+  /**
+   * Laeuft diese Installation als oeffentliche Schaufenster-Demo? Dann -
+   * und nur dann - traegt die Seite den Hinweis, dass Kontaktdaten und
+   * Preise Beispieldaten sind. Frueher hing das Band an `preview` und
+   * erschien damit genau verkehrt herum: auf jeder echten Ladenseite,
+   * nie in der Editorvorschau.
+   */
+  demoMode?: boolean;
   profile: StoreProfile;
   preview?: boolean;
   publicSlug?: string;
@@ -43,6 +51,7 @@ function StoreLogo({ profile }: { profile: StoreProfile }) {
 }
 
 export function Storefront({
+  demoMode = false,
   profile,
   preview = false,
   publicSlug,
@@ -67,7 +76,7 @@ export function Storefront({
       className={`storefront ${preview ? "storefront--preview" : ""}`}
       style={style}
     >
-      {!preview ? (
+      {demoMode && !preview ? (
         <div className="demo-ribbon">
           Öffentliche Demo · Kontaktdaten und Speisekarte sind Beispieldaten
         </div>

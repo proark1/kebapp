@@ -3,7 +3,7 @@ import "server-only";
 // Buchhaltung Stufe A: Eingangsrechnungen erfassen, als bezahlt markieren,
 // vereinfachten DATEV-artigen Buchungsstapel und USt-Auswertung exportieren.
 
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { writeAuditEvent } from "@/server/audit/write-audit-event";
 import type { KebappDatabase } from "@/server/db/client";
@@ -24,6 +24,13 @@ export const invoiceInputSchema = z
     netCents7: centsSchema,
     netCents19: centsSchema,
     category: z.enum(["FLEISCH","GEMUESE","TROCKEN","GETRAENKE","VERPACKUNG","SONSTIGES"]).default("SONSTIGES"),
+    // Das abfotografierte Original als data-URL. Es geht nur mit, wenn
+    // die Buchung aus dem Belegscan stammt.
+    receiptImage: z
+      .string()
+      .max(2_600_000)
+      .regex(/^data:image\/(jpeg|png|webp|bmp);base64,[A-Za-z0-9+/=]+$/)
+      .optional(),
     supplierName: z.string().trim().min(2).max(180),
   })
   .refine((value) => value.netCents7 > 0 || value.netCents19 > 0, {
@@ -65,6 +72,7 @@ export async function upsertInvoice(input: {
           netCents7: parsed.netCents7,
           netCents19: parsed.netCents19,
           organizationId,
+          receiptImage: parsed.receiptImage ?? null,
           supplierName: parsed.supplierName,
         })
         .onConflictDoUpdate({
@@ -74,6 +82,9 @@ export async function upsertInvoice(input: {
             dueDate: parsed.dueDate ?? null,
             netCents7: parsed.netCents7,
             netCents19: parsed.netCents19,
+            // Ein nachgereichtes Foto ergaenzt den Beleg; ein fehlendes
+            // loescht das vorhandene nicht.
+            ...(parsed.receiptImage ? { receiptImage: parsed.receiptImage } : {}),
             updatedAt: now,
           },
           target: [
@@ -101,6 +112,7 @@ export async function upsertInvoice(input: {
         actorUserId: input.actor.userId,
         metadata: {
           invoiceNumber: parsed.invoiceNumber,
+          scanned: parsed.receiptImage !== undefined,
           supplier: parsed.supplierName,
         },
         objectId: saved!.id,
@@ -167,14 +179,20 @@ export async function markInvoicePaid(input: {
 export async function listInvoices(input: {
   actor: PersonnelActor;
   database?: KebappDatabase;
+  /** Belegdatum ab (ISO). Hat Vorrang vor `months`. */
+  from?: string;
   months?: number;
   organizationId: string;
+  /** Belegdatum bis (ISO, einschliesslich). */
+  to?: string;
 }) {
   const organizationId = procurementIdSchema.parse(input.organizationId);
   const months = Math.min(Math.max(input.months ?? 3, 1), 24);
-  const since = new Intl.DateTimeFormat("sv-SE").format(
-    new Date(Date.now() - months * 30 * 86_400_000),
-  );
+  const since =
+    input.from ??
+    new Intl.DateTimeFormat("sv-SE").format(
+      new Date(Date.now() - months * 30 * 86_400_000),
+    );
 
   return withTenantContext(
     { actor: input.actor, database: input.database, organizationId },
@@ -191,6 +209,7 @@ export async function listInvoices(input: {
           and(
             eq(incomingInvoices.organizationId, organizationId),
             gte(incomingInvoices.documentDate, since),
+            input.to ? lte(incomingInvoices.documentDate, input.to) : undefined,
           ),
         )
         .orderBy(desc(incomingInvoices.documentDate));

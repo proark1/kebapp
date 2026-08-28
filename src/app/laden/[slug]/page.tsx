@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Storefront } from "@/components/storefront";
+import { isPublicDemo } from "@/server/demo/demo-mode";
 import { getPublicStorefrontBySlug } from "@/server/storefront/queries";
 
 type StorefrontPageProps = {
@@ -38,5 +39,11 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
     notFound();
   }
 
-  return <Storefront profile={storefront.profile} publicSlug={storefront.publicSlug} />;
+  return (
+    <Storefront
+      demoMode={isPublicDemo()}
+      profile={storefront.profile}
+      publicSlug={storefront.publicSlug}
+    />
+  );
 }

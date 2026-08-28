@@ -41,6 +41,8 @@ export const auditActionLabels: Record<string, string> = {
   SUPPORT_SALES_IMPORTED: "Umsätze importiert (Support)",
   SUPPORT_STOREFRONT_UPDATED: "Ladenwebsite geändert",
   TIME_ENTRY_CORRECTED: "Arbeitszeit korrigiert",
+  TIME_GEOFENCE_REMOVED: "Ladenstandort entfernt",
+  TIME_GEOFENCE_SAVED: "Ladenstandort gespeichert",
 };
 
 export const auditResultLabels: Record<string, string> = {

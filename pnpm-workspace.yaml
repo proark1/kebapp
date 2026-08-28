@@ -1,5 +1,7 @@
 allowBuilds:
   esbuild: true
+  # Nur `opencollective-postinstall` - eine Spendenmeldung, kein Build.
+  tesseract.js: false
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - '@vitejs/plugin-react@6.1.0'

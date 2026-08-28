@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { Download, FileCode2, Upload } from "lucide-react";
+import { Download, FileCode2, Image as ImageIcon, Upload } from "lucide-react";
+import Image from "next/image";
+import { ReceiptScanner } from "@/components/receipt-scanner";
 import { requireActiveOrganizationPage } from "@/server/auth/page-guards";
 import { listInvoices } from "@/server/accounting/invoices";
 
@@ -39,6 +41,9 @@ async function createInvoiceAction(formData: FormData): Promise<void> {
   const value = (name: string) => String(formData.get(name) ?? "").trim();
   const net7 = Number(value("net7").replace(",", "."));
   const net19 = Number(value("net19").replace(",", "."));
+  // Kommt die Buchung aus dem Belegscan, haengt das Foto als data-URL im
+  // Formular und wird als Nachweis mitgespeichert.
+  const receiptImage = value("receiptImage") || undefined;
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(value("documentDate")) ||
     !value("supplierName") ||
@@ -63,6 +68,7 @@ async function createInvoiceAction(formData: FormData): Promise<void> {
           ? (value("category") as InvoiceCategory)
           : "SONSTIGES",
         netCents19: Math.round((net19 || 0) * 100),
+        receiptImage,
         supplierName: value("supplierName"),
       },
       organizationId: guard.organization.organizationId,
@@ -150,6 +156,11 @@ function categoryLabel(key: string): string {
   return categoryLabels[key as InvoiceCategory] ?? key;
 }
 
+const categoryOptions = invoiceCategories.map((value) => ({
+  label: categoryLabels[value],
+  value,
+}));
+
 const meldungMessages: Record<string, string> = {
   importiert: "XRechnung importiert",
   "keine-datei": "Bitte eine XML-Datei auswählen.",
@@ -228,10 +239,16 @@ export default async function BuchhaltungPage({
         </p>
       ) : null}
 
+      <ReceiptScanner
+        categories={categoryOptions}
+        createAction={createInvoiceAction}
+        today={today}
+      />
+
       <section className="panel">
         <div className="panel__header">
           <div>
-            <span className="eyebrow">Neu</span>
+            <span className="eyebrow">Neu · von Hand</span>
             <h2>Eingangsrechnung erfassen</h2>
           </div>
         </div>
@@ -327,7 +344,7 @@ export default async function BuchhaltungPage({
           <a
             className="button button--secondary"
             download="buchen.csv"
-            href={`/api/api/app/buchhaltung/export`}
+            href="/api/app/buchhaltung/export"
           >
             <Download size={17} aria-hidden="true" />
             Buchungsstapel CSV
@@ -359,6 +376,24 @@ export default async function BuchhaltungPage({
                           <FileCode2 size={12} aria-hidden="true" /> aus XRechnung
                           · {invoice.sourceFileName}
                         </small>
+                      ) : null}
+                      {invoice.receiptImage ? (
+                        // Kein Link auf die data-URL: Browser blockieren
+                        // den Seitenwechsel auf `data:` seit Jahren. Das
+                        // Foto klappt deshalb an Ort und Stelle auf.
+                        <details className="receipt-proof">
+                          <summary>
+                            <ImageIcon size={12} aria-hidden="true" />
+                            Beleg ansehen
+                          </summary>
+                          <Image
+                            alt={`Beleg ${invoice.invoiceNumber}`}
+                            height={640}
+                            src={invoice.receiptImage}
+                            unoptimized
+                            width={480}
+                          />
+                        </details>
                       ) : null}
                     </td>
                     <td data-label="Nr.">{invoice.invoiceNumber}</td>

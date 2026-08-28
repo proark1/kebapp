@@ -108,60 +108,33 @@ function createShortName(storeName: string): string {
   return initials || "LD";
 }
 
+// Startpunkt fuer einen frisch freigegebenen Laden.
+//
+// Frueher standen hier vier erfundene Gerichte mit Preisen und drei
+// erfundene Oeffnungszeitbloecke. Wer die Seite veroeffentlichte, ohne sie
+// vorher zu bearbeiten, hatte falsche Preise am Tresen und Gaeste vor
+// verschlossener Tuer. Leere Listen sind unbequemer, aber nicht falsch -
+// der Editor fragt die Angaben ohnehin ab.
 function createDefaultProfile(storeName: string): StoreProfile {
   return {
     accent: "#f3b83f",
     city: "",
-    description:
-      "Döner, Tellergerichte und vegetarische Auswahl – frisch für dich zubereitet.",
+    description: "",
     deliveryEnabled: false,
     eyebrow: `Willkommen bei ${storeName}`,
     features: [],
     heroImageUrl: "",
     logoUrl: "",
-    menu: [
-      {
-        category: "Döner",
-        description: "Drehspieß, Salat und Sauce nach Wahl",
-        id: "menu-doener",
-        name: "Döner im Fladenbrot",
-        price: 7.5,
-      },
-      {
-        category: "Döner",
-        description: "Dünnes Fladenbrot, Drehspieß, Salat und Sauce",
-        id: "menu-dueruem",
-        name: "Dürüm",
-        price: 8.5,
-      },
-      {
-        category: "Teller",
-        description: "Drehspieß, Beilage, Salat und Sauce",
-        id: "menu-teller",
-        name: "Döner-Teller",
-        price: 13.9,
-      },
-      {
-        category: "Vegetarisch",
-        description: "Falafel, Salat und Sauce",
-        id: "menu-falafel",
-        name: "Falafel-Tasche",
-        price: 7,
-      },
-    ],
+    menu: [],
     name: storeName,
-    openingHours: [
-      { days: "Montag–Donnerstag", hours: "11:00–23:00" },
-      { days: "Freitag–Samstag", hours: "11:00–00:00" },
-      { days: "Sonntag", hours: "12:00–22:00" },
-    ],
+    openingHours: [],
     phone: "",
     pickupEnabled: true,
     postalCode: "",
     schemaVersion: 3,
     shortName: createShortName(storeName),
     street: "",
-    tagline: "Frisch zubereitet. Direkt bei uns im Laden.",
+    tagline: "",
     whatsappPhone: "",
   };
 }

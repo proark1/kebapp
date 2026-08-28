@@ -27,6 +27,7 @@ import {
   platformImports,
   roundAwards,
   salesDaily,
+  storeGeofences,
   timeEntries,
 } from "../src/server/db/schema";
 
@@ -239,6 +240,42 @@ const shiftNotes: Array<string | null> = [
   null,
 ];
 
+// Ladenstandort fuer die Stempeluhr. Alle Demo-Betriebe liegen im
+// Pilotgebiet Moenchengladbach; die Betriebe bekommen leicht versetzte
+// Punkte, damit die Karte nicht alle uebereinander legt.
+const DEMO_STORE_LATITUDE = 51.194_0;
+const DEMO_STORE_LONGITUDE = 6.441_6;
+const DEMO_RADIUS_METERS = 150;
+
+async function seedGeofence(
+  transaction: SeedTransaction,
+  target: DemoOperationsTarget,
+  now: Date,
+): Promise<void> {
+  const values = {
+    // Bewusst nicht scharfgestellt: im Demo soll niemand vor einer
+    // abgelehnten Stempelung stehen, nur weil er woanders sitzt.
+    enforced: false,
+    label: "Ladentheke",
+    latitude: DEMO_STORE_LATITUDE + target.slot * 0.004,
+    longitude: DEMO_STORE_LONGITUDE + target.slot * 0.006,
+    radiusMeters: DEMO_RADIUS_METERS,
+    updatedByUserId: target.ownerUserId,
+  };
+
+  await transaction
+    .insert(storeGeofences)
+    .values({
+      ...values,
+      id: demoId("a5", target.slot, 1),
+      organizationId: target.organizationId,
+    })
+    .onConflictDoUpdate({
+      target: storeGeofences.organizationId,
+      set: { ...values, updatedAt: now },
+    });
+}
+
 async function seedShifts(
   transaction: SeedTransaction,
   target: DemoOperationsTarget,
@@ -266,13 +303,25 @@ async function seedShifts(
       const note = shiftNotes[noteIndex] ?? null;
       const corrected = noteIndex === 2;
 
+      // Standortvermerk: die meisten Schichten beginnen an der Theke,
+      // vereinzelt stempelt jemand vom Parkplatz oder auf dem Heimweg.
+      // Ohne solche Ausreisser saehe die Spalte im Demo unecht aus.
+      const offSite = noteIndex === 4;
+      const accuracy = 12 + Math.round(spread(dayOffset + staffIndex) * 40);
+
       rows.push({
         correctedByUserId: corrected ? target.ownerUserId : null,
+        endedAccuracyMeters: accuracy,
         endedAt,
+        endedDistanceMeters: Math.round(spread(dayOffset * 3) * 60),
         id: demoId("a4", target.slot, dayKey(day) * 10 + staffIndex),
         note,
         organizationId: target.organizationId,
+        startedAccuracyMeters: accuracy,
         startedAt: day,
+        startedDistanceMeters: offSite
+          ? DEMO_RADIUS_METERS + 120 + Math.round(spread(dayOffset) * 400)
+          : Math.round(spread(dayOffset * 7) * 70),
         userId: person.userId,
       });
     }
@@ -285,9 +334,13 @@ async function seedShifts(
         target: timeEntries.id,
         set: {
           correctedByUserId: sql`excluded.corrected_by_user_id`,
+          endedAccuracyMeters: sql`excluded.ended_accuracy_meters`,
           endedAt: sql`excluded.ended_at`,
+          endedDistanceMeters: sql`excluded.ended_distance_meters`,
           note: sql`excluded.note`,
+          startedAccuracyMeters: sql`excluded.started_accuracy_meters`,
           startedAt: sql`excluded.started_at`,
+          startedDistanceMeters: sql`excluded.started_distance_meters`,
           updatedAt: now,
         },
       });
@@ -303,12 +356,20 @@ async function seedShifts(
         id: demoId("a4", target.slot, 999_999),
         note: "Laufende Schicht",
         organizationId: target.organizationId,
+        startedAccuracyMeters: 18,
         startedAt,
+        startedDistanceMeters: 24,
         userId: target.employeeUserId,
       })
       .onConflictDoUpdate({
         target: timeEntries.id,
-        set: { startedAt, endedAt: null, updatedAt: now },
+        set: {
+          endedAt: null,
+          startedAccuracyMeters: 18,
+          startedAt,
+          startedDistanceMeters: 24,
+          updatedAt: now,
+        },
       });
   }
 }
@@ -1125,6 +1186,7 @@ export async function seedDemoOperations(
     await removeSupersededDemoRows(transaction, target);
     await seedSales(transaction, target, now, staffUserId);
     await seedHygiene(transaction, target, now);
+    await seedGeofence(transaction, target, now);
     await seedShifts(transaction, target, now);
     await seedInvoices(transaction, target, now, target.ownerUserId);
     await seedCalculations(transaction, target, now, target.ownerUserId);
