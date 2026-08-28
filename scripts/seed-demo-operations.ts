@@ -6,7 +6,7 @@
 // werden per Upsert geschrieben. Ein erneuter Lauf frischt die Daten auf,
 // ohne von Hand erfasste Datensaetze zu beruehren.
 
-import { sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
   buyingRounds,
@@ -500,7 +500,7 @@ async function seedCalculations(
 ): Promise<void> {
   if (target.menu.length === 0) return;
 
-  const rows = target.menu.map((item, index) => {
+  const rows = target.menu.map((item) => {
     const ingredients = ingredientsForDish(item.name);
     const totalCostCents = Math.round(
       ingredients.reduce(
@@ -512,7 +512,9 @@ async function seedCalculations(
 
     return {
       createdByUserId,
-      id: demoId("a6", target.slot, index),
+      // Bewusst ohne feste Kennung: eindeutig ist hier (Betrieb, Gericht).
+      // Eine aus dem Listenindex abgeleitete Kennung kollidiert, sobald sich
+      // die Reihenfolge der Speisekarte aendert.
       ingredients,
       menuItemKey: item.id,
       menuName: item.name,
@@ -1074,6 +1076,40 @@ async function seedGuests(
   }
 }
 
+// Frueher schrieb dieser Seed nur eine abgeschlossene Runde und leitete die
+// Positionskennungen direkt aus dem Listenindex ab. Mit der zweiten Runde
+// haben sich diese Kennungen verschoben. Ohne Aufraeumen blieben die alten
+// Zeilen liegen: der Wareneingang zeigte jede Position doppelt, und der
+// Zuschlag der laufenden Runde kollidierte mit round_awards_org_round_unique.
+async function removeSupersededDemoRows(
+  transaction: SeedTransaction,
+  target: DemoOperationsTarget,
+): Promise<void> {
+  const legacyItemIds = [demoId("a9", target.slot, 0), demoId("a9", target.slot, 1)];
+  const legacyReceiptItemIds = [
+    demoId("b2", target.slot, 0),
+    demoId("b2", target.slot, 1),
+  ];
+
+  await transaction
+    .delete(goodsReceiptItems)
+    .where(inArray(goodsReceiptItems.id, legacyReceiptItemIds));
+  await transaction
+    .delete(demandItems)
+    .where(inArray(demandItems.id, legacyItemIds));
+
+  // Der Zuschlag mit dieser Kennung gehoerte frueher zur laufenden Runde und
+  // gehoert jetzt zur zweiten abgeschlossenen. Nur den alten Stand loeschen.
+  await transaction
+    .delete(roundAwards)
+    .where(
+      and(
+        eq(roundAwards.id, demoId("b3", target.slot, 2)),
+        ne(roundAwards.buyingRoundId, demoId("a7", target.slot, 2)),
+      ),
+    );
+}
+
 export async function seedDemoOperations(
   transaction: SeedTransaction,
   input: {
@@ -1086,6 +1122,7 @@ export async function seedDemoOperations(
 
   for (const target of input.targets) {
     const staffUserId = target.employeeUserId ?? target.ownerUserId;
+    await removeSupersededDemoRows(transaction, target);
     await seedSales(transaction, target, now, staffUserId);
     await seedHygiene(transaction, target, now);
     await seedShifts(transaction, target, now);

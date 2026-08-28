@@ -693,8 +693,18 @@ if (isMainModule) {
   Promise.resolve()
     .then(() => seedPublicDemo(parseProductionEnv(process.env)))
     .then(() => console.info("Öffentliche Demo-Daten sind bereit."))
-    .catch(() => {
+    .catch((error: unknown) => {
+      // Ohne Ursache kostet ein fehlgeschlagenes Deployment eine ganze
+      // Runde Ratearbeit. Zugangsdaten stehen in keiner dieser Meldungen -
+      // der Fehler kommt aus der Datenbankschicht, nicht aus der Umgebung.
       console.error("Öffentliche Demo-Daten konnten nicht angelegt werden.");
+      for (
+        let current: unknown = error, depth = 0;
+        current instanceof Error && depth < 5;
+        current = (current as { cause?: unknown }).cause, depth += 1
+      ) {
+        console.error(`  ${current.name}: ${current.message.slice(0, 400)}`);
+      }
       process.exitCode = 1;
     });
 }
