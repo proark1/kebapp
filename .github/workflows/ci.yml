@@ -1,0 +1,74 @@
+name: CI
+
+# First CI for this repository. It runs the checks that need nothing but the
+# repository itself: lint, unit tests, and a production build.
+#
+# Deliberately not here yet, so their absence is a decision rather than an
+# oversight:
+#   * `pnpm test:integration` needs PostgreSQL with two distinct roles
+#     (kebapp_owner and kebapp_app) and two databases, because the tenant
+#     isolation tests assert what the *app* role cannot reach. That is worth
+#     having -- those are the security tests -- but it needs its own service
+#     container and role bootstrap, and belongs in a change that can be
+#     verified on its own.
+#   * `pnpm test:e2e` builds the app and drives Playwright, which needs browser
+#     downloads on top of that same database.
+#   * `pnpm check:secrets` is a pre-commit hook: it inspects the staged diff, so
+#     in CI it would have nothing to look at and would pass without checking
+#     anything.
+#
+# GitHub-hosted runners are used on purpose. This repository is public, so
+# Actions minutes are free here, and self-hosted runners on a public repository
+# would let anyone who opens a pull request run code on the host.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # No version pinned here: pnpm/action-setup reads the `packageManager`
+      # field from package.json, so the lockfile and CI cannot drift apart.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      # src/lib/env.ts validates the runtime environment with zod, and although
+      # it parses lazily, anything the build renders ahead of time can reach it.
+      # These values only have to satisfy the schema -- a parseable PostgreSQL
+      # URL, a 32-character secret, an absolute auth URL. Nothing connects to a
+      # database during the build, and none of this is a real credential.
+      - name: Build
+        run: pnpm build
+        env:
+          DATABASE_URL: postgresql://kebapp_app:placeholder-build-password@127.0.0.1:5432/kebapp
+          BETTER_AUTH_SECRET: placeholder-build-secret-not-a-real-key
+          BETTER_AUTH_URL: http://localhost:3000
