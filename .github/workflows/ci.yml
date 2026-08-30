@@ -61,14 +61,23 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
-      # src/lib/env.ts validates the runtime environment with zod, and although
-      # it parses lazily, anything the build renders ahead of time can reach it.
-      # These values only have to satisfy the schema -- a parseable PostgreSQL
-      # URL, a 32-character secret, an absolute auth URL. Nothing connects to a
-      # database during the build, and none of this is a real credential.
+      # `next build` collects page data, which imports src/server/db/client.ts,
+      # which calls getRuntimeEnv() -- so the zod schema in src/lib/env.ts is
+      # enforced at build time even though it parses lazily. A Pool is
+      # constructed but never queried, so no database is contacted.
+      #
+      # SMTP is supplied because the schema's superRefine requires HOST, PORT
+      # and FROM whenever DEMO_MODE is off. Turning DEMO_MODE on would be the
+      # wrong fix: next build sets NODE_ENV=production, and the same refinement
+      # then also demands ALLOW_PUBLIC_DEMO=true, which declares a deliberately
+      # public demo. Building in the production-like shape is the point of this
+      # step, so the placeholders go to an unroutable .invalid host instead.
       - name: Build
         run: pnpm build
         env:
           DATABASE_URL: postgresql://kebapp_app:placeholder-build-password@127.0.0.1:5432/kebapp
           BETTER_AUTH_SECRET: placeholder-build-secret-not-a-real-key
           BETTER_AUTH_URL: http://localhost:3000
+          SMTP_HOST: smtp.kebapp.invalid
+          SMTP_PORT: "1025"
+          SMTP_FROM: ci@kebapp.invalid
